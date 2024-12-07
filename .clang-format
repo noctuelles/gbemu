@@ -1,0 +1,45 @@
+# .clang-format
+---
+BasedOnStyle: Google
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+BreakBeforeBraces: Allman
+AllowShortFunctionsOnASingleLine: Empty
+AlwaysBreakTemplateDeclarations: Yes
+ColumnLimit: 100
+DerivePointerAlignment: false
+PointerAlignment: Left
+AccessModifierOffset: -2
+SpaceAfterCStyleCast: true
+SpaceBeforeParens: ControlStatements
+SpacesInAngles: false
+SpacesInContainerLiterals: false
+SpacesInParentheses: false
+Standard: C++20
+IndentCaseLabels: true
+SortIncludes: true
+ReflowComments: true
+FixNamespaceComments: true
+NamespaceIndentation: All
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignTrailingComments: true
+Cpp11BracedListStyle: true
+IncludeBlocks: Regroup
+IncludeIsMainRegex: "(Test)?$"
+
+# Custom alignment for readability
+AlignAfterOpenBracket: Align
+BinPackArguments: true
+BinPackParameters: true
+
+# Control comments and formatting rules
+CommentPragmas: "^ IWYU pragma:"
+BreakStringLiterals: false
+
+# Advanced configurations
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+PenaltyBreakBeforeFirstCallParameter: 100
+PenaltyReturnTypeOnItsOwnLine: 200
+SpacesBeforeTrailingComments: 2
