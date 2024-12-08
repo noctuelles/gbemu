@@ -15,9 +15,7 @@ public:
     ~Memory();
 
     Memory(const Memory &) = default;
-    Memory(Memory &&) -> Memory & = default;
-    auto operator=(const Memory &) -> Memory & = default;
-    auto operator=(Memory &&) -> Memory & = default;
+    Memory& operator=(const Memory &) = default;
 
     uint8_t read(uint16_t addr) const;
     void write(uint8_t val, uint16_t addr);

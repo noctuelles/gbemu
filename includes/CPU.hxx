@@ -17,7 +17,7 @@ public:
     {
         std::string name;
         size_t cycles;
-        std::function<void(CPU &)> op;
+        void (CPU::*op)();
     };
 
     template<typename T>
@@ -30,10 +30,13 @@ public:
     class BadRegisterException final : public std::exception
     {};
 
+    class IllegalInstructionException final : public std::exception
+    {};
+
     enum Flags
     {
         ZERO = 1 << 7,
-        SUBSTRACT = 1 << 6,
+        SUBTRACT = 1 << 6,
         HALF_CARRY = 1 << 5,
         CARRY = 1 << 4
     };
@@ -46,11 +49,37 @@ public:
 
 private:
     void NOP();
-    void LDBCN16();
+    /**
+    * @brief Illegal instruction.
+    */
+    void ILL();
 
+    /**
+    * @brief Load from 8-bit register to 8-bit register.
+    */
     void LD_R8_R8();
+    /**
+    * @brief Load from 8-bit immediate to 8-bit register.
+    */
     void LD_R8_IMM8();
     void LD_R8_MEM_HL();
+
+    /**
+    * @brief AND from 8-bit register to register A.
+    */
+    void AND_R8();
+    /**
+    * @brief AND from 8-bit register to register A.
+    */
+    void OR_R8();
+    /**
+    * @brief AND from 8-bit register to register A.
+    */
+    void XOR_R8();
+    /**
+    * @brief ADD from 8-bit register to register A.
+    */
+    void ADD_R8();
 
     uint8_t A,F;
     uint8_t B,C;
@@ -59,14 +88,20 @@ private:
     uint16_t PC;
     uint16_t SP;
 
+    /**
+     * @brief Tracks the remaining machine cycles for the current instruction execution.
+     */
     uint8_t cycles;
+    /**
+     * @brief Represents the current operation code being executed.
+     */
     uint8_t opcode;
 
-    Memory &memory;
+    Memory memory;
     /**
     * @brief Current instruction.
     */
-    Instruction &inst;
+    Instruction inst;
     /**
      * @brief String representation of the current instruction.
      */
