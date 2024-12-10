@@ -14,5 +14,9 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 add_executable(gbemu srcs/CPU.cxx
+        includes/Memory.hxx
+        srcs/Memory.cxx
+        includes/Bus.hxx
         srcs/main.cxx
-        srcs/Bus.cxx)
+        srcs/utils.cxx
+        includes/utils.hxx)
