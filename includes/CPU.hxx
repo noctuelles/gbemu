@@ -18,6 +18,13 @@ public:
         std::string name;
         size_t cycles;
         void (CPU::*op)();
+
+        static constexpr Instruction LD_R8_R8();
+        static constexpr Instruction LD_R8_IMM8();
+        static constexpr Instruction AND_R8();
+        static constexpr Instruction XOR_R8();
+        static constexpr Instruction OR_R8();
+        static constexpr Instruction ILL();
     };
 
     template<typename T>
@@ -48,6 +55,9 @@ public:
     const std::string& get_str_inst() const;
 
 private:
+    void build_str_inst_r8(const std::string& reg);
+    void build_str_inst_r8_xxx(const std::string& reg_dest, const std::string& val);
+
     void NOP();
     /**
     * @brief Illegal instruction.
@@ -80,6 +90,10 @@ private:
     * @brief ADD from 8-bit register to register A.
     */
     void ADD_R8();
+    /**
+    * @brief Increment by one a 8-bit register.
+    */
+    void INC_R8();
 
     uint8_t A,F;
     uint8_t B,C;

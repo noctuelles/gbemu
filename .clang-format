@@ -16,9 +16,7 @@ SpaceBeforeParens: ControlStatements
 SpacesInAngles: false
 SpacesInContainerLiterals: false
 SpacesInParentheses: false
-Standard: C++20
 IndentCaseLabels: true
-SortIncludes: true
 ReflowComments: true
 FixNamespaceComments: true
 NamespaceIndentation: All

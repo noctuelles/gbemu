@@ -17,4 +17,6 @@ add_executable(gbemu srcs/CPU.cxx
         includes/Memory.hxx
         srcs/Memory.cxx
         includes/Bus.hxx
-        srcs/main.cxx)
+        srcs/main.cxx
+        srcs/utils.cxx
+        includes/utils.hxx)
