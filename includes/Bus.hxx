@@ -6,17 +6,20 @@
 #define BUS_HXX
 
 #include <cstdint>
+#include <array>
 
 class Bus
 {
-public:
+  public:
     Bus();
     ~Bus();
 
     uint8_t read(uint16_t addr);
-    void write(uint16_t addr, uint8_t data);
+    void    write(uint16_t addr, uint8_t data);
 
-private:
+  private:
+    std::array<uint8_t, 8192> memory;
 };
+
 
 #endif //BUS_HXX
