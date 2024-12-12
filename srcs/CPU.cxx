@@ -5,26 +5,6 @@
 
 #include "utils.hxx"
 
-const std::array<CPU::RegisterDescription<CPU::Reg>, 0x08> CPU::r8_lookup{{
-    {"A", &CPU::B},       /* 0b000 */
-    {"C", &CPU::C},       /* 0b001 */
-    {"D", &CPU::D},       /* 0b010 */
-    {"E", &CPU::E},       /* 0b011 */
-    {"H", &CPU::H},       /* 0b100 */
-    {"L", &CPU::L},       /* 0b101 */
-    {"INVALID", nullptr}, /* 0b110 */
-    {"A", &CPU::A},       /* 0b111 */
-}};
-
-const std::array<CPU::RegisterDescription<CPU::RegPair>, 0x04> CPU::r16_lookup{{
-    {"BC", std::make_pair(&CPU::B, &CPU::C)}, /* 0b000 */
-    {"DE", std::make_pair(&CPU::D, &CPU::E)}, /* 0b001 */
-    {"HL", std::make_pair(&CPU::H, &CPU::L)}, /* 0b010 */
-    // TODO: correct pointer
-    {"SP", std::make_pair(reinterpret_cast<CPU::Reg>(&CPU::SP),
-                          reinterpret_cast<CPU::Reg>(&CPU::SP))}, /* 0b011 */
-}};
-
 const std::array<CPU::Instruction, 0x100> CPU::inst_lookup{{
     {},                                // 0x00
     CPU::Instruction::LD_R16_IMM16(),  // 0x01
@@ -43,7 +23,7 @@ const std::array<CPU::Instruction, 0x100> CPU::inst_lookup{{
     CPU::Instruction::LD_R8_IMM8(),    // 0x0E
     {},                                // 0x0F
     {},                                // 0x10
-    CPU::Instruction::LD_R16_IMM16(),                                // 0x11
+    CPU::Instruction::LD_R16_IMM16(),  // 0x11
     {},                                // 0x12
     {},                                // 0x13
     {},                                // 0x14
@@ -59,7 +39,7 @@ const std::array<CPU::Instruction, 0x100> CPU::inst_lookup{{
     CPU::Instruction::LD_R8_IMM8(),    // 0x1E
     {},                                // 0x1F
     {},                                // 0x20
-    CPU::Instruction::LD_R16_IMM16(),                                // 0x21
+    CPU::Instruction::LD_R16_IMM16(),  // 0x21
     {},                                // 0x22
     {},                                // 0x23
     {},                                // 0x24
@@ -75,7 +55,7 @@ const std::array<CPU::Instruction, 0x100> CPU::inst_lookup{{
     CPU::Instruction::LD_R8_IMM8(),    // 0x2E
     {},                                // 0x2F
     {},                                // 0x30
-    CPU::Instruction::LD_R16_IMM16(),                                // 0x31
+    CPU::Instruction::LD_R16_IMM16(),  // 0x31
     {},                                // 0x32
     {},                                // 0x33
     {},                                // 0x34
@@ -96,7 +76,7 @@ const std::array<CPU::Instruction, 0x100> CPU::inst_lookup{{
     CPU::Instruction::LD_R8_R8(),      // 0x43
     CPU::Instruction::LD_R8_R8(),      // 0x44
     CPU::Instruction::LD_R8_R8(),      // 0x45
-    {},                                // 0x46
+    CPU::Instruction::LD_R8_MEM_HL(),  // 0x46
     CPU::Instruction::LD_R8_R8(),      // 0x47
     CPU::Instruction::LD_R8_R8(),      // 0x48
     CPU::Instruction::LD_R8_R8(),      // 0x49
@@ -104,7 +84,7 @@ const std::array<CPU::Instruction, 0x100> CPU::inst_lookup{{
     CPU::Instruction::LD_R8_R8(),      // 0x4B
     CPU::Instruction::LD_R8_R8(),      // 0x4C
     CPU::Instruction::LD_R8_R8(),      // 0x4D
-    {},                                // 0x4E
+    CPU::Instruction::LD_R8_MEM_HL(),  // 0x4E
     CPU::Instruction::LD_R8_R8(),      // 0x4F
     CPU::Instruction::LD_R8_R8(),      // 0x50
     CPU::Instruction::LD_R8_R8(),      // 0x51
@@ -112,7 +92,7 @@ const std::array<CPU::Instruction, 0x100> CPU::inst_lookup{{
     CPU::Instruction::LD_R8_R8(),      // 0x53
     CPU::Instruction::LD_R8_R8(),      // 0x54
     CPU::Instruction::LD_R8_R8(),      // 0x55
-    {},                                // 0x56
+    CPU::Instruction::LD_R8_MEM_HL(),  // 0x56
     CPU::Instruction::LD_R8_R8(),      // 0x57
     CPU::Instruction::LD_R8_R8(),      // 0x58
     CPU::Instruction::LD_R8_R8(),      // 0x59
@@ -120,7 +100,7 @@ const std::array<CPU::Instruction, 0x100> CPU::inst_lookup{{
     CPU::Instruction::LD_R8_R8(),      // 0x5B
     CPU::Instruction::LD_R8_R8(),      // 0x5C
     CPU::Instruction::LD_R8_R8(),      // 0x5D
-    {},                                // 0x5E
+    CPU::Instruction::LD_R8_MEM_HL(),  // 0x5E
     CPU::Instruction::LD_R8_R8(),      // 0x5F
     CPU::Instruction::LD_R8_R8(),      // 0x60
     CPU::Instruction::LD_R8_R8(),      // 0x61
@@ -128,7 +108,7 @@ const std::array<CPU::Instruction, 0x100> CPU::inst_lookup{{
     CPU::Instruction::LD_R8_R8(),      // 0x63
     CPU::Instruction::LD_R8_R8(),      // 0x64
     CPU::Instruction::LD_R8_R8(),      // 0x65
-    {},                                // 0x66
+    CPU::Instruction::LD_R8_MEM_HL(),  // 0x66
     CPU::Instruction::LD_R8_R8(),      // 0x67
     CPU::Instruction::LD_R8_R8(),      // 0x68
     CPU::Instruction::LD_R8_R8(),      // 0x69
@@ -136,23 +116,23 @@ const std::array<CPU::Instruction, 0x100> CPU::inst_lookup{{
     CPU::Instruction::LD_R8_R8(),      // 0x6B
     CPU::Instruction::LD_R8_R8(),      // 0x6C
     CPU::Instruction::LD_R8_R8(),      // 0x6D
-    {},                                // 0x6E
+    CPU::Instruction::LD_R8_MEM_HL(),  // 0x6E
     CPU::Instruction::LD_R8_R8(),      // 0x6F
-    {},                                // 0x70
-    {},                                // 0x71
-    {},                                // 0x72
-    {},                                // 0x73
-    {},                                // 0x74
-    {},                                // 0x75
+    CPU::Instruction::LD_MEM_HL_R8(),  // 0x70
+    CPU::Instruction::LD_MEM_HL_R8(),  // 0x71
+    CPU::Instruction::LD_MEM_HL_R8(),  // 0x72
+    CPU::Instruction::LD_MEM_HL_R8(),  // 0x73
+    CPU::Instruction::LD_MEM_HL_R8(),  // 0x74
+    CPU::Instruction::LD_MEM_HL_R8(),  // 0x75
     {},                                // 0x76
-    {},                                // 0x77
+    CPU::Instruction::LD_MEM_HL_R8(),  // 0x77
     CPU::Instruction::LD_R8_R8(),      // 0x78
     CPU::Instruction::LD_R8_R8(),      // 0x79
     CPU::Instruction::LD_R8_R8(),      // 0x7A
     CPU::Instruction::LD_R8_R8(),      // 0x7B
     CPU::Instruction::LD_R8_R8(),      // 0x7C
     CPU::Instruction::LD_R8_R8(),      // 0x7D
-    {},                                // 0x7E
+    CPU::Instruction::LD_R8_MEM_HL(),  // 0x7E
     CPU::Instruction::LD_R8_R8(),      // 0x7F
     {},                                // 0x80
     {},                                // 0x81
@@ -299,6 +279,16 @@ constexpr CPU::Instruction CPU::Instruction::LD_R16_IMM16()
     return {.name = "LD", .cycles = 12, .op = &CPU::LD_R16_IMM16};
 }
 
+constexpr CPU::Instruction CPU::Instruction::LD_R8_MEM_HL()
+{
+    return {.name = "LD", .cycles = 8, .op = &CPU::LD_R8_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_R8()
+{
+    return {.name = "LD", .cycles = 8, .op = &CPU::LD_MEM_HL_R8};
+}
+
 constexpr CPU::Instruction CPU::Instruction::AND_R8()
 {
     return {.name = "AND", .cycles = 4, .op = &CPU::AND_R8};
@@ -343,170 +333,135 @@ void CPU::NOP() {}
 
 void CPU::LD_R8_R8()
 {
-    const auto& r_dest = r8_lookup[(this->opcode >> 3) & 0b00000111];
-    const auto& r_src  = r8_lookup[this->opcode & 0b00000111];
+    const auto r_dest = static_cast<Register8>((this->opcode >> 3) & 0b00000111);
+    const auto r_src  = static_cast<uint8_t>(this->opcode & 0b00000111);
 
-    if (r_dest.reg == nullptr || r_src.reg == nullptr)
-    {
-        throw BadRegisterException();
-    }
-
-    this->build_str_inst_r8_xxx(r_dest.name, r_src.name);
-    this->*r_dest.reg = this->*r_src.reg;
+    this->set_register_r8_imm8(r_dest, r_src);
 }
 
 void CPU::LD_R8_IMM8()
 {
-    const auto& r_dest{r8_lookup[(this->opcode >> 3) & 0b00000111U]};
-    const auto  r_imm{this->bus.read(this->PC++)};
+    const auto r_dest = static_cast<Register8>((this->opcode >> 3) & 0b00000111);
+    const auto r_imm{this->bus.read(this->PC++)};
 
-    if (r_dest.reg == nullptr)
-    {
-        throw BadRegisterException();
-    }
-
-    this->build_str_inst_r8_xxx(r_dest.name, int_to_hex(r_imm));
-    this->*r_dest.reg = r_imm;
+    this->set_register_r8_imm8(r_dest, r_imm);
 }
 
 void CPU::LD_R16_IMM16()
 {
-    const auto& r_dest{r16_lookup[(this->opcode >> 4) & 0b00000011U]};
-    const auto  imm_lsb{this->bus.read(this->PC++)};
-    const auto  imm_msb{this->bus.read(this->PC++)};
+    const auto r_dest = static_cast<Register16>((this->opcode >> 4) & 0b00000011U);
+    const auto imm_lsb{this->bus.read(this->PC++)};
+    const auto imm_msb{this->bus.read(this->PC++)};
+    const auto imm_val = static_cast<uint16_t>(imm_lsb << 8 | imm_msb);
 
-    this->*r_dest.reg.first  = imm_lsb;
-    this->*r_dest.reg.second = imm_msb;
+    this->set_register_r16_imm16(r_dest, imm_val);
 }
 
 void CPU::LD_R8_MEM_HL()
 {
-    const auto& r_dest  = r8_lookup[(this->opcode >> 3) & 0b00000111U];
-    const auto  mem_val = this->memory.read(REG16_PAIR_GET(this->H, this->L));
+    const auto r_dest  = static_cast<Register8>((this->opcode >> 3) & 0b00000111);
+    const auto mem_val = this->bus.read(REG16_PAIR_GET(this->H, this->L));
 
-    if (r_dest.reg == nullptr)
-    {
-        throw BadRegisterException();
-    }
+    this->set_register_r8_imm8(r_dest, mem_val);
+}
 
-    this->build_str_inst_r8_xxx(r_dest.name, "HL");
-    this->*r_dest.reg = mem_val;
+void CPU::LD_MEM_HL_R8() const
+{
+    const auto r_dest = get_register8(static_cast<Register8>(this->opcode & 0b00000111));
+    this->bus.write(REG16_PAIR_GET(this->H, this->L), this->*r_dest);
 }
 
 void CPU::AND_R8()
 {
-    const auto& r_src = r8_lookup[this->opcode & 0b00000111];
+    const auto r_src = get_register8(static_cast<Register8>(this->opcode & 0b00000111));
 
-    if (r_src.reg == nullptr)
-    {
-        throw BadRegisterException();
-    }
-
-    this->build_str_inst_r8(r_src.name);
-    this->A &= this->*r_src.reg;
+    this->A &= this->*r_src;
     if (this->A == 0)
     {
-        this->F |= ZERO;
+        this->F |= Flags::ZERO;
     }
     else
     {
-        this->F &= ~ZERO;
+        this->F &= ~Flags::ZERO;
     }
-    this->F |= HALF_CARRY;
-    this->F &= ~SUBTRACT;
-    this->F &= ~CARRY;
+    this->F |= Flags::HALF_CARRY;
+    this->F &= ~Flags::SUBTRACT;
+    this->F &= ~Flags::CARRY;
 }
 
 void CPU::OR_R8()
 {
-    const auto& r_src = r8_lookup[this->opcode & 0b00000111];
+    const auto r_src = get_register8(static_cast<Register8>(this->opcode & 0b00000111));
 
-    if (r_src.reg == nullptr)
-    {
-        throw BadRegisterException();
-    }
-
-    this->build_str_inst_r8(r_src.name);
-    this->A |= this->*r_src.reg;
+    this->A |= this->*r_src;
     if (this->A == 0)
     {
-        this->F |= ZERO;
+        this->F |= Flags::ZERO;
     }
     else
     {
-        this->F &= ~ZERO;
+        this->F &= ~Flags::ZERO;
     }
-    this->F &= ~HALF_CARRY;
-    this->F &= ~SUBTRACT;
-    this->F &= ~CARRY;
+    this->F &= ~Flags::HALF_CARRY;
+    this->F &= ~Flags::SUBTRACT;
+    this->F &= ~Flags::CARRY;
 }
 
 void CPU::XOR_R8()
 {
-    const auto& r_src = r8_lookup[this->opcode & 0b00000111];
+    const auto r_src = get_register8(static_cast<Register8>(this->opcode & 0b00000111));
 
-    if (r_src.reg == nullptr)
-    {
-        throw BadRegisterException();
-    }
-
-    this->build_str_inst_r8(r_src.name);
-    this->A ^= this->*r_src.reg;
+    this->A ^= this->*r_src;
     if (this->A == 0)
     {
-        this->F |= ZERO;
+        this->F |= Flags::ZERO;
     }
     else
     {
-        this->F &= ~ZERO;
+        this->F &= ~Flags::ZERO;
     }
-    this->F &= ~HALF_CARRY;
-    this->F &= ~SUBTRACT;
-    this->F &= ~CARRY;
+    this->F &= ~Flags::HALF_CARRY;
+    this->F &= ~Flags::SUBTRACT;
+    this->F &= ~Flags::CARRY;
 }
 
 void CPU::ADD_R8()
 {
-    const auto& r_src      = r8_lookup[this->opcode & 0b00000111];
-    uint8_t     half_carry = 0;
+    const auto r_src      = get_register8(static_cast<Register8>(this->opcode & 0b00000111));
+    uint8_t    half_carry = 0;
 
-    if (r_src.reg == nullptr)
-    {
-        throw BadRegisterException();
-    }
-
-    this->build_str_inst_r8(r_src.name);
-    half_carry = ((this->A & 0x0F) + (this->*r_src.reg & 0x0F)) & 0x10;
+    half_carry = ((this->A & 0x0F) + (this->*r_src & 0x0F)) & 0x10;
     if (half_carry)
     {
-        this->F |= HALF_CARRY;
+        this->F |= Flags::HALF_CARRY;
     }
     else
     {
-        this->F &= ~HALF_CARRY;
+        this->F &= ~Flags::HALF_CARRY;
     }
-    if (__builtin_add_overflow(this->A, this->*r_src.reg, &this->A))
+    if (__builtin_add_overflow(this->A, this->*r_src, &this->A))
     {
-        this->F |= CARRY;
+        this->F |= Flags::CARRY;
     }
     else
     {
-        this->F &= ~CARRY;
+        this->F &= ~Flags::CARRY;
     }
     if (this->A == 0)
     {
-        this->F |= ZERO;
+        this->F |= Flags::ZERO;
     }
     else
     {
-        this->F &= ~ZERO;
+        this->F &= ~Flags::ZERO;
     }
-    this->F &= ~SUBTRACT;
+    this->F &= ~Flags::SUBTRACT;
 }
 
 void CPU::INC_R8()
 {
-    const auto& r_dest = r8_lookup[(this->opcode >> 3) & 0b00000111U];
+    const auto r_dest = get_register8(static_cast<Register8>((this->opcode >> 4) & 0b00000011U));
+    this->*r_dest += 1;
 }
 
 void CPU::ILL()
@@ -519,7 +474,7 @@ void CPU::cycle()
     if (this->cycles == 0)
     {
         // TODO: CB Prefix
-        this->opcode = this->memory.read(this->PC);
+        this->opcode = this->bus.read(this->PC);
         this->inst   = inst_lookup.at(opcode);
         this->cycles = this->inst.cycles;
         this->PC++;
@@ -543,4 +498,65 @@ void CPU::build_str_inst_r8(const std::string& reg)
 void CPU::build_str_inst_r8_xxx(const std::string& reg_dest, const std::string& val)
 {
     this->str_inst = this->inst.name + " " + reg_dest + ", " + val;
+}
+
+void CPU::set_register_r16_imm16(const Register16 reg, const uint16_t value)
+{
+    switch (reg)
+    {
+        case Register16::R16_BC:
+            this->B = value & 0xFF;
+            this->C = value >> 8;
+            break;
+        case Register16::R16_DE:
+            this->D = value & 0xFF;
+            this->E = value >> 8;
+            break;
+        case Register16::R16_HL:
+            this->H = value & 0xFF;
+            this->L = value >> 8;
+            break;
+        case Register16::R16_SP:
+            this->SP = value;
+            break;
+        default:
+            throw BadRegisterException();
+    }
+}
+
+void CPU::set_register_r8_imm8(const Register8 reg, const uint8_t value)
+{
+    const auto r_dest = get_register8(reg);
+    this->*r_dest     = value;
+}
+
+void CPU::set_register_r8_r8(const Register8 reg_dst, const Register8 reg_src)
+{
+    const auto r_dest = get_register8(reg_dst);
+    const auto r_src  = get_register8(reg_src);
+
+    this->*r_dest = this->*r_src;
+}
+
+CPU::Reg CPU::get_register8(Register8 reg)
+{
+    switch (reg)
+    {
+        case Register8::R8_A:
+            return &CPU::A;
+        case Register8::R8_B:
+            return &CPU::B;
+        case Register8::R8_C:
+            return &CPU::C;
+        case Register8::R8_D:
+            return &CPU::D;
+        case Register8::R8_E:
+            return &CPU::E;
+        case Register8::R8_H:
+            return &CPU::H;
+        case Register8::R8_L:
+            return &CPU::L;
+        default:
+            throw BadRegisterException();
+    }
 }

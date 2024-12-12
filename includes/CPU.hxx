@@ -15,7 +15,6 @@ class CPU
 {
   public:
     using Reg = uint8_t CPU::*;
-    using RegPair = std::pair<uint8_t CPU::*, uint8_t CPU::*>;
 
     struct Instruction
     {
@@ -26,10 +25,43 @@ class CPU
         static constexpr Instruction LD_R8_R8();
         static constexpr Instruction LD_R16_IMM16();
         static constexpr Instruction LD_R8_IMM8();
+        static constexpr Instruction LD_R8_MEM_HL();
+        static constexpr Instruction LD_MEM_HL_R8();
+
         static constexpr Instruction AND_R8();
         static constexpr Instruction XOR_R8();
         static constexpr Instruction OR_R8();
         static constexpr Instruction ILL();
+    };
+
+    enum class Register16 : uint8_t
+    {
+        R16_BC = 0b00,
+        R16_DE = 0b01,
+        R16_HL = 0b10,
+        R16_SP = 0b11,
+    };
+
+    enum class Register8 : uint8_t
+    {
+        R8_A = 0b111,
+        R8_B = 0b000,
+        R8_C = 0b001,
+        R8_D = 0b010,
+        R8_E = 0b011,
+        R8_H = 0b100,
+        R8_L = 0b101
+    };
+
+    struct Flags
+    {
+        enum Value : uint8_t
+        {
+            ZERO       = 1 << 7,
+            SUBTRACT   = 1 << 6,
+            HALF_CARRY = 1 << 5,
+            CARRY      = 1 << 4
+        };
     };
 
     template <typename RegType>
@@ -47,12 +79,8 @@ class CPU
     {
     };
 
-    enum Flags
+    class InstructionNotImplementedException final : public std::exception
     {
-        ZERO       = 1 << 7,
-        SUBTRACT   = 1 << 6,
-        HALF_CARRY = 1 << 5,
-        CARRY      = 1 << 4
     };
 
     explicit CPU(Bus& bus);
@@ -65,6 +93,12 @@ class CPU
   private:
     void build_str_inst_r8(const std::string& reg);
     void build_str_inst_r8_xxx(const std::string& reg_dest, const std::string& val);
+
+    static Reg get_register8(Register8 reg);
+
+    void set_register_r16_imm16(Register16 reg, uint16_t value);
+    void set_register_r8_imm8(Register8 reg, uint8_t value);
+    void set_register_r8_r8(Register8 reg_dest, Register8 reg_src);
 
     void NOP();
     /**
@@ -84,7 +118,16 @@ class CPU
      * @brief Load from 16-bit immediate to 16-bit register.
      */
     void LD_R16_IMM16();
+    /**
+    * @brief Load from memory pointed by HL to 8-bit register.
+    */
     void LD_R8_MEM_HL();
+    /**
+    * @brief Load from 8-bit register to memory pointed by HL.
+    */
+    void LD_MEM_HL_R8() const;
+
+    void LD_A_MEM_16();
 
     /**
      * @brief AND from 8-bit register to register A.
@@ -140,14 +183,6 @@ class CPU
      * @brief Instruction lookup table.
      */
     const static std::array<Instruction, 0x100> inst_lookup;
-    /**
-     * @brief Lookup table for 8-bit register.
-     */
-    const static std::array<RegisterDescription<Reg>, 0x08> r8_lookup;
-    /**
-     * @brief Lookup table for 8-bit register.
-     */
-    const static std::array<RegisterDescription<RegPair>, 0x04> r16_lookup;
 
     Bus& bus;
 };
