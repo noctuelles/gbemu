@@ -10,10 +10,19 @@ Bus::Bus()
 
 Bus::~Bus() = default;
 
-uint8_t Bus::read(uint16_t addr) {
+uint8_t Bus::read(const uint16_t addr) const {
     return this->memory.at(addr);
 }
 
-void    Bus::write(uint16_t addr, uint8_t data) {
+void Bus::write(uint16_t addr, uint8_t data)
+{
     this->memory.at(addr) = data;
+}
+
+void Bus::write(uint16_t addr, std::span<uint8_t> data)
+{
+    for (const auto &byte : data)
+    {
+        this->write(addr++, byte);
+    }
 }

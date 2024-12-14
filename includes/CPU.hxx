@@ -14,62 +14,47 @@
 class CPU
 {
   public:
-    using Reg = uint8_t CPU::*;
-
     struct Instruction
     {
-        std::string name;
-        size_t      cycles;
+        size_t cycles;
         void (CPU::*op)();
 
-        static constexpr Instruction LD_R8_R8();
-        static constexpr Instruction LD_R16_IMM16();
-        static constexpr Instruction LD_R8_IMM8();
-        static constexpr Instruction LD_R8_MEM_HL();
-        static constexpr Instruction LD_MEM_HL_R8();
+        constexpr Instruction();
+        constexpr Instruction(size_t cycles, void (CPU::*op)());
 
-        static constexpr Instruction AND_R8();
-        static constexpr Instruction XOR_R8();
-        static constexpr Instruction OR_R8();
-        static constexpr Instruction ILL();
+        constexpr static Instruction LD_R8_R8();
+        constexpr static Instruction LD_R16_IMM16();
+        constexpr static Instruction LD_R8_IMM8();
+        constexpr static Instruction LD_R8_MEM_HL();
+        constexpr static Instruction LD_MEM_HL_R8();
+
+        constexpr static Instruction AND_R8();
+        constexpr static Instruction XOR_R8();
+        constexpr static Instruction OR_R8();
+        constexpr static Instruction ILL();
+        constexpr static Instruction PREFIX();
+
+        constexpr static Instruction BIT_R8();
+        constexpr static Instruction BIT_MEM_HL();
+        constexpr static Instruction RES_R8();
+        constexpr static Instruction RES_MEM_HL();
+        constexpr static Instruction SET_R8();
+        constexpr static Instruction SET_MEM_HL();
     };
 
-    enum class Register16 : uint8_t
+    struct Register
     {
-        R16_BC = 0b00,
-        R16_DE = 0b01,
-        R16_HL = 0b10,
-        R16_SP = 0b11,
+        uint8_t A, F;
+        uint8_t B, C;
+        uint8_t D, E;
+        uint8_t H, L;
+
+        uint16_t PC;
+        uint16_t SP;
     };
 
-    enum class Register8 : uint8_t
-    {
-        R8_A = 0b111,
-        R8_B = 0b000,
-        R8_C = 0b001,
-        R8_D = 0b010,
-        R8_E = 0b011,
-        R8_H = 0b100,
-        R8_L = 0b101
-    };
-
-    struct Flags
-    {
-        enum Value : uint8_t
-        {
-            ZERO       = 1 << 7,
-            SUBTRACT   = 1 << 6,
-            HALF_CARRY = 1 << 5,
-            CARRY      = 1 << 4
-        };
-    };
-
-    template <typename RegType>
-    struct RegisterDescription
-    {
-        std::string name;
-        RegType     reg;
-    };
+    using Register8  = uint8_t   Register::*;
+    using Register16 = uint16_t Register::*;
 
     class BadRegisterException final : public std::exception
     {
@@ -88,17 +73,58 @@ class CPU
 
     void cycle();
 
-    const std::string& get_str_inst() const;
+    Register get_register() const noexcept;
 
   private:
-    void build_str_inst_r8(const std::string& reg);
-    void build_str_inst_r8_xxx(const std::string& reg_dest, const std::string& val);
+    enum class InstructionRegister16 : uint8_t
+    {
+        BC = 0b00,
+        DE = 0b01,
+        HL = 0b10,
+        SP = 0b11,
+    };
 
-    static Reg get_register8(Register8 reg);
+    enum class InstructionRegister8 : uint8_t
+    {
+        A = 0b111,
+        B = 0b000,
+        C = 0b001,
+        D = 0b010,
+        E = 0b011,
+        H = 0b100,
+        L = 0b101
+    };
 
-    void set_register_r16_imm16(Register16 reg, uint16_t value);
-    void set_register_r8_imm8(Register8 reg, uint8_t value);
-    void set_register_r8_r8(Register8 reg_dest, Register8 reg_src);
+    enum class InstructionBit : uint8_t
+    {
+        ZERO  = 0b000,
+        ONE   = 0b001,
+        TWO   = 0b010,
+        THREE = 0b011,
+        FOUR  = 0b100,
+        FIVE  = 0b101,
+        SIX   = 0b110,
+        SEVEN = 0b111,
+    };
+
+    struct Flags
+    {
+        enum Value : uint8_t
+        {
+            ZERO       = 1 << 7,
+            SUBTRACT   = 1 << 6,
+            HALF_CARRY = 1 << 5,
+            CARRY      = 1 << 4
+        };
+    };
+
+    using InstructionLookupTable = std::array<Instruction, 0x100>;
+
+    static Register8 get_register8(InstructionRegister8 reg);
+
+    void set_register_r16_imm16(InstructionRegister16 reg, uint16_t value);
+    void set_register_r8_imm8(InstructionRegister8 reg, uint8_t value);
+    void set_register_r8_r8(InstructionRegister8 reg_dest, InstructionRegister8 reg_src);
 
     void NOP();
     /**
@@ -119,13 +145,13 @@ class CPU
      */
     void LD_R16_IMM16();
     /**
-    * @brief Load from memory pointed by HL to 8-bit register.
-    */
+     * @brief Load from memory pointed by HL to 8-bit register.
+     */
     void LD_R8_MEM_HL();
     /**
-    * @brief Load from 8-bit register to memory pointed by HL.
-    */
-    void LD_MEM_HL_R8() const;
+     * @brief Load from 8-bit register to memory pointed by HL.
+     */
+    void LD_MEM_HL_R8();
 
     void LD_A_MEM_16();
 
@@ -133,34 +159,68 @@ class CPU
      * @brief AND from 8-bit register to register A.
      */
     void AND_R8();
+
     /**
      * @brief AND from 8-bit register to register A.
      */
     void OR_R8();
+
     /**
      * @brief AND from 8-bit register to register A.
      */
     void XOR_R8();
+
     /**
      * @brief ADD from 8-bit register to register A.
      */
     void ADD_R8();
+
     /**
-     * @brief Increment by one a 8-bit register.
+     * @brief Increment by one an 8-bit register.
      */
     void INC_R8();
 
     /**
+     * @brief CB Prefix.
+     */
+    void PREFIX();
+
+    /**
+     * @brief Test bit in an 8-bit register, set the zero flag if bit not set.
+     */
+    void BIT_R8();
+
+    /**
+     * @brief Test bit in the byte pointed by HL, set the zero flag if bit not set.
+     */
+    void BIT_MEM_HL();
+
+    /**
+     * @brief Set bit u3 in register r8 to 0. Bit 0 is the rightmost one, bit 7 the leftmost one.
+     */
+    void RES_R8();
+
+    /**
+     * @brief Set bit u3 in the byte pointed by HL to 0. Bit 0 is the rightmost one, bit 7 the
+     * leftmost one.
+     */
+    void RES_MEM_HL();
+
+    /**
+     * @brief Set bit u3 in the byte pointed by HL to 1. Bit 0 is the rightmost one, bit 7 the
+     * leftmost one.
+     */
+    void SET_R8();
+
+    /**
+     * @brief Clear specified bit in 8-bit register.
+     */
+    void SET_MEM_HL();
+
+    /**
      * @brief General Purpose Registers
      */
-
-    uint8_t A, F;
-    uint8_t B, C;
-    uint8_t D, E;
-    uint8_t H, L;
-
-    uint16_t PC;
-    uint16_t SP;
+    Register reg;
 
     /**
      * @brief Tracks the remaining machine cycles for the current instruction execution.
@@ -171,18 +231,18 @@ class CPU
      */
     uint8_t opcode;
 
+    bool cb_prefixed;
+
     /**
      * @brief Current instruction.
      */
     Instruction inst;
-    /**
-     * @brief String representation of the current instruction.
-     */
-    std::string str_inst;
+
     /**
      * @brief Instruction lookup table.
      */
-    const static std::array<Instruction, 0x100> inst_lookup;
+    const static InstructionLookupTable inst_lookup;
+    const static InstructionLookupTable cb_prefixed_inst_lookup;
 
     Bus& bus;
 };
