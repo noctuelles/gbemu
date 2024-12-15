@@ -34,6 +34,8 @@ class CPU
         constexpr static Instruction ILL();
         constexpr static Instruction PREFIX();
 
+        constexpr static Instruction SWAP_R8();
+        constexpr static Instruction SWAP_MEM_HL();
         constexpr static Instruction BIT_R8();
         constexpr static Instruction BIT_MEM_HL();
         constexpr static Instruction RES_R8();
@@ -189,6 +191,16 @@ class CPU
      * @brief Test bit in an 8-bit register, set the zero flag if bit not set.
      */
     void BIT_R8();
+
+    /**
+    * @brief Swap the upper 4 bits in register r8 and the lower 4 ones.
+    */
+    void SWAP_R8();
+
+    /**
+    * @brief Swap the upper 4 bits in the byte pointed by HL and the lower 4 ones.
+    */
+    void SWAP_MEM_HL();
 
     /**
      * @brief Test bit in the byte pointed by HL, set the zero flag if bit not set.
