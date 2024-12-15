@@ -8,8 +8,7 @@
 #include "Bus.hxx"
 
 #define REG16_PAIR_GET(r1, r2) (static_cast<uint16_t>((r1 << 8) | r2))
-#define REG16_PAIR_SET(val, r1, r2) \
-    (r1 = static_cast<uint8_t>(val >> 8), r2 = static_cast<uint8_t>(val & 0xFF))
+#define REG16_PAIR_SET(val, r1, r2) (r1 = static_cast<uint8_t>(val >> 8), r2 = static_cast<uint8_t>(val & 0xFF))
 
 class CPU
 {
@@ -34,12 +33,31 @@ class CPU
         constexpr static Instruction ILL();
         constexpr static Instruction PREFIX();
 
+        constexpr static Instruction RRC_R8();
+        constexpr static Instruction RRC_MEM_HL();
+        constexpr static Instruction RLC_R8();
+        constexpr static Instruction RLC_MEM_HL();
+        constexpr static Instruction RR_R8();
+        constexpr static Instruction RR_MEM_HL();
+        constexpr static Instruction RL_R8();
+        constexpr static Instruction RL_MEM_HL();
+
+        constexpr static Instruction SLA_R8();
+        constexpr static Instruction SLA_MEM_HL();
+        constexpr static Instruction SRL_R8();
+        constexpr static Instruction SRL_MEM_HL();
+        constexpr static Instruction SRA_R8();
+        constexpr static Instruction SRA_MEM_HL();
+
         constexpr static Instruction SWAP_R8();
         constexpr static Instruction SWAP_MEM_HL();
+
         constexpr static Instruction BIT_R8();
         constexpr static Instruction BIT_MEM_HL();
+
         constexpr static Instruction RES_R8();
         constexpr static Instruction RES_MEM_HL();
+
         constexpr static Instruction SET_R8();
         constexpr static Instruction SET_MEM_HL();
     };
@@ -75,7 +93,7 @@ class CPU
 
     void cycle();
 
-    Register get_register() const noexcept;
+    [[nodiscard]] Register get_register() const noexcept;
 
   private:
     enum class InstructionRegister16 : uint8_t
@@ -107,6 +125,24 @@ class CPU
         FIVE  = 0b101,
         SIX   = 0b110,
         SEVEN = 0b111,
+    };
+
+    enum class ShiftDirection : bool
+    {
+        RIGHT,
+        LEFT
+    };
+
+    enum class RotateDirection : bool
+    {
+        RIGHT,
+        LEFT
+    };
+
+    enum class ShiftType : bool
+    {
+        LOGICAL,
+        ARITHMETIC
     };
 
     struct Flags
@@ -188,24 +224,91 @@ class CPU
     void PREFIX();
 
     /**
+     * @brief Perform an 8-bit rotate through the carry flag.
+     * @return Operation result.
+     */
+    auto ROTATE(uint8_t val, RotateDirection rotate_direction, bool rotate_through_carry) noexcept;
+    /**
+     * @brief Rotate register r8 left.
+     */
+    void RLC_R8();
+    /**
+     * @brief Rotate the byte pointed to by HL left.
+     */
+    void RLC_MEM_HL();
+    /**
+     * @brief Rotate register r8 right.
+     */
+    void RRC_R8();
+    /**
+     * @brief  Rotate the byte pointed to by HL right.
+     */
+    void RRC_MEM_HL();
+    /**
+     * @brief Rotate bits in register r8 left, through the carry flag.
+     */
+    void RL_R8();
+    /**
+     * @brief Rotate the byte pointed to by HL left, through the carry flag.
+     */
+    void RL_MEM_HL();
+    /**
+     * @brief Rotate register r8 right, through the carry flag.
+     */
+    void RR_R8();
+    /**
+     * @brief Rotate the byte pointed to by HL right, through the carry flag.
+     */
+    void RR_MEM_HL();
+
+    /**
+     * @brief Perform an 8 bit shift.
+     * @return Operation result.
+     */
+    auto SHIFT(uint8_t val, ShiftType shift_type, ShiftDirection shift_direction) noexcept;
+    /**
+     * @brief Shift Right Arithmetically register r8.
+     */
+    void SRA_R8();
+    /**
+     * @brief Shift Right Arithmetically the byte pointed to by HL.
+     */
+    void SRA_MEM_HL();
+    /**
+     * @brief Shift Left Arithmetically register r8.
+     */
+    void SLA_R8();
+    /**
+     * @brief Shift Left Arithmetically the byte pointed to by HL.
+     */
+    void SLA_MEM_HL();
+    /**
+     * @brief Shift Right Logically register r8.
+     */
+    void SRL_R8();
+    /**
+     * @brief Shift Right Logically the byte pointed to by HL.
+     */
+    void SRL_MEM_HL();
+
+    /**
      * @brief Test bit in an 8-bit register, set the zero flag if bit not set.
      */
     void BIT_R8();
-
-    /**
-    * @brief Swap the upper 4 bits in register r8 and the lower 4 ones.
-    */
-    void SWAP_R8();
-
-    /**
-    * @brief Swap the upper 4 bits in the byte pointed by HL and the lower 4 ones.
-    */
-    void SWAP_MEM_HL();
-
     /**
      * @brief Test bit in the byte pointed by HL, set the zero flag if bit not set.
      */
     void BIT_MEM_HL();
+
+    /**
+     * @brief Swap the upper 4 bits in register r8 and the lower 4 ones.
+     */
+    void SWAP_R8();
+
+    /**
+     * @brief Swap the upper 4 bits in the byte pointed by HL and the lower 4 ones.
+     */
+    void SWAP_MEM_HL();
 
     /**
      * @brief Set bit u3 in register r8 to 0. Bit 0 is the rightmost one, bit 7 the leftmost one.

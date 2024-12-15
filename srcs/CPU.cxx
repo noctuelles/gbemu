@@ -1,5 +1,7 @@
 #include "CPU.hxx"
 
+#include <x86intrin.h>
+
 #include <iomanip>
 #include <utility>
 
@@ -263,54 +265,54 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
 }};
 
 const CPU::InstructionLookupTable CPU::cb_prefixed_inst_lookup{{
-    {},                               // 0x00
-    {},                               // 0x01
-    {},                               // 0x02
-    {},                               // 0x03
-    {},                               // 0x04
-    {},                               // 0x05
-    {},                               // 0x06
-    {},                               // 0x07
-    {},                               // 0x08
-    {},                               // 0x09
-    {},                               // 0x0A
-    {},                               // 0x0B
-    {},                               // 0x0C
-    {},                               // 0x0D
-    {},                               // 0x0E
-    {},                               // 0x0F
-    {},                               // 0x10
-    {},                               // 0x11
-    {},                               // 0x12
-    {},                               // 0x13
-    {},                               // 0x14
-    {},                               // 0x15
-    {},                               // 0x16
-    {},                               // 0x17
-    {},                               // 0x18
-    {},                               // 0x19
-    {},                               // 0x1A
-    {},                               // 0x1B
-    {},                               // 0x1C
-    {},                               // 0x1D
-    {},                               // 0x1E
-    {},                               // 0x1F
-    {},                               // 0x20
-    {},                               // 0x21
-    {},                               // 0x22
-    {},                               // 0x23
-    {},                               // 0x24
-    {},                               // 0x25
-    {},                               // 0x26
-    {},                               // 0x27
-    {},                               // 0x28
-    {},                               // 0x29
-    {},                               // 0x2A
-    {},                               // 0x2B
-    {},                               // 0x2C
-    {},                               // 0x2D
-    {},                               // 0x2E
-    {},                               // 0x2F
+    CPU::Instruction::RLC_R8(),       // 0x00
+    CPU::Instruction::RLC_R8(),       // 0x01
+    CPU::Instruction::RLC_R8(),       // 0x02
+    CPU::Instruction::RLC_R8(),       // 0x03
+    CPU::Instruction::RLC_R8(),       // 0x04
+    CPU::Instruction::RLC_R8(),       // 0x05
+    CPU::Instruction::RLC_MEM_HL(),   // 0x06
+    CPU::Instruction::RLC_R8(),       // 0x07
+    CPU::Instruction::RRC_R8(),       // 0x08
+    CPU::Instruction::RRC_R8(),       // 0x0a
+    CPU::Instruction::RRC_R8(),       // 0x0A
+    CPU::Instruction::RRC_R8(),       // 0x0B
+    CPU::Instruction::RRC_R8(),       // 0x0C
+    CPU::Instruction::RRC_R8(),       // 0x0D
+    CPU::Instruction::RRC_MEM_HL(),   // 0x0E
+    CPU::Instruction::RRC_R8(),       // 0x0F
+    CPU::Instruction::RL_R8(),        // 0x10
+    CPU::Instruction::RL_R8(),        // 0x11
+    CPU::Instruction::RL_R8(),        // 0x12
+    CPU::Instruction::RL_R8(),        // 0x13
+    CPU::Instruction::RL_R8(),        // 0x14
+    CPU::Instruction::RL_R8(),        // 0x15
+    CPU::Instruction::RL_MEM_HL(),    // 0x16
+    CPU::Instruction::RL_R8(),        // 0x17
+    CPU::Instruction::RR_R8(),        // 0x18
+    CPU::Instruction::RR_R8(),        // 0x19
+    CPU::Instruction::RR_R8(),        // 0x1A
+    CPU::Instruction::RR_R8(),        // 0x1B
+    CPU::Instruction::RR_R8(),        // 0x1C
+    CPU::Instruction::RR_R8(),        // 0x1D
+    CPU::Instruction::RR_MEM_HL(),    // 0x1E
+    CPU::Instruction::RR_R8(),        // 0x1F
+    CPU::Instruction::SLA_R8(),       // 0x20
+    CPU::Instruction::SLA_R8(),       // 0x22
+    CPU::Instruction::SLA_R8(),       // 0x22
+    CPU::Instruction::SLA_R8(),       // 0x23
+    CPU::Instruction::SLA_R8(),       // 0x24
+    CPU::Instruction::SLA_R8(),       // 0x25
+    CPU::Instruction::SLA_MEM_HL(),   // 0x26
+    CPU::Instruction::SLA_R8(),       // 0x27
+    CPU::Instruction::SRA_R8(),       // 0x28
+    CPU::Instruction::SRA_R8(),       // 0x29
+    CPU::Instruction::SRA_R8(),       // 0x2A
+    CPU::Instruction::SRA_R8(),       // 0x2B
+    CPU::Instruction::SRA_R8(),       // 0x2C
+    CPU::Instruction::SRA_R8(),       // 0x2D
+    CPU::Instruction::SRA_MEM_HL(),   // 0x2E
+    CPU::Instruction::SRA_R8(),       // 0x2F
     CPU::Instruction::SWAP_R8(),      // 0x30
     CPU::Instruction::SWAP_R8(),      // 0x31
     CPU::Instruction::SWAP_R8(),      // 0x32
@@ -319,14 +321,14 @@ const CPU::InstructionLookupTable CPU::cb_prefixed_inst_lookup{{
     CPU::Instruction::SWAP_R8(),      // 0x35
     CPU::Instruction::SWAP_MEM_HL(),  // 0x36
     CPU::Instruction::SWAP_R8(),      // 0x37
-    {},                               // 0x38
-    {},                               // 0x39
-    {},                               // 0x3A
-    {},                               // 0x3B
-    {},                               // 0x3C
-    {},                               // 0x3D
-    {},                               // 0x3E
-    {},                               // 0x3F
+    CPU::Instruction::SRL_R8(),       // 0x38
+    CPU::Instruction::SRL_R8(),       // 0x39
+    CPU::Instruction::SRL_R8(),       // 0x3A
+    CPU::Instruction::SRL_R8(),       // 0x3B
+    CPU::Instruction::SRL_R8(),       // 0x3C
+    CPU::Instruction::SRL_R8(),       // 0x3D
+    CPU::Instruction::SRL_MEM_HL(),   // 0x3E
+    CPU::Instruction::SRL_R8(),       // 0x3F
     CPU::Instruction::BIT_R8(),       // 0x40
     CPU::Instruction::BIT_R8(),       // 0x41
     CPU::Instruction::BIT_R8(),       // 0x42
@@ -523,10 +525,7 @@ const CPU::InstructionLookupTable CPU::cb_prefixed_inst_lookup{{
 
 constexpr CPU::Instruction::Instruction() : cycles(0), op(&CPU::ILL) {}
 
-constexpr CPU::Instruction::Instruction(const size_t cycles, void (CPU::*op)())
-    : cycles(cycles), op(op)
-{
-}
+constexpr CPU::Instruction::Instruction(const size_t cycles, void (CPU::*op)()) : cycles(cycles), op(op) {}
 
 constexpr CPU::Instruction CPU::Instruction::LD_R8_R8()
 {
@@ -577,6 +576,76 @@ constexpr CPU::Instruction CPU::Instruction::PREFIX()
 {
     return Instruction{4U, &CPU::PREFIX};
 }
+
+constexpr CPU::Instruction CPU::Instruction::RRC_R8()
+{
+    return Instruction{8U, &CPU::RRC_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::RRC_MEM_HL()
+{
+    return Instruction{16U, &CPU::RRC_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::RLC_R8()
+{
+    return Instruction{8U, &CPU::RLC_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::RLC_MEM_HL()
+{
+    return Instruction{16U, &CPU::RLC_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::RR_R8()
+{
+    return Instruction{8U, &CPU::RR_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::RR_MEM_HL()
+{
+    return Instruction{16U, &CPU::RR_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::RL_R8()
+{
+    return Instruction{8U, &CPU::RL_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::RL_MEM_HL()
+{
+    return Instruction{16U, &CPU::RL_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SLA_R8()
+{
+    return Instruction{8U, &CPU::SLA_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SLA_MEM_HL()
+{
+    return Instruction{8U, &CPU::SLA_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SRL_R8()
+{
+    return Instruction{8U, &CPU::SRL_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SRL_MEM_HL()
+{
+    return Instruction{16U, &CPU::SRL_R8};
+}
+constexpr CPU::Instruction CPU::Instruction::SRA_R8()
+{
+    return Instruction{8U, &CPU::SRA_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SRA_MEM_HL()
+{
+    return Instruction{16U, &CPU::SRA_MEM_HL};
+}
+
 constexpr CPU::Instruction CPU::Instruction::SWAP_R8()
 {
     return Instruction{8U, &CPU::SWAP_R8};
@@ -616,9 +685,7 @@ constexpr CPU::Instruction CPU::Instruction::SET_MEM_HL()
     return Instruction{16U, &CPU::SET_MEM_HL};
 }
 
-CPU::CPU(Bus& bus) : reg(), cycles(0), opcode(0), cb_prefixed(false), inst(inst_lookup[0]), bus(bus)
-{
-}
+CPU::CPU(Bus& bus) : reg(), cycles(0), opcode(0), cb_prefixed(false), inst(inst_lookup[0]), bus(bus) {}
 
 CPU::~CPU() = default;
 
@@ -755,7 +822,7 @@ void CPU::XOR_R8()
 
 void CPU::ADD_R8()
 {
-    const auto r_src = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
+    const auto r_src      = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
     uint8_t    half_carry = 0;
 
     half_carry = ((this->reg.A & 0x0F) + (this->reg.*r_src & 0x0F)) & 0x10;
@@ -788,8 +855,7 @@ void CPU::ADD_R8()
 
 void CPU::INC_R8()
 {
-    const auto r_dest =
-        get_register8(static_cast<InstructionRegister8>((this->opcode >> 4) & 0b00000011U));
+    const auto r_dest = get_register8(static_cast<InstructionRegister8>((this->opcode >> 4) & 0b00000011U));
     this->reg.*r_dest += 1;
 }
 
@@ -802,10 +868,171 @@ void CPU::PREFIX()
 {
     this->cb_prefixed = true;
 }
+
+auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool rotate_through_carry) noexcept
+{
+    auto has_new_carry = false;
+
+    if (rotate_direction == RotateDirection::LEFT)
+    {
+        has_new_carry = (val & 0b10000000) != 0;
+        val <<= 1;
+        if (rotate_through_carry)
+        {
+            val |= (this->reg.F & Flags::CARRY ? 0b00000001 : 0b00000000);
+        }
+    }
+    else
+    {
+        has_new_carry = (val & 0b00000001) != 0;
+        val >>= 1;
+        if (rotate_through_carry)
+        {
+            val |= (this->reg.F & Flags::CARRY ? 0b10000000 : 0b00000000);
+        }
+    }
+    if (has_new_carry)
+    {
+        this->reg.F |= Flags::CARRY;
+    }
+    else
+    {
+        this->reg.F &= ~Flags::CARRY;
+    }
+    this->reg.F &= ~Flags::HALF_CARRY;
+    this->reg.F &= ~Flags::SUBTRACT;
+
+    return (val);
+}
+void CPU::RLC_R8()
+{
+    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    this->reg.*r_dest = this->ROTATE(this->reg.*r_dest, RotateDirection::LEFT, false);
+}
+
+void CPU::RLC_MEM_HL()
+{
+    auto val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
+    val      = this->ROTATE(val, RotateDirection::LEFT, false);
+    this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), val);
+}
+
+void CPU::RRC_R8()
+{
+    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    this->reg.*r_dest = this->ROTATE(this->reg.*r_dest, RotateDirection::RIGHT, false);
+}
+
+void CPU::RRC_MEM_HL()
+{
+    auto val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
+    val      = this->ROTATE(val, RotateDirection::RIGHT, false);
+    this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), val);
+}
+
+void CPU::RL_R8()
+{
+    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    this->reg.*r_dest = this->ROTATE(this->reg.*r_dest, RotateDirection::LEFT, true);
+}
+void CPU::RL_MEM_HL()
+{
+    auto val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
+    val      = this->ROTATE(val, RotateDirection::LEFT, true);
+    this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), val);
+}
+
+void CPU::RR_R8()
+{
+    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    this->reg.*r_dest = this->ROTATE(this->reg.*r_dest, RotateDirection::RIGHT, true);
+}
+
+void CPU::RR_MEM_HL()
+{
+    auto val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
+    val      = this->ROTATE(val, RotateDirection::LEFT, true);
+    this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), val);
+}
+
+auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection shift_direction) noexcept
+{
+    auto sign_bit = false;
+
+    if (val & ((shift_direction == ShiftDirection::RIGHT) ? 0b00000001U : 0b10000000U))
+    {
+        this->reg.F |= Flags::CARRY;
+    }
+    else
+    {
+        this->reg.F &= ~Flags::CARRY;
+    }
+    sign_bit = val & 0b10000000U != 0;
+    if (shift_direction == ShiftDirection::RIGHT)
+    {
+        val >>= 1;
+    }
+    else
+    {
+        val <<= 1;
+    }
+    if (sign_bit && shift_type == ShiftType::ARITHMETIC && shift_direction == ShiftDirection::RIGHT)
+    {
+        val |= 0b10000000U;
+    }
+    if (val == 0)
+    {
+        this->reg.F |= Flags::ZERO;
+    }
+    this->reg.F &= ~Flags::HALF_CARRY;
+    this->reg.F &= ~Flags::SUBTRACT;
+
+    return val;
+}
+
+void CPU::SRA_R8()
+{
+    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    this->reg.*r_dest = this->SHIFT(this->reg.*r_dest, ShiftType::ARITHMETIC, ShiftDirection::RIGHT);
+}
+
+void CPU::SRA_MEM_HL()
+{
+    auto val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
+    val      = this->SHIFT(val, ShiftType::ARITHMETIC, ShiftDirection::RIGHT);
+    this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), val);
+}
+
+void CPU::SLA_R8()
+{
+    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    this->reg.*r_dest = this->SHIFT(this->reg.*r_dest, ShiftType::ARITHMETIC, ShiftDirection::LEFT);
+}
+
+void CPU::SLA_MEM_HL()
+{
+    auto val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
+    val      = this->SHIFT(val, ShiftType::ARITHMETIC, ShiftDirection::LEFT);
+    this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), val);
+}
+
+void CPU::SRL_R8()
+{
+    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    this->reg.*r_dest = this->SHIFT(this->reg.*r_dest, ShiftType::LOGICAL, ShiftDirection::RIGHT);
+}
+
+void CPU::SRL_MEM_HL()
+{
+    auto val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
+    val      = this->SHIFT(val, ShiftType::LOGICAL, ShiftDirection::RIGHT);
+    this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), val);
+}
+
 void CPU::BIT_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
-    const auto bit    = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
+    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    const auto bit    = static_cast<uint8_t>((this->opcode & 0b00111000U) >> 3U);
 
     if (!(this->reg.*r_dest & (1 << bit)))
     {
@@ -819,8 +1046,7 @@ void CPU::SWAP_R8()
 {
     const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
 
-    this->reg.*r_dest =
-        ((this->reg.*r_dest & 0b11110000) >> 4) | ((this->reg.*r_dest & 0b00001111) << 4);
+    this->reg.*r_dest = ((this->reg.*r_dest & 0b11110000) >> 4) | ((this->reg.*r_dest & 0b00001111) << 4);
 
     this->reg.F &= ~Flags::SUBTRACT;
     this->reg.F &= ~Flags::HALF_CARRY;
@@ -853,8 +1079,7 @@ void CPU::BIT_MEM_HL()
 {
     const auto bit = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
 
-    if (const auto mem_val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
-        !(mem_val & (1 << bit)))
+    if (const auto mem_val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L)); !(mem_val & (1 << bit)))
     {
         this->reg.F |= Flags::ZERO;
     }
