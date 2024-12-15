@@ -3,9 +3,12 @@
 
 #include <array>
 #include <functional>
-#include <string>
 
 #include "Bus.hxx"
+
+#ifndef TEST_FRIENDS
+# define TEST_FRIENDS
+#endif
 
 #define REG16_PAIR_GET(r1, r2) (static_cast<uint16_t>((r1 << 8) | r2))
 #define REG16_PAIR_SET(val, r1, r2) (r1 = static_cast<uint8_t>(val >> 8), r2 = static_cast<uint8_t>(val & 0xFF))
@@ -166,6 +169,15 @@ class CPU
     };
 
     static Register8 get_register8(OperandRegister8 reg);
+
+    [[nodiscard]] Register8 get_register8_dest_from_opcode() const;
+    [[nodiscard]] static Register8 get_register8_dest_from_opcode(uint8_t opcode);
+
+    [[nodiscard]] Register8 get_register8_src_from_opcode() const;
+    [[nodiscard]] static Register8 get_register8_src_from_opcode(uint8_t opcode);
+
+    [[nodiscard]] std::pair<Register8, Register8> get_register8_dest_src_from_opcode() const;
+    [[nodiscard]] static std::pair<Register8, Register8> get_register8_dest_src_from_opcode(uint8_t opcode);
 
     void set_register_r16_imm16(OperandRegister16 reg, uint16_t value);
     void set_register_r8_imm8(OperandRegister8 reg, uint8_t value);
@@ -362,6 +374,8 @@ class CPU
     Instruction inst;
 
     Bus& bus;
+
+    TEST_FRIENDS;
 };
 
 #endif

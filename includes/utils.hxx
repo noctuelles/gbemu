@@ -5,15 +5,8 @@
 #ifndef UTILS_HXX
 #define UTILS_HXX
 
-#include <iomanip>
-#include <sstream>
+#include <cstdint>
 
-template <typename T>
-std::string int_to_hex(T i)
-{
-    std::stringstream stream;
-    stream << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << i << "h";
-    return stream.str();
-}
+#define U8(x) (static_cast<uint8_t>(x))
 
 #endif //UTILS_HXX

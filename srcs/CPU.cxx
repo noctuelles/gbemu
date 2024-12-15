@@ -693,18 +693,16 @@ void CPU::NOP() {}
 
 void CPU::LD_R8_R8()
 {
-    const auto r_dest = static_cast<OperandRegister8>((this->opcode >> 3) & 0b00000111);
-    const auto r_src  = static_cast<uint8_t>(this->opcode & 0b00000111);
-
-    this->set_register_r8_imm8(r_dest, r_src);
+    const auto [dest, src] = this->get_register8_dest_src_from_opcode();
+    this->reg.*dest        = this->reg.*src;
 }
 
 void CPU::LD_R8_IMM8()
 {
-    const auto r_dest = static_cast<OperandRegister8>((this->opcode >> 3) & 0b00000111);
-    const auto r_imm{this->bus.read(this->reg.PC++)};
+    const auto dest =this->get_register8_dest_from_opcode();
+    const auto imm{this->bus.read(this->reg.PC++)};
 
-    this->set_register_r8_imm8(r_dest, r_imm);
+    this->reg.*dest = imm;
 }
 
 void CPU::LD_R16_IMM16()
@@ -734,10 +732,10 @@ void CPU::LD_A_MEM_16() {}
 
 void CPU::RES_R8()
 {
-    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
+    const auto src = this->get_register8_src_from_opcode();
     const auto bit    = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
 
-    this->reg.*r_dest &= ~(1 << bit);
+    this->reg.*src &= ~(1 << bit);
 }
 void CPU::RES_MEM_HL()
 {
@@ -750,10 +748,10 @@ void CPU::RES_MEM_HL()
 }
 void CPU::SET_R8()
 {
-    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
+    const auto src = this->get_register8_src_from_opcode();
     const auto bit    = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
 
-    this->reg.*r_dest |= 1 << bit;
+    this->reg.*src |= 1 << bit;
 }
 
 void CPU::SET_MEM_HL()
@@ -1171,4 +1169,33 @@ CPU::Register8 CPU::get_register8(OperandRegister8 reg)
         default:
             throw BadRegister();
     }
+}
+CPU::Register8 CPU::get_register8_dest_from_opcode() const
+{
+    return get_register8(static_cast<OperandRegister8>((this->opcode >> 3) & 0b00000111U));
+}
+
+CPU::Register8 CPU::get_register8_dest_from_opcode(const uint8_t opcode)
+{
+    return get_register8(static_cast<OperandRegister8>((opcode >> 3) & 0b00000111U));
+}
+
+CPU::Register8 CPU::get_register8_src_from_opcode() const
+{
+    return get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111U));
+}
+
+CPU::Register8 CPU::get_register8_src_from_opcode(const uint8_t opcode)
+{
+    return get_register8(static_cast<OperandRegister8>(opcode & 0b00000111U));
+}
+
+std::pair<CPU::Register8, CPU::Register8> CPU::get_register8_dest_src_from_opcode() const
+{
+    return std::make_pair(this->get_register8_dest_from_opcode(), this->get_register8_src_from_opcode());
+}
+
+std::pair<CPU::Register8, CPU::Register8> CPU::get_register8_dest_src_from_opcode(uint8_t opcode)
+{
+    return std::make_pair(get_register8_dest_from_opcode(opcode), get_register8_src_from_opcode(opcode));
 }
