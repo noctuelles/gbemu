@@ -17,7 +17,9 @@ add_executable(gbemu srcs/CPU.cxx
         srcs/main.cxx
         srcs/Bus.cxx)
 
-add_executable(gbemu_test srcs/tests/CPU.cxx)
+add_executable(gbemu_test srcs/tests/CPU.cxx
+        srcs/CPU.cxx
+        srcs/Bus.cxx)
 
 target_link_libraries(
         gbemu_test

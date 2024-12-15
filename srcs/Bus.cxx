@@ -19,7 +19,7 @@ void Bus::write(uint16_t addr, uint8_t data)
     this->memory.at(addr) = data;
 }
 
-void Bus::write(uint16_t addr, std::span<uint8_t> data)
+void Bus::write(uint16_t addr, std::initializer_list<uint8_t> data)
 {
     for (const auto &byte : data)
     {

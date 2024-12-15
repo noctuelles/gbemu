@@ -693,7 +693,7 @@ void CPU::NOP() {}
 
 void CPU::LD_R8_R8()
 {
-    const auto r_dest = static_cast<InstructionRegister8>((this->opcode >> 3) & 0b00000111);
+    const auto r_dest = static_cast<OperandRegister8>((this->opcode >> 3) & 0b00000111);
     const auto r_src  = static_cast<uint8_t>(this->opcode & 0b00000111);
 
     this->set_register_r8_imm8(r_dest, r_src);
@@ -701,7 +701,7 @@ void CPU::LD_R8_R8()
 
 void CPU::LD_R8_IMM8()
 {
-    const auto r_dest = static_cast<InstructionRegister8>((this->opcode >> 3) & 0b00000111);
+    const auto r_dest = static_cast<OperandRegister8>((this->opcode >> 3) & 0b00000111);
     const auto r_imm{this->bus.read(this->reg.PC++)};
 
     this->set_register_r8_imm8(r_dest, r_imm);
@@ -709,7 +709,7 @@ void CPU::LD_R8_IMM8()
 
 void CPU::LD_R16_IMM16()
 {
-    const auto r_dest = static_cast<InstructionRegister16>((this->opcode >> 4) & 0b00000011U);
+    const auto r_dest = static_cast<OperandRegister16>((this->opcode >> 4) & 0b00000011U);
     const auto imm_lsb{this->bus.read(this->reg.PC++)};
     const auto imm_msb{this->bus.read(this->reg.PC++)};
     const auto imm_val = static_cast<uint16_t>(imm_lsb << 8 | imm_msb);
@@ -719,7 +719,7 @@ void CPU::LD_R16_IMM16()
 
 void CPU::LD_R8_MEM_HL()
 {
-    const auto r_dest  = static_cast<InstructionRegister8>((this->opcode >> 3) & 0b00000111);
+    const auto r_dest  = static_cast<OperandRegister8>((this->opcode >> 3) & 0b00000111);
     const auto mem_val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
 
     this->set_register_r8_imm8(r_dest, mem_val);
@@ -727,14 +727,14 @@ void CPU::LD_R8_MEM_HL()
 
 void CPU::LD_MEM_HL_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
     this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), this->reg.*r_dest);
 }
 void CPU::LD_A_MEM_16() {}
 
 void CPU::RES_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
     const auto bit    = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
 
     this->reg.*r_dest &= ~(1 << bit);
@@ -750,7 +750,7 @@ void CPU::RES_MEM_HL()
 }
 void CPU::SET_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
     const auto bit    = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
 
     this->reg.*r_dest |= 1 << bit;
@@ -768,7 +768,7 @@ void CPU::SET_MEM_HL()
 
 void CPU::AND_R8()
 {
-    const auto r_src = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
+    const auto r_src = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
 
     this->reg.A &= this->reg.*r_src;
     if (this->reg.A == 0)
@@ -786,7 +786,7 @@ void CPU::AND_R8()
 
 void CPU::OR_R8()
 {
-    const auto r_src = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
+    const auto r_src = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
 
     this->reg.A |= this->reg.*r_src;
     if (this->reg.A == 0)
@@ -804,7 +804,7 @@ void CPU::OR_R8()
 
 void CPU::XOR_R8()
 {
-    const auto r_src = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
+    const auto r_src = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
 
     this->reg.A ^= this->reg.*r_src;
     if (this->reg.A == 0)
@@ -822,7 +822,7 @@ void CPU::XOR_R8()
 
 void CPU::ADD_R8()
 {
-    const auto r_src      = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
+    const auto r_src      = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
     uint8_t    half_carry = 0;
 
     half_carry = ((this->reg.A & 0x0F) + (this->reg.*r_src & 0x0F)) & 0x10;
@@ -855,13 +855,13 @@ void CPU::ADD_R8()
 
 void CPU::INC_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>((this->opcode >> 4) & 0b00000011U));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>((this->opcode >> 4) & 0b00000011U));
     this->reg.*r_dest += 1;
 }
 
 void CPU::ILL()
 {
-    throw IllegalInstructionException();
+    throw IllegalInstruction();
 }
 
 void CPU::PREFIX()
@@ -906,7 +906,7 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
 }
 void CPU::RLC_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111U));
     this->reg.*r_dest = this->ROTATE(this->reg.*r_dest, RotateDirection::LEFT, false);
 }
 
@@ -919,7 +919,7 @@ void CPU::RLC_MEM_HL()
 
 void CPU::RRC_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111U));
     this->reg.*r_dest = this->ROTATE(this->reg.*r_dest, RotateDirection::RIGHT, false);
 }
 
@@ -932,7 +932,7 @@ void CPU::RRC_MEM_HL()
 
 void CPU::RL_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111U));
     this->reg.*r_dest = this->ROTATE(this->reg.*r_dest, RotateDirection::LEFT, true);
 }
 void CPU::RL_MEM_HL()
@@ -944,7 +944,7 @@ void CPU::RL_MEM_HL()
 
 void CPU::RR_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111U));
     this->reg.*r_dest = this->ROTATE(this->reg.*r_dest, RotateDirection::RIGHT, true);
 }
 
@@ -992,7 +992,7 @@ auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection sh
 
 void CPU::SRA_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111U));
     this->reg.*r_dest = this->SHIFT(this->reg.*r_dest, ShiftType::ARITHMETIC, ShiftDirection::RIGHT);
 }
 
@@ -1005,7 +1005,7 @@ void CPU::SRA_MEM_HL()
 
 void CPU::SLA_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111U));
     this->reg.*r_dest = this->SHIFT(this->reg.*r_dest, ShiftType::ARITHMETIC, ShiftDirection::LEFT);
 }
 
@@ -1018,7 +1018,7 @@ void CPU::SLA_MEM_HL()
 
 void CPU::SRL_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111U));
     this->reg.*r_dest = this->SHIFT(this->reg.*r_dest, ShiftType::LOGICAL, ShiftDirection::RIGHT);
 }
 
@@ -1031,7 +1031,7 @@ void CPU::SRL_MEM_HL()
 
 void CPU::BIT_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111U));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111U));
     const auto bit    = static_cast<uint8_t>((this->opcode & 0b00111000U) >> 3U);
 
     if (!(this->reg.*r_dest & (1 << bit)))
@@ -1044,7 +1044,7 @@ void CPU::BIT_R8()
 
 void CPU::SWAP_R8()
 {
-    const auto r_dest = get_register8(static_cast<InstructionRegister8>(this->opcode & 0b00000111));
+    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
 
     this->reg.*r_dest = ((this->reg.*r_dest & 0b11110000) >> 4) | ((this->reg.*r_dest & 0b00001111) << 4);
 
@@ -1105,47 +1105,44 @@ void CPU::cycle()
         this->reg.PC++;
         (this->*inst.op)();
     }
-    else
-    {
-        this->cycles--;
-    }
+    this->cycles--;
 }
 CPU::Register CPU::get_register() const noexcept
 {
     return this->reg;
 }
 
-void CPU::set_register_r16_imm16(const InstructionRegister16 reg, const uint16_t value)
+void CPU::set_register_r16_imm16(const OperandRegister16 reg, const uint16_t value)
 {
     switch (reg)
     {
-        case InstructionRegister16::BC:
+        case OperandRegister16::BC:
             this->reg.B = value & 0xFF;
             this->reg.C = value >> 8;
             break;
-        case InstructionRegister16::DE:
+        case OperandRegister16::DE:
             this->reg.D = value & 0xFF;
             this->reg.E = value >> 8;
             break;
-        case InstructionRegister16::HL:
+        case OperandRegister16::HL:
             this->reg.H = value & 0xFF;
             this->reg.L = value >> 8;
             break;
-        case InstructionRegister16::SP:
+        case OperandRegister16::SP:
             this->reg.SP = value;
             break;
         default:
-            throw BadRegisterException();
+            throw BadRegister();
     }
 }
 
-void CPU::set_register_r8_imm8(const InstructionRegister8 reg, const uint8_t value)
+void CPU::set_register_r8_imm8(const OperandRegister8 reg, const uint8_t value)
 {
     const auto r_dest = get_register8(reg);
     this->reg.*r_dest = value;
 }
 
-void CPU::set_register_r8_r8(const InstructionRegister8 reg_dst, const InstructionRegister8 reg_src)
+void CPU::set_register_r8_r8(const OperandRegister8 reg_dst, const OperandRegister8 reg_src)
 {
     const auto r_dest = get_register8(reg_dst);
     const auto r_src  = get_register8(reg_src);
@@ -1153,25 +1150,25 @@ void CPU::set_register_r8_r8(const InstructionRegister8 reg_dst, const Instructi
     this->reg.*r_dest = this->reg.*r_src;
 }
 
-CPU::Register8 CPU::get_register8(InstructionRegister8 reg)
+CPU::Register8 CPU::get_register8(OperandRegister8 reg)
 {
     switch (reg)
     {
-        case InstructionRegister8::A:
+        case OperandRegister8::A:
             return &CPU::Register::A;
-        case InstructionRegister8::B:
+        case OperandRegister8::B:
             return &CPU::Register::B;
-        case InstructionRegister8::C:
+        case OperandRegister8::C:
             return &CPU::Register::C;
-        case InstructionRegister8::D:
+        case OperandRegister8::D:
             return &CPU::Register::D;
-        case InstructionRegister8::E:
+        case OperandRegister8::E:
             return &CPU::Register::E;
-        case InstructionRegister8::H:
+        case OperandRegister8::H:
             return &CPU::Register::H;
-        case InstructionRegister8::L:
+        case OperandRegister8::L:
             return &CPU::Register::L;
         default:
-            throw BadRegisterException();
+            throw BadRegister();
     }
 }
