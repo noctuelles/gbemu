@@ -8,7 +8,7 @@
 #include "Bus.hxx"
 
 #ifndef TEST_FRIENDS
-# define TEST_FRIENDS
+#define TEST_FRIENDS
 #endif
 
 #define REG16_PAIR_GET(r1, r2) (static_cast<uint16_t>((r1 << 8) | r2))
@@ -77,21 +77,31 @@ class CPU
 
     struct Register
     {
-        uint8_t A, F;
-        uint8_t B, C;
-        uint8_t D, E;
-        uint8_t H, L;
+        union General
+        {
+            struct U16
+            {
+                uint16_t AF, BC, DE, HL;
+            } u16;
+            struct U8
+            {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+                uint8_t F, A, C, B, E, D, L, H;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+                uint8_t A, F, B, C, D, E, H, L;
+#endif
+            } u8;
+        } general{};
 
-        uint16_t PC;
-        uint16_t SP;
-    };
+        uint16_t PC{}, SP{};
+    } __attribute__((packed));
 
-    using Register8  = uint8_t   Register::*;
-    using Register16 = uint16_t Register::*;
+    using Register8 = uint8_t Register::General::U8::*;
+    using Register16 = uint16_t Register::General::U16::*;
 
     class BadRegister final : public std::exception
     {
-        [[nodiscard]] const char *what() const noexcept override;
+        [[nodiscard]] const char* what() const noexcept override;
     };
 
     class IllegalInstruction final : public std::exception
@@ -172,16 +182,16 @@ class CPU
 
     static Register8 get_register8(OperandRegister8 reg);
 
-    [[nodiscard]] Register8 get_register8_dest_from_opcode() const;
+    [[nodiscard]] Register8        get_register8_dest_from_opcode() const;
     [[nodiscard]] static Register8 get_register8_dest_from_opcode(uint8_t opcode);
 
-    [[nodiscard]] Register8 get_register8_src_from_opcode() const;
+    [[nodiscard]] Register8        get_register8_src_from_opcode() const;
     [[nodiscard]] static Register8 get_register8_src_from_opcode(uint8_t opcode);
 
-    [[nodiscard]] std::pair<Register8, Register8> get_register8_dest_src_from_opcode() const;
+    [[nodiscard]] std::pair<Register8, Register8>        get_register8_dest_src_from_opcode() const;
     [[nodiscard]] static std::pair<Register8, Register8> get_register8_dest_src_from_opcode(uint8_t opcode);
 
-    void set_register16(OperandRegister16 reg, uint16_t value);
+    void     set_register16(OperandRegister16 reg, uint16_t value);
     uint16_t get_register16(OperandRegister16 reg) const;
 
     void NOP();

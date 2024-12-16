@@ -699,7 +699,7 @@ void CPU::NOP() {}
 void CPU::LD_R8_R8()
 {
     const auto [dest, src] = this->get_register8_dest_src_from_opcode();
-    this->reg.*dest        = this->reg.*src;
+    this->reg.general.u8.*dest = this->reg.general.u8.*src;
 }
 
 void CPU::LD_R8_IMM8()
@@ -707,7 +707,7 @@ void CPU::LD_R8_IMM8()
     const auto dest =this->get_register8_dest_from_opcode();
     const auto imm{this->bus.read(this->reg.PC++)};
 
-    this->reg.*dest = imm;
+    this->reg.general.u8.*dest = imm;
 }
 
 void CPU::LD_R16_IMM16()
@@ -715,23 +715,24 @@ void CPU::LD_R16_IMM16()
     const auto dest = this->get_register8_dest_from_opcode();
     const auto imm_lsb{this->bus.read(this->reg.PC++)};
     const auto imm_msb{this->bus.read(this->reg.PC++)};
+
     const auto imm_val = static_cast<uint16_t>(imm_msb << 8 | imm_lsb);
 
-    this->reg.*dest = imm_val;
+    this->reg.general.u8.*dest = imm_val;
 }
 
 void CPU::LD_R8_MEM_HL()
 {
     const auto src  = this->get_register8_dest_from_opcode();
-    const auto mem_val = this->bus.read(this->get_register16(OperandRegister16::HL));
+    const auto mem_val = this->bus.read(this->reg.general.u16.HL);
 
-    this->reg.*src = mem_val;
+    this->reg.general.u8.*src = mem_val;
 }
 
 void CPU::LD_MEM_HL_R8()
 {
     const auto src = this->get_register8_src_from_opcode();
-    this->bus.write(this->get_register16(OperandRegister16::HL), this->reg.*src);
+    this->bus.write(this->reg.general.u16.HL, this->reg.general.u8.*src);
 }
 
 void CPU::LD_A_MEM_16() {}
@@ -741,17 +742,17 @@ void CPU::RES_R8()
     const auto src = this->get_register8_src_from_opcode();
     const auto bit    = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
 
-    this->reg.*src &= ~(1 << bit);
+    this->reg.general.u8.*src &= ~(1 << bit);
 }
 
 void CPU::RES_MEM_HL()
 {
     const auto bit     = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
-    auto       mem_val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
+    auto       mem_val = this->bus.read(this->reg.general.u16.HL);
 
     mem_val &= ~(1 << bit);
 
-    this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), mem_val);
+    this->bus.write(this->reg.general.u16.HL, mem_val);
 }
 
 void CPU::SET_R8()
@@ -759,35 +760,35 @@ void CPU::SET_R8()
     const auto src = this->get_register8_src_from_opcode();
     const auto bit    = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
 
-    this->reg.*src |= 1 << bit;
+    this->reg.general.u8.*src |= 1 << bit;
 }
 
 void CPU::SET_MEM_HL()
 {
     const auto bit     = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
-    auto       mem_val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
+    auto       mem_val = this->bus.read(this->reg.general.u16.HL);
 
     mem_val |= 1 << bit;
 
-    this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), mem_val);
+    this->bus.write(this->reg.general.u16.HL, mem_val);
 }
 
 void CPU::AND_R8()
 {
-    const auto r_src = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
+    const auto src = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
 
-    this->reg.A &= this->reg.*r_src;
-    if (this->reg.A == 0)
+    this->reg.general.u8.A &= this->reg.general.u8.*src;
+    if (this->reg.general.u8.A == 0)
     {
-        this->reg.F |= Flags::ZERO;
+        this->reg.general.u8.F |= Flags::ZERO;
     }
     else
     {
-        this->reg.F &= ~Flags::ZERO;
+        this->reg.general.u8.F &= ~Flags::ZERO;
     }
-    this->reg.F |= Flags::HALF_CARRY;
-    this->reg.F &= ~Flags::SUBTRACT;
-    this->reg.F &= ~Flags::CARRY;
+    this->reg.general.u8.F |= Flags::HALF_CARRY;
+    this->reg.general.u8.F &= ~Flags::SUBTRACT;
+    this->reg.general.u8.F &= ~Flags::CARRY;
 }
 
 void CPU::OR_R8()
@@ -1161,24 +1162,24 @@ uint16_t CPU::get_register16(const OperandRegister16 reg) const
     }
 }
 
-CPU::Register8 CPU::get_register8(OperandRegister8 reg)
+CPU::Register8 CPU::get_register8(const OperandRegister8 reg)
 {
     switch (reg)
     {
         case OperandRegister8::A:
-            return &CPU::Register::A;
+            return &Register::General::U8::A;
         case OperandRegister8::B:
-            return &CPU::Register::B;
+            return &Register::General::U8::B;
         case OperandRegister8::C:
-            return &CPU::Register::C;
+            return &Register::General::U8::C;
         case OperandRegister8::D:
-            return &CPU::Register::D;
+            return &Register::General::U8::D;
         case OperandRegister8::E:
-            return &CPU::Register::E;
+            return &Register::General::U8::E;
         case OperandRegister8::H:
-            return &CPU::Register::H;
+            return &Register::General::U8::H;
         case OperandRegister8::L:
-            return &CPU::Register::L;
+            return &Register::General::U8::L;
         default:
             throw BadRegister();
     }

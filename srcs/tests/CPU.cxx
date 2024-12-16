@@ -117,11 +117,11 @@ TEST_F(CPUTesting, SET_R8)
         while (bit_nbr < 8)
         {
             const auto src      = CPU::get_register8_src_from_opcode(opcode);
-            this->cpu->reg.*src = 0b00000000;
+            this->cpu->reg.general.u8.*src = 0b00000000;
 
             this->execute_instructions({0xCB, opcode});
 
-            ASSERT_EQ(this->cpu->reg.*src, (1U << bit_nbr));
+            ASSERT_EQ(this->cpu->reg.general.u8.*src, (1U << bit_nbr));
 
             opcode += 0x08;
             bit_nbr++;
@@ -146,11 +146,11 @@ TEST_F(CPUTesting, RES_R8)
         while (bit_nbr < 8)
         {
             const auto src      = CPU::get_register8_src_from_opcode(opcode);
-            this->cpu->reg.*src = 0b11111111;
+            this->cpu->reg.general.u8.*src = 0b11111111;
 
             this->execute_instructions({0xCB, opcode});
 
-            ASSERT_EQ(this->cpu->reg.*src, 0b11111111 & ~(1U << bit_nbr));
+            ASSERT_EQ(this->cpu->reg.general.u8.*src, 0b11111111 & ~(1U << bit_nbr));
 
             opcode += 0x08;
             bit_nbr++;
@@ -180,9 +180,9 @@ TEST_F(CPUTesting, LD_R8_R8)
             if (i != 6) /* Skip the MEM_HL */
             {
                 auto [dest, src]    = CPU::get_register8_dest_src_from_opcode(opcode);
-                this->cpu->reg.*src = dist(gen);
+                this->cpu->reg.general.u8.*src = dist(gen);
                 this->execute_instructions({opcode});
-                ASSERT_EQ(this->cpu->reg.*dest, this->cpu->reg.*src);
+                ASSERT_EQ(this->cpu->reg.general.u8.*dest, this->cpu->reg.general.u8.*src);
             }
             opcode++;
             i++;
