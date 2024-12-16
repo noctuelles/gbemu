@@ -57,7 +57,7 @@ class CPUTesting : public ::testing::Test
         CPU::Instruction inst{};
         size_t           eat{};
 
-        this->bus->write(this->cpu->reg.PC, instructions);
+        this->bus->write(this->cpu->reg.u16.PC, instructions);
 
         for (const auto& instruction : instructions)
         {
@@ -96,7 +96,7 @@ class CPUTesting : public ::testing::Test
             }
         }
 
-        this->cpu->reg.PC -= instructions.size();
+        this->cpu->reg.u16.PC -= instructions.size();
     }
 };
 
@@ -116,12 +116,12 @@ TEST_F(CPUTesting, SET_R8)
 
         while (bit_nbr < 8)
         {
-            const auto src      = CPU::get_register8_src_from_opcode(opcode);
-            this->cpu->reg.general.u8.*src = 0b00000000;
+            const auto src         = CPU::get_register8_src_from_opcode(opcode);
+            this->cpu->reg.u8.*src = 0b00000000;
 
             this->execute_instructions({0xCB, opcode});
 
-            ASSERT_EQ(this->cpu->reg.general.u8.*src, (1U << bit_nbr));
+            ASSERT_EQ(this->cpu->reg.u8.*src, (1U << bit_nbr));
 
             opcode += 0x08;
             bit_nbr++;
@@ -145,12 +145,12 @@ TEST_F(CPUTesting, RES_R8)
 
         while (bit_nbr < 8)
         {
-            const auto src      = CPU::get_register8_src_from_opcode(opcode);
-            this->cpu->reg.general.u8.*src = 0b11111111;
+            const auto src         = CPU::get_register8_src_from_opcode(opcode);
+            this->cpu->reg.u8.*src = 0b11111111;
 
             this->execute_instructions({0xCB, opcode});
 
-            ASSERT_EQ(this->cpu->reg.general.u8.*src, 0b11111111 & ~(1U << bit_nbr));
+            ASSERT_EQ(this->cpu->reg.u8.*src, 0b11111111 & ~(1U << bit_nbr));
 
             opcode += 0x08;
             bit_nbr++;
@@ -170,7 +170,7 @@ TEST_F(CPUTesting, LD_R8_R8)
 {
     auto test_ld_r8_r8 = [this](uint8_t opcode)
     {
-        uint8_t                                i = 0;
+        uint8_t                                i{};
         std::random_device                     rd{};
         std::mt19937                           gen{rd()};
         std::uniform_int_distribution<uint8_t> dist{0, 255};
@@ -179,10 +179,10 @@ TEST_F(CPUTesting, LD_R8_R8)
         {
             if (i != 6) /* Skip the MEM_HL */
             {
-                auto [dest, src]    = CPU::get_register8_dest_src_from_opcode(opcode);
-                this->cpu->reg.general.u8.*src = dist(gen);
+                auto [dest, src]       = CPU::get_register8_dest_src_from_opcode(opcode);
+                this->cpu->reg.u8.*src = dist(gen);
                 this->execute_instructions({opcode});
-                ASSERT_EQ(this->cpu->reg.general.u8.*dest, this->cpu->reg.general.u8.*src);
+                ASSERT_EQ(this->cpu->reg.u8.*dest, this->cpu->reg.u8.*src);
             }
             opcode++;
             i++;
@@ -205,13 +205,12 @@ TEST_F(CPUTesting, LD_R8_IMM8)
         std::random_device                     rd{};
         std::mt19937                           gen{rd()};
         std::uniform_int_distribution<uint8_t> dist{0, 255};
-        const auto                             val = dist(gen);
-
-        const auto dest = CPU::get_register8_dest_from_opcode(opcode);
+        const auto                             val{dist(gen)};
+        const auto                             dest{CPU::get_register8_dest_from_opcode(opcode)};
 
         this->execute_instructions({opcode, val});
 
-        ASSERT_EQ(this->cpu->reg.*dest, val);
+        ASSERT_EQ(this->cpu->reg.u8.*dest, val);
     };
 
     repeat(TEST_REPEAT,
@@ -242,17 +241,16 @@ TEST_F(CPUTesting, LD_R8_MEM_HL)
         std::mt19937                            gen{rd()};
         std::uniform_int_distribution<uint8_t>  dist_u8{0, UINT8_MAX};
         std::uniform_int_distribution<uint16_t> dist_u16{1, Bus::MEMORY_SIZE - 1};
-
-        const auto val  = dist_u8(gen);
-        const auto addr = dist_u16(gen);
-        const auto dest = CPU::get_register8_dest_from_opcode(opcode);
+        const auto                              val{dist_u8(gen)};
+        const auto                              addr{dist_u16(gen)};
+        const auto                              dest{CPU::get_register8_dest_from_opcode(opcode)};
 
         this->bus->write(addr, val);
-        this->cpu->set_register16(CPU::OperandRegister16::HL, addr);
+        this->cpu->reg.u16.HL = addr;
 
         this->execute_instructions({opcode});
 
-        ASSERT_EQ(this->cpu->reg.*dest, val);
+        ASSERT_EQ(this->cpu->reg.u8.*dest, val);
     };
 
     repeat(TEST_REPEAT,
@@ -288,22 +286,22 @@ TEST_F(CPUTesting, LD_MEM_HL_R8)
         const auto addr = dist_u16(gen);
         const auto src  = CPU::get_register8_src_from_opcode(opcode);
 
-        this->cpu->set_register16(CPU::OperandRegister16::HL, addr);
+        this->cpu->reg.u16.HL = addr;
 
-        if (src != &CPU::Register::H && src != &CPU::Register::L)
+        if (src != &CPU::Register::U8::H && src != &CPU::Register::U8::L)
         {
-            this->cpu->reg.*src = val;
+            this->cpu->reg.u8.*src = val;
         }
 
         this->execute_instructions({opcode});
 
-        if (src != &CPU::Register::H && src != &CPU::Register::L)
+        if (src != &CPU::Register::U8::H && src != &CPU::Register::U8::L)
         {
             ASSERT_EQ(this->bus->read(addr), val);
         }
         else
         {
-            ASSERT_EQ(this->bus->read(addr), this->cpu->reg.*src);
+            ASSERT_EQ(this->bus->read(addr), this->cpu->reg.u8.*src);
         }
     };
 

@@ -316,6 +316,7 @@ class CPU
      */
     void SRL_MEM_HL();
 
+    void BIT(uint8_t val, uint8_t bit);
     /**
      * @brief Test bit in an 8-bit register, set the zero flag if bit not set.
      */
@@ -325,11 +326,11 @@ class CPU
      */
     void BIT_MEM_HL();
 
+    auto SWAP(uint8_t val);
     /**
      * @brief Swap the upper 4 bits in register r8 and the lower 4 ones.
      */
     void SWAP_R8();
-
     /**
      * @brief Swap the upper 4 bits in the byte pointed by HL and the lower 4 ones.
      */
