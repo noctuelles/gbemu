@@ -1,5 +1,10 @@
 .vscode
 .idea
+
+!.idea/workspace.xml
+!.idea/usage.statistics.xml
+!.idea/shelf
+
 cmake-build-debug
 build
 gbemu
