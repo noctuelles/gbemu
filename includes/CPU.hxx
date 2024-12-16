@@ -3,6 +3,7 @@
 
 #include <array>
 #include <functional>
+#include <string>
 
 #include "Bus.hxx"
 
@@ -90,6 +91,7 @@ class CPU
 
     class BadRegister final : public std::exception
     {
+        [[nodiscard]] const char *what() const noexcept override;
     };
 
     class IllegalInstruction final : public std::exception
@@ -179,9 +181,8 @@ class CPU
     [[nodiscard]] std::pair<Register8, Register8> get_register8_dest_src_from_opcode() const;
     [[nodiscard]] static std::pair<Register8, Register8> get_register8_dest_src_from_opcode(uint8_t opcode);
 
-    void set_register_r16_imm16(OperandRegister16 reg, uint16_t value);
-    void set_register_r8_imm8(OperandRegister8 reg, uint8_t value);
-    void set_register_r8_r8(OperandRegister8 reg_dest, OperandRegister8 reg_src);
+    void set_register16(OperandRegister16 reg, uint16_t value);
+    uint16_t get_register16(OperandRegister16 reg) const;
 
     void NOP();
     /**

@@ -68,7 +68,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                                // 0x3B
     {},                                // 0x3C
     {},                                // 0x3D
-    CPU::Instruction::LD_R8_R8(),      // 0x3E
+    CPU::Instruction::LD_R8_IMM8(),      // 0x3E
     {},                                // 0x3F
     CPU::Instruction::LD_R8_R8(),      // 0x40
     CPU::Instruction::LD_R8_R8(),      // 0x41
@@ -685,6 +685,11 @@ constexpr CPU::Instruction CPU::Instruction::SET_MEM_HL()
     return Instruction{16U, &CPU::SET_MEM_HL};
 }
 
+const char* CPU::BadRegister::what() const noexcept
+{
+    return "Bad Register";
+}
+
 CPU::CPU(Bus& bus) : reg(), cycles(0), opcode(0), cb_prefixed(false), inst(inst_lookup[0]), bus(bus) {}
 
 CPU::~CPU() = default;
@@ -707,27 +712,28 @@ void CPU::LD_R8_IMM8()
 
 void CPU::LD_R16_IMM16()
 {
-    const auto r_dest = static_cast<OperandRegister16>((this->opcode >> 4) & 0b00000011U);
+    const auto dest = this->get_register8_dest_from_opcode();
     const auto imm_lsb{this->bus.read(this->reg.PC++)};
     const auto imm_msb{this->bus.read(this->reg.PC++)};
-    const auto imm_val = static_cast<uint16_t>(imm_lsb << 8 | imm_msb);
+    const auto imm_val = static_cast<uint16_t>(imm_msb << 8 | imm_lsb);
 
-    this->set_register_r16_imm16(r_dest, imm_val);
+    this->reg.*dest = imm_val;
 }
 
 void CPU::LD_R8_MEM_HL()
 {
-    const auto r_dest  = static_cast<OperandRegister8>((this->opcode >> 3) & 0b00000111);
-    const auto mem_val = this->bus.read(REG16_PAIR_GET(this->reg.H, this->reg.L));
+    const auto dest  = this->get_register8_dest_from_opcode();
+    const auto mem_val = this->bus.read(this->get_register16(OperandRegister16::HL));
 
-    this->set_register_r8_imm8(r_dest, mem_val);
+    this->reg.*dest = mem_val;
 }
 
 void CPU::LD_MEM_HL_R8()
 {
-    const auto r_dest = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
-    this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), this->reg.*r_dest);
+    const auto dest = this->get_register8_dest_from_opcode();
+    this->bus.write(this->get_register16(OperandRegister16::HL), this->reg.*dest);
 }
+
 void CPU::LD_A_MEM_16() {}
 
 void CPU::RES_R8()
@@ -737,6 +743,7 @@ void CPU::RES_R8()
 
     this->reg.*src &= ~(1 << bit);
 }
+
 void CPU::RES_MEM_HL()
 {
     const auto bit     = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
@@ -746,6 +753,7 @@ void CPU::RES_MEM_HL()
 
     this->bus.write(REG16_PAIR_GET(this->reg.H, this->reg.L), mem_val);
 }
+
 void CPU::SET_R8()
 {
     const auto src = this->get_register8_src_from_opcode();
@@ -1105,26 +1113,27 @@ void CPU::cycle()
     }
     this->cycles--;
 }
+
 CPU::Register CPU::get_register() const noexcept
 {
     return this->reg;
 }
 
-void CPU::set_register_r16_imm16(const OperandRegister16 reg, const uint16_t value)
+void CPU::set_register16(const OperandRegister16 reg, const uint16_t value)
 {
     switch (reg)
     {
         case OperandRegister16::BC:
-            this->reg.B = value & 0xFF;
-            this->reg.C = value >> 8;
+            this->reg.B = value >> 8;
+            this->reg.C = value & 0xFF;
             break;
         case OperandRegister16::DE:
-            this->reg.D = value & 0xFF;
-            this->reg.E = value >> 8;
+            this->reg.D = value >> 8;
+            this->reg.E = value & 0xFF;
             break;
         case OperandRegister16::HL:
-            this->reg.H = value & 0xFF;
-            this->reg.L = value >> 8;
+            this->reg.H = value >> 8;
+            this->reg.L = value & 0xFF;
             break;
         case OperandRegister16::SP:
             this->reg.SP = value;
@@ -1134,18 +1143,22 @@ void CPU::set_register_r16_imm16(const OperandRegister16 reg, const uint16_t val
     }
 }
 
-void CPU::set_register_r8_imm8(const OperandRegister8 reg, const uint8_t value)
+uint16_t CPU::get_register16(const OperandRegister16 reg) const
 {
-    const auto r_dest = get_register8(reg);
-    this->reg.*r_dest = value;
-}
 
-void CPU::set_register_r8_r8(const OperandRegister8 reg_dst, const OperandRegister8 reg_src)
-{
-    const auto r_dest = get_register8(reg_dst);
-    const auto r_src  = get_register8(reg_src);
-
-    this->reg.*r_dest = this->reg.*r_src;
+    switch (reg)
+    {
+        case OperandRegister16::BC:
+            return this->reg.B << 8 | this->reg.C;
+        case OperandRegister16::DE:
+            return this->reg.D << 8 | this->reg.E;
+        case OperandRegister16::HL:
+            return this->reg.H << 8 | this->reg.L;
+        case OperandRegister16::SP:
+            return this->reg.SP;
+        default:
+            throw BadRegister();
+    }
 }
 
 CPU::Register8 CPU::get_register8(OperandRegister8 reg)

@@ -15,13 +15,15 @@ class Bus
     Bus();
     ~Bus();
 
+    static constexpr size_t MEMORY_SIZE = 8192;
+
     [[nodiscard]] uint8_t read(uint16_t addr) const;
 
     void    write(uint16_t addr, uint8_t data);
     void    write(uint16_t addr, std::initializer_list<uint8_t> data);
 
   private:
-    std::array<uint8_t, 8192> memory;
+    std::array<uint8_t, MEMORY_SIZE> memory;
 };
 
 
