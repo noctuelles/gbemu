@@ -722,16 +722,16 @@ void CPU::LD_R16_IMM16()
 
 void CPU::LD_R8_MEM_HL()
 {
-    const auto dest  = this->get_register8_dest_from_opcode();
+    const auto src  = this->get_register8_dest_from_opcode();
     const auto mem_val = this->bus.read(this->get_register16(OperandRegister16::HL));
 
-    this->reg.*dest = mem_val;
+    this->reg.*src = mem_val;
 }
 
 void CPU::LD_MEM_HL_R8()
 {
-    const auto dest = this->get_register8_dest_from_opcode();
-    this->bus.write(this->get_register16(OperandRegister16::HL), this->reg.*dest);
+    const auto src = this->get_register8_src_from_opcode();
+    this->bus.write(this->get_register16(OperandRegister16::HL), this->reg.*src);
 }
 
 void CPU::LD_A_MEM_16() {}

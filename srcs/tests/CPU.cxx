@@ -2,13 +2,14 @@
 // Created by plouvel on 12/14/24.
 //
 
-#define TEST_FRIENDS                         \
-    friend class CPUTesting;                 \
-    friend class CPUTesting_SET_R8_Test;     \
-    friend class CPUTesting_RES_R8_Test;     \
-    friend class CPUTesting_LD_R8_R8_Test;   \
-    friend class CPUTesting_LD_R8_IMM8_Test; \
-    friend class CPUTesting_LD_R8_MEM_HL_Test;
+#define TEST_FRIENDS                           \
+    friend class CPUTesting;                   \
+    friend class CPUTesting_SET_R8_Test;       \
+    friend class CPUTesting_RES_R8_Test;       \
+    friend class CPUTesting_LD_R8_R8_Test;     \
+    friend class CPUTesting_LD_R8_IMM8_Test;   \
+    friend class CPUTesting_LD_R8_MEM_HL_Test; \
+    friend class CPUTesting_LD_MEM_HL_R8_Test;
 
 #include "CPU.hxx"
 
@@ -271,5 +272,57 @@ TEST_F(CPUTesting, LD_R8_MEM_HL)
                test_ld_r8_mem_hl(0x66);
                SCOPED_TRACE("LD L, [HL]");
                test_ld_r8_mem_hl(0x6E);
+           });
+}
+
+TEST_F(CPUTesting, LD_MEM_HL_R8)
+{
+    auto test_ld_mem_hl_r8 = [this](const uint8_t opcode)
+    {
+        std::random_device                      rd{};
+        std::mt19937                            gen{rd()};
+        std::uniform_int_distribution<uint8_t>  dist_u8{0, UINT8_MAX};
+        std::uniform_int_distribution<uint16_t> dist_u16{1, Bus::MEMORY_SIZE - 1};
+
+        const auto val  = dist_u8(gen);
+        const auto addr = dist_u16(gen);
+        const auto src  = CPU::get_register8_src_from_opcode(opcode);
+
+        this->cpu->set_register16(CPU::OperandRegister16::HL, addr);
+
+        if (src != &CPU::Register::H && src != &CPU::Register::L)
+        {
+            this->cpu->reg.*src = val;
+        }
+
+        this->execute_instructions({opcode});
+
+        if (src != &CPU::Register::H && src != &CPU::Register::L)
+        {
+            ASSERT_EQ(this->bus->read(addr), val);
+        }
+        else
+        {
+            ASSERT_EQ(this->bus->read(addr), this->cpu->reg.*src);
+        }
+    };
+
+    repeat(TEST_REPEAT,
+           [test_ld_mem_hl_r8]()
+           {
+               SCOPED_TRACE("LD [HL], A");
+               test_ld_mem_hl_r8(0x77);
+               SCOPED_TRACE("LD [HL], B");
+               test_ld_mem_hl_r8(0x70);
+               SCOPED_TRACE("LD [HL], C");
+               test_ld_mem_hl_r8(0x71);
+               SCOPED_TRACE("LD [HL], D");
+               test_ld_mem_hl_r8(0x72);
+               SCOPED_TRACE("LD [HL], E");
+               test_ld_mem_hl_r8(0x73);
+               SCOPED_TRACE("LD [HL], H");
+               test_ld_mem_hl_r8(0x74);
+               SCOPED_TRACE("LD [HL], L");
+               test_ld_mem_hl_r8(0x75);
            });
 }
