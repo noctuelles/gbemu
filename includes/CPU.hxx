@@ -30,6 +30,7 @@ class CPU
         constexpr static Instruction LD_R8_IMM8();
         constexpr static Instruction LD_R8_MEM_HL();
         constexpr static Instruction LD_MEM_HL_R8();
+        constexpr static Instruction LD_MEM_HL_IMM8();
 
         constexpr static Instruction AND_R8();
         constexpr static Instruction XOR_R8();
@@ -219,7 +220,25 @@ class CPU
      */
     void LD_MEM_HL_R8();
 
+    /**
+     * @brief Load from 16-bit address to 8-bit register A.
+     */
     void LD_A_MEM_16();
+
+    /**
+     * @brief Load from 8-bit immediate to memory pointed by HL.
+     */
+    void LD_MEM_HL_IMM8();
+
+    /**
+     * @brief Push register r16 into the stack.
+     */
+    void PUSH_R16();
+
+     /**
+     * @brief Pop register r16 onto the stack.
+     */
+    void POP_R16();
 
     /**
      * @brief AND from 8-bit register to register A.
@@ -239,7 +258,7 @@ class CPU
     /**
      * @brief ADD from 8-bit register to register A.
      */
-    void ADD_R8();
+    void ADD_A_R8();
 
     /**
      * @brief Increment by one an 8-bit register.

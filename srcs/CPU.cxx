@@ -551,6 +551,10 @@ constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_R8()
 {
     return Instruction{8U, &CPU::LD_MEM_HL_R8};
 }
+constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_IMM8()
+{
+    return Instruction{8U, &CPU::LD_MEM_HL_IMM8};
+}
 
 constexpr CPU::Instruction CPU::Instruction::AND_R8()
 {
@@ -712,7 +716,7 @@ void CPU::LD_R8_IMM8()
 
 void CPU::LD_R16_IMM16()
 {
-    const auto dest = this->get_register16_dest_from_opcode();
+    const auto dest{this->get_register16_dest_from_opcode()};
     const auto imm_lsb{this->bus.read(this->reg.u16.PC++)};
     const auto imm_msb{this->bus.read(this->reg.u16.PC++)};
 
@@ -721,7 +725,7 @@ void CPU::LD_R16_IMM16()
 
 void CPU::LD_R8_MEM_HL()
 {
-    const auto src     = this->get_register8_dest_from_opcode();
+    const auto src{this->get_register8_dest_from_opcode()};
     const auto mem_val = this->bus.read(this->reg.u16.HL);
 
     this->reg.u8.*src = mem_val;
@@ -729,13 +733,40 @@ void CPU::LD_R8_MEM_HL()
 
 void CPU::LD_MEM_HL_R8()
 {
-    const auto src = this->get_register8_src_from_opcode();
+    const auto src{this->get_register8_src_from_opcode()};
     this->bus.write(this->reg.u16.HL, this->reg.u8.*src);
 }
 
-void CPU::LD_A_MEM_16()
+void CPU::LD_MEM_HL_IMM8()
 {
+    this->bus.write(this->reg.u16.HL, this->bus.read(this->reg.u16.PC++));
+}
 
+void CPU::PUSH_R16()
+{
+    const auto src{static_cast<uint8_t>((this->opcode >> 4) & 0b00000011U)};
+    Register16 rsrc{nullptr};
+
+    switch (src)
+    {
+        case 0b00:
+            rsrc = &Register::U16::BC;
+            break;
+        case 0b01:
+            rsrc = &Register::U16::DE;
+            break;
+        case 0b10:
+            rsrc = &Register::U16::HL;
+            break;
+        case 0b11:
+            rsrc = &Register::U16::AF;
+            break;
+        default:
+            throw BadRegister();
+    }
+
+    this->bus.write(this->reg.u16.SP--, (this->reg.u16.*rsrc >> 8U) & 0xFFU);
+    this->bus.write(this->reg.u16.SP--, this->reg.u16.*rsrc & 0xFFU);
 }
 
 void CPU::RES_R8()
@@ -828,7 +859,7 @@ void CPU::XOR_R8()
     this->reg.u8.F &= ~Flags::CARRY;
 }
 
-void CPU::ADD_R8()
+void CPU::ADD_A_R8()
 {
     const auto src        = this->get_register8_src_from_opcode();
     uint8_t    half_carry = 0;
@@ -846,17 +877,9 @@ void CPU::ADD_R8()
     {
         this->reg.u8.F |= Flags::CARRY;
     }
-    else
-    {
-        this->reg.u8.F &= ~Flags::CARRY;
-    }
     if (this->reg.u8.A == 0)
     {
         this->reg.u8.F |= Flags::ZERO;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::ZERO;
     }
     this->reg.u8.F &= ~Flags::SUBTRACT;
 }
@@ -1161,12 +1184,10 @@ CPU::Register16 CPU::get_register16_dest_from_opcode() const
     return get_register16(static_cast<OperandRegister16>((this->opcode >> 4) & 0b00000011U));
 }
 
-
 CPU::Register16 CPU::get_register16_dest_from_opcode(const uint8_t opcode)
 {
     return get_register16(static_cast<OperandRegister16>((opcode >> 4) & 0b00000011U));
 }
-
 
 CPU::Register8 CPU::get_register8_dest_from_opcode() const
 {
