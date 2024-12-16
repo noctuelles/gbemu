@@ -9,7 +9,8 @@
     friend class CPUTesting_LD_R8_R8_Test;     \
     friend class CPUTesting_LD_R8_IMM8_Test;   \
     friend class CPUTesting_LD_R8_MEM_HL_Test; \
-    friend class CPUTesting_LD_MEM_HL_R8_Test;
+    friend class CPUTesting_LD_MEM_HL_R8_Test; \
+    friend class CPUTesting_LD_R16_IMM16_Test;
 
 #include "CPU.hxx"
 
@@ -322,5 +323,34 @@ TEST_F(CPUTesting, LD_MEM_HL_R8)
                test_ld_mem_hl_r8(0x74);
                SCOPED_TRACE("LD [HL], L");
                test_ld_mem_hl_r8(0x75);
+           });
+}
+
+TEST_F(CPUTesting, LD_R16_IMM16)
+{
+    auto test_ld_r16_imm16 = [this](const uint8_t opcode)
+    {
+        std::random_device                      rd{};
+        std::mt19937                            gen{rd()};
+        std::uniform_int_distribution<uint16_t> dist{0, UINT16_MAX};
+        const auto                              val{dist(gen)};
+        const auto                              dest{CPU::get_register16_dest_from_opcode(opcode)};
+
+        this->execute_instructions({opcode, static_cast<uint8_t>(val & 0xFFU), static_cast<uint8_t>((val >> 8) & 0xFFU)});
+
+        ASSERT_EQ(this->cpu->reg.u16.*dest, val);
+    };
+
+    repeat(TEST_REPEAT,
+           [test_ld_r16_imm16]()
+           {
+               SCOPED_TRACE("LD BC, imm16");
+               test_ld_r16_imm16(0x01);
+               SCOPED_TRACE("LD DE, imm16");
+               test_ld_r16_imm16(0x11);
+               SCOPED_TRACE("LD HL, imm16");
+               test_ld_r16_imm16(0x21);
+               SCOPED_TRACE("LD SP, imm16");
+               test_ld_r16_imm16(0x31);
            });
 }

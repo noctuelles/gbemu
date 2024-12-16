@@ -178,6 +178,9 @@ class CPU
     static Register8  get_register8(OperandRegister8 reg);
     static Register16 get_register16(OperandRegister16 reg);
 
+    [[nodiscard]] Register16        get_register16_dest_from_opcode() const;
+    [[nodiscard]] static Register16 get_register16_dest_from_opcode(uint8_t opcode);
+
     [[nodiscard]] Register8        get_register8_dest_from_opcode() const;
     [[nodiscard]] static Register8 get_register8_dest_from_opcode(uint8_t opcode);
 

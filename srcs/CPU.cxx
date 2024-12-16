@@ -712,13 +712,11 @@ void CPU::LD_R8_IMM8()
 
 void CPU::LD_R16_IMM16()
 {
-    const auto dest = this->get_register8_dest_from_opcode();
+    const auto dest = this->get_register16_dest_from_opcode();
     const auto imm_lsb{this->bus.read(this->reg.u16.PC++)};
     const auto imm_msb{this->bus.read(this->reg.u16.PC++)};
 
-    const auto imm_val = static_cast<uint16_t>(imm_msb << 8 | imm_lsb);
-
-    this->reg.u8.*dest = imm_val;
+    this->reg.u16.*dest = static_cast<uint16_t>(imm_msb << 8 | imm_lsb);
 }
 
 void CPU::LD_R8_MEM_HL()
@@ -735,7 +733,10 @@ void CPU::LD_MEM_HL_R8()
     this->bus.write(this->reg.u16.HL, this->reg.u8.*src);
 }
 
-void CPU::LD_A_MEM_16() {}
+void CPU::LD_A_MEM_16()
+{
+
+}
 
 void CPU::RES_R8()
 {
@@ -1154,6 +1155,18 @@ CPU::Register16 CPU::get_register16(const OperandRegister16 reg)
             throw BadRegister();
     }
 }
+
+CPU::Register16 CPU::get_register16_dest_from_opcode() const
+{
+    return get_register16(static_cast<OperandRegister16>((this->opcode >> 4) & 0b00000011U));
+}
+
+
+CPU::Register16 CPU::get_register16_dest_from_opcode(const uint8_t opcode)
+{
+    return get_register16(static_cast<OperandRegister16>((opcode >> 4) & 0b00000011U));
+}
+
 
 CPU::Register8 CPU::get_register8_dest_from_opcode() const
 {
