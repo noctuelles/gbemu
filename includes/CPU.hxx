@@ -75,29 +75,24 @@ class CPU
     const static InstructionLookupTable inst_lookup;
     const static InstructionLookupTable cb_prefixed_inst_lookup;
 
-    struct Register
+    union Register
     {
-        union General
+        struct U16
         {
-            struct U16
-            {
-                uint16_t AF, BC, DE, HL;
-            } u16;
-            struct U8
-            {
+            uint16_t AF, BC, DE, HL, SP, PC;
+        } u16;
+        struct U8
+        {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-                uint8_t F, A, C, B, E, D, L, H;
+            uint8_t F, A, C, B, E, D, L, H;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-                uint8_t A, F, B, C, D, E, H, L;
+            uint8_t A, F, B, C, D, E, H, L;
 #endif
-            } u8;
-        } general{};
-
-        uint16_t PC{}, SP{};
+        } u8;
     } __attribute__((packed));
 
-    using Register8 = uint8_t Register::General::U8::*;
-    using Register16 = uint16_t Register::General::U16::*;
+    using Register8  = uint8_t   Register::U8::*;
+    using Register16 = uint16_t Register::U16::*;
 
     class BadRegister final : public std::exception
     {
@@ -180,7 +175,8 @@ class CPU
         };
     };
 
-    static Register8 get_register8(OperandRegister8 reg);
+    static Register8  get_register8(OperandRegister8 reg);
+    static Register16 get_register16(OperandRegister16 reg);
 
     [[nodiscard]] Register8        get_register8_dest_from_opcode() const;
     [[nodiscard]] static Register8 get_register8_dest_from_opcode(uint8_t opcode);
@@ -191,8 +187,7 @@ class CPU
     [[nodiscard]] std::pair<Register8, Register8>        get_register8_dest_src_from_opcode() const;
     [[nodiscard]] static std::pair<Register8, Register8> get_register8_dest_src_from_opcode(uint8_t opcode);
 
-    void     set_register16(OperandRegister16 reg, uint16_t value);
-    uint16_t get_register16(OperandRegister16 reg) const;
+    void set_register16(OperandRegister16 reg, uint16_t value);
 
     void NOP();
     /**

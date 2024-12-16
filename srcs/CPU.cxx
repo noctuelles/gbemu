@@ -699,34 +699,34 @@ void CPU::NOP() {}
 void CPU::LD_R8_R8()
 {
     const auto [dest, src] = this->get_register8_dest_src_from_opcode();
-    this->reg.general.u8.*dest = this->reg.general.u8.*src;
+    this->reg.u8.*dest = this->reg.u8.*src;
 }
 
 void CPU::LD_R8_IMM8()
 {
     const auto dest =this->get_register8_dest_from_opcode();
-    const auto imm{this->bus.read(this->reg.PC++)};
+    const auto imm{this->bus.read(this->reg.u16.PC++)};
 
-    this->reg.general.u8.*dest = imm;
+    this->reg.u8.*dest = imm;
 }
 
 void CPU::LD_R16_IMM16()
 {
     const auto dest = this->get_register8_dest_from_opcode();
-    const auto imm_lsb{this->bus.read(this->reg.PC++)};
-    const auto imm_msb{this->bus.read(this->reg.PC++)};
+    const auto imm_lsb{this->bus.read(this->reg.u16.PC++)};
+    const auto imm_msb{this->bus.read(this->reg.u16.PC++)};
 
     const auto imm_val = static_cast<uint16_t>(imm_msb << 8 | imm_lsb);
 
-    this->reg.general.u8.*dest = imm_val;
+    this->reg.u8.*dest = imm_val;
 }
 
 void CPU::LD_R8_MEM_HL()
 {
     const auto src  = this->get_register8_dest_from_opcode();
-    const auto mem_val = this->bus.read(this->reg.general.u16.HL);
+    const auto mem_val = this->bus.read(this->reg.u16.HL);
 
-    this->reg.general.u8.*src = mem_val;
+    this->reg.u8.*src = mem_val;
 }
 
 void CPU::LD_MEM_HL_R8()
@@ -1144,46 +1144,47 @@ void CPU::set_register16(const OperandRegister16 reg, const uint16_t value)
     }
 }
 
-uint16_t CPU::get_register16(const OperandRegister16 reg) const
-{
-
-    switch (reg)
-    {
-        case OperandRegister16::BC:
-            return this->reg.B << 8 | this->reg.C;
-        case OperandRegister16::DE:
-            return this->reg.D << 8 | this->reg.E;
-        case OperandRegister16::HL:
-            return this->reg.H << 8 | this->reg.L;
-        case OperandRegister16::SP:
-            return this->reg.SP;
-        default:
-            throw BadRegister();
-    }
-}
-
 CPU::Register8 CPU::get_register8(const OperandRegister8 reg)
 {
     switch (reg)
     {
         case OperandRegister8::A:
-            return &Register::General::U8::A;
+            return &Register::U8::A;
         case OperandRegister8::B:
-            return &Register::General::U8::B;
+            return &Register::U8::B;
         case OperandRegister8::C:
-            return &Register::General::U8::C;
+            return &Register::U8::C;
         case OperandRegister8::D:
-            return &Register::General::U8::D;
+            return &Register::U8::D;
         case OperandRegister8::E:
-            return &Register::General::U8::E;
+            return &Register::U8::E;
         case OperandRegister8::H:
-            return &Register::General::U8::H;
+            return &Register::U8::H;
         case OperandRegister8::L:
-            return &Register::General::U8::L;
+            return &Register::U8::L;
         default:
             throw BadRegister();
     }
 }
+
+
+CPU::Register16 CPU::get_register16(const OperandRegister16 reg)
+{
+    switch (reg)
+    {
+        case OperandRegister16::BC:
+            return &Register::U16::BC;
+        case OperandRegister16::DE:
+            return &Register::U16::DE;
+        case OperandRegister16::HL:
+            return &Register::U16::HL;
+        case OperandRegister16::SP:
+            return &Register::U16::SP;
+        default:
+            throw BadRegister();
+    }
+}
+
 CPU::Register8 CPU::get_register8_dest_from_opcode() const
 {
     return get_register8(static_cast<OperandRegister8>((this->opcode >> 3) & 0b00000111U));
