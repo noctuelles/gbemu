@@ -792,7 +792,7 @@ void CPU::SET_R8()
     const auto src = this->get_register8_src_from_opcode();
     const auto bit = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
 
-    this->reg.u8.*src |= 1 << bit;
+    this->reg.u8.*src |= 1U << bit;
 }
 
 void CPU::SET_MEM_HL()
@@ -800,7 +800,7 @@ void CPU::SET_MEM_HL()
     const auto bit     = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
     auto       mem_val = this->bus.read(this->reg.u16.HL);
 
-    mem_val |= 1 << bit;
+    mem_val |= 1U << bit;
 
     this->bus.write(this->reg.u16.HL, mem_val);
 }
@@ -1015,6 +1015,11 @@ auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection sh
     {
         this->reg.u8.F |= Flags::ZERO;
     }
+    else
+    {
+        this->reg.u8.F &= ~Flags::ZERO;
+    }
+
     this->reg.u8.F &= ~Flags::HALF_CARRY;
     this->reg.u8.F &= ~Flags::SUBTRACT;
 
@@ -1072,6 +1077,10 @@ auto CPU::SWAP(uint8_t val)
     {
         this->reg.u8.F |= Flags::ZERO;
     }
+    else
+    {
+        this->reg.u8.F &= ~Flags::ZERO;
+    }
 
     return (val);
 }
@@ -1091,7 +1100,11 @@ void CPU::SWAP_MEM_HL()
 
 void CPU::BIT(const uint8_t val, const uint8_t bit)
 {
-    if (!(val & (1 << bit)))
+    if (val & (1 << bit))
+    {
+        this->reg.u8.F &= ~Flags::ZERO;
+    }
+    else
     {
         this->reg.u8.F |= Flags::ZERO;
     }
