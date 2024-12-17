@@ -12,12 +12,24 @@ FetchContent_Declare(
         googletest
         URL https://github.com/google/googletest/archive/b514bdc898e2951020cbdca1304b75f5950d1f59.zip
 )
+
+FetchContent_Declare(
+        sdl2
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL
+        GIT_TAG 9c821dc21ccbd69b2bda421fdb35cb4ae2da8f5e
+)
+
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+FetchContent_MakeAvailable(googletest sdl2)
 
 add_executable(gbemu srcs/CPU.cxx
         srcs/main.cxx
         srcs/Bus.cxx)
+
+target_link_libraries(
+        gbemu
+        SDL2::SDL2
+)
 
 add_executable(gbemu_test srcs/tests/CPU.cxx
         srcs/CPU.cxx

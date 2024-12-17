@@ -943,6 +943,7 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
 
     return (val);
 }
+
 void CPU::RLC_R8()
 {
     const auto src    = this->get_register8_src_from_opcode();
