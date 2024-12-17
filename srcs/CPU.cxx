@@ -998,7 +998,7 @@ auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection sh
     {
         this->reg.u8.F &= ~Flags::CARRY;
     }
-    sign_bit = val & 0b10000000U != 0;
+    sign_bit = (val & 0b10000000U) != 0;
     if (shift_direction == ShiftDirection::RIGHT)
     {
         val >>= 1;

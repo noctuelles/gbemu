@@ -377,7 +377,7 @@ TEST_F(CPUTesting, SRL_R8)
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
 
-        val = 0b00000001U;
+        val       = 0b00000001U;
         shift_val = 0b00000000U;
 
         this->cpu->reg.u8.*src = val;
@@ -385,7 +385,7 @@ TEST_F(CPUTesting, SRL_R8)
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
 
-        val = 0b00010000U;
+        val       = 0b00010000U;
         shift_val = 0b00001000U;
 
         this->cpu->reg.u8.*src = val;
@@ -408,6 +408,54 @@ TEST_F(CPUTesting, SRL_R8)
     test_srl(0x3C);
     SCOPED_TRACE("SRL L");
     test_srl(0x3D);
+}
+
+TEST_F(CPUTesting, SRA_R8)
+{
+    auto test_srl = [this](uint8_t opcode)
+    {
+        const auto src       = CPU::get_register8_src_from_opcode(opcode);
+        uint8_t    val       = 0b10100101U;
+        uint8_t    shift_val = 0b11010010U; /* Sign bit is preserved : 1 */
+
+        this->cpu->reg.u8.F |= CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
+
+        this->cpu->reg.u8.*src = val;
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
+
+        val       = 0b00000001U;
+        shift_val = 0b00000000U; /* Sign bit is preserved : 0 */
+
+        this->cpu->reg.u8.*src = val;
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
+
+        val       = 0b00100101U;
+        shift_val = 0b00010010U; /* Sign bit is preserved : 0 */
+
+        this->cpu->reg.u8.*src = val;
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
+    };
+
+    SCOPED_TRACE("SRA A");
+    test_srl(0x2F);
+    SCOPED_TRACE("SRA B");
+    test_srl(0x28);
+    SCOPED_TRACE("SRA C");
+    test_srl(0x29);
+    SCOPED_TRACE("SRA D");
+    test_srl(0x2A);
+    SCOPED_TRACE("SRA E");
+    test_srl(0x2B);
+    SCOPED_TRACE("SRA H");
+    test_srl(0x2C);
+    SCOPED_TRACE("SRA L");
+    test_srl(0x2D);
 }
 
 TEST_F(CPUTesting, LD_R8_R8)
