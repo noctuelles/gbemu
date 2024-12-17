@@ -15,6 +15,12 @@
     friend class CPUTesting_SRL_MEM_HL_Test;   \
     friend class CPUTesting_SRA_R8_Test;       \
     friend class CPUTesting_SRA_MEM_HL_Test;   \
+    friend class CPUTesting_SLA_R8_Test;       \
+    friend class CPUTesting_SLA_MEM_HL_Test;   \
+    friend class CPUTesting_RL_R8_Test;        \
+    friend class CPUTesting_RL_MEM_HL_Test;    \
+    friend class CPUTesting_RR_R8_Test;        \
+    friend class CPUTesting_RR_MEM_HL_Test;    \
     friend class CPUTesting_LD_R8_R8_Test;     \
     friend class CPUTesting_LD_R8_IMM8_Test;   \
     friend class CPUTesting_LD_R8_MEM_HL_Test; \
@@ -117,6 +123,10 @@ static void repeat(size_t nbr, const std::function<void()>& func)
         func();
     }
 }
+
+/**
+ * @brief CB-prefixed opcodes.
+ */
 
 TEST_F(CPUTesting, SET_R8)
 {
@@ -456,6 +466,162 @@ TEST_F(CPUTesting, SRA_R8)
     test_srl(0x2C);
     SCOPED_TRACE("SRA L");
     test_srl(0x2D);
+}
+
+TEST_F(CPUTesting, SLA_R8)
+{
+    auto test_sla = [this](uint8_t opcode)
+    {
+        const auto src       = CPU::get_register8_src_from_opcode(opcode);
+        uint8_t    val       = 0b00100101U;
+        uint8_t    shift_val = 0b01001010U;
+
+        this->cpu->reg.u8.F |= CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
+
+        this->cpu->reg.u8.*src = val;
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, 0);
+
+        val       = 0b10000000U;
+        shift_val = 0b00000000U;
+
+        this->cpu->reg.u8.*src = val;
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
+
+        val       = 0b00100101U;
+        shift_val = 0b01001010U;
+
+        this->cpu->reg.u8.*src = val;
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, 0);
+    };
+
+    SCOPED_TRACE("SLA A");
+    test_sla(0x27);
+    SCOPED_TRACE("SLA B");
+    test_sla(0x20);
+    SCOPED_TRACE("SLA C");
+    test_sla(0x21);
+    SCOPED_TRACE("SLA D");
+    test_sla(0x22);
+    SCOPED_TRACE("SLA E");
+    test_sla(0x23);
+    SCOPED_TRACE("SLA H");
+    test_sla(0x24);
+    SCOPED_TRACE("SLA L");
+    test_sla(0x25);
+}
+
+TEST_F(CPUTesting, RL_R8)
+{
+    auto test_rl = [this](uint8_t opcode)
+    {
+        const auto src     = CPU::get_register8_src_from_opcode(opcode);
+        uint8_t    val     = 0b00100100U;
+        uint8_t    rot_val = 0b01001000U;
+
+        this->cpu->reg.u8.*src = val;
+        this->cpu->reg.u8.F    = CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
+
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, 0);
+
+        val = 0b10000000U;
+        rot_val = 0b00000000U;
+
+        this->cpu->reg.u8.*src = val;
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
+
+        val = 0b00000000U;
+        rot_val = 0b00000001U;
+
+        this->cpu->reg.u8.*src = val;
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, 0);
+    };
+
+    SCOPED_TRACE("RL A");
+    test_rl(0x17);
+
+    SCOPED_TRACE("RL B");
+    test_rl(0x10);
+
+    SCOPED_TRACE("RL C");
+    test_rl(0x11);
+
+    SCOPED_TRACE("RL D");
+    test_rl(0x12);
+
+    SCOPED_TRACE("RL E");
+    test_rl(0x13);
+
+    SCOPED_TRACE("RL H");
+    test_rl(0x14);
+
+    SCOPED_TRACE("RL L");
+    test_rl(0x15);
+}
+
+TEST_F(CPUTesting, RR_R8)
+{
+    auto test_rl = [this](uint8_t opcode)
+    {
+        const auto src     = CPU::get_register8_src_from_opcode(opcode);
+        uint8_t    val     = 0b00100100U;
+        uint8_t    rot_val = 0b00010010U;
+
+        this->cpu->reg.u8.*src = val;
+        this->cpu->reg.u8.F    = CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
+
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, 0);
+
+        val = 0b00110001U;
+        rot_val = 0b00011000U;
+
+        this->cpu->reg.u8.*src = val;
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
+
+        val = 0b00000100U;
+        rot_val = 0b10000010U;
+
+        this->cpu->reg.u8.*src = val;
+        this->execute_instructions({0xCB, opcode});
+        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
+        ASSERT_EQ(this->cpu->reg.u8.F, 0);
+    };
+
+    SCOPED_TRACE("RR A");
+    test_rl(0x1F);
+
+    SCOPED_TRACE("RR B");
+    test_rl(0x18);
+
+    SCOPED_TRACE("RR C");
+    test_rl(0x19);
+
+    SCOPED_TRACE("RR D");
+    test_rl(0x1A);
+
+    SCOPED_TRACE("RR E");
+    test_rl(0x1B);
+
+    SCOPED_TRACE("RR H");
+    test_rl(0x1C);
+
+    SCOPED_TRACE("RR L");
+    test_rl(0x1D);
 }
 
 TEST_F(CPUTesting, LD_R8_R8)

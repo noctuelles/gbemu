@@ -906,21 +906,29 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
 
     if (rotate_direction == RotateDirection::LEFT)
     {
-        has_new_carry = (val & 0b10000000) != 0;
+        has_new_carry = (val & 0b10000000U) != 0;
         val <<= 1;
         if (rotate_through_carry)
         {
-            val |= (this->reg.u8.F & Flags::CARRY ? 0b00000001 : 0b00000000);
+            val |= (this->reg.u8.F & Flags::CARRY ? 0b00000001U : 0b00000000U);
         }
     }
     else
     {
-        has_new_carry = (val & 0b00000001) != 0;
+        has_new_carry = (val & 0b00000001U) != 0;
         val >>= 1;
         if (rotate_through_carry)
         {
-            val |= (this->reg.u8.F & Flags::CARRY ? 0b10000000 : 0b00000000);
+            val |= (this->reg.u8.F & Flags::CARRY ? 0b10000000U : 0b00000000U);
         }
+    }
+    if (val == 0)
+    {
+        this->reg.u8.F |= Flags::ZERO;
+    }
+    else
+    {
+        this->reg.u8.F &= ~Flags::ZERO;
     }
     if (has_new_carry)
     {
