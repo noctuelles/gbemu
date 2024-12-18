@@ -200,15 +200,15 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                                // 0xBF
     {},                                // 0xC0
     {},                                // 0xC1
-    {},                                // 0xC2
-    {},                                // 0xC3
+    CPU::Instruction::JP_CC_IMM16(),   // 0xC2
+    CPU::Instruction::JP_IMM16(),      // 0xC3
     {},                                // 0xC4
     {},                                // 0xC5
     {},                                // 0xC6
     {},                                // 0xC7
     {},                                // 0xC8
     {},                                // 0xC9
-    {},                                // 0xCA
+    CPU::Instruction::JP_CC_IMM16(),   // 0xCA
     CPU::Instruction::PREFIX(),        // 0xCB
     {},                                // 0xCC
     {},                                // 0xCD
@@ -216,7 +216,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                                // 0xCF
     {},                                // 0xD0
     {},                                // 0xD1
-    {},                                // 0xD2
+    CPU::Instruction::JP_CC_IMM16(),   // 0xD2
     {},                                // 0xD3
     {},                                // 0xD4
     {},                                // 0xD5
@@ -224,7 +224,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                                // 0xD7
     {},                                // 0xD8
     {},                                // 0xD9
-    {},                                // 0xDA
+    CPU::Instruction::JP_CC_IMM16(),   // 0xDA
     {},                                // 0xDB
     {},                                // 0xDC
     {},                                // 0xDD
@@ -239,7 +239,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                                // 0xE6
     {},                                // 0xE7
     {},                                // 0xE8
-    {},                                // 0xE9
+    CPU::Instruction::JP_HL(),         // 0xE9
     {},                                // 0xEA
     {},                                // 0xEB
     {},                                // 0xEC
@@ -580,6 +580,20 @@ constexpr CPU::Instruction CPU::Instruction::PREFIX()
 {
     return Instruction{4U, &CPU::PREFIX};
 }
+constexpr CPU::Instruction CPU::Instruction::JP_IMM16()
+{
+    return Instruction{16U, &CPU::JP_IMM16};
+}
+
+constexpr CPU::Instruction CPU::Instruction::JP_HL()
+{
+    return Instruction{4U, &CPU::JP_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::JP_CC_IMM16()
+{
+    return Instruction{12U, &CPU::JP_CC_IMM16};
+}
 
 constexpr CPU::Instruction CPU::Instruction::RRC_R8()
 {
@@ -900,6 +914,51 @@ void CPU::PREFIX()
     this->cb_prefixed = true;
 }
 
+void CPU::JP_IMM16()
+{
+    const auto imm_lsb = this->bus.read(this->reg.u16.PC++);
+    const auto imm_msb = this->bus.read(this->reg.u16.PC++);
+
+    this->reg.u16.PC = imm_msb << 8 | imm_lsb;
+}
+
+void CPU::JP_HL()
+{
+    this->reg.u16.PC = this->reg.u16.HL;
+}
+
+void CPU::JP_CC_IMM16()
+{
+    const auto condition     = static_cast<ConditionOperand>((this->opcode >> 3) & 0b00000011U);
+    auto       condition_met = false;
+
+    switch (condition)
+    {
+        case ConditionOperand::C:
+            condition_met = (this->reg.u8.F & Flags::CARRY) != 0;
+            break;
+        case ConditionOperand::Z:
+            condition_met = (this->reg.u8.F & Flags::ZERO) != 0;
+            break;
+        case ConditionOperand::NC:
+            condition_met = (this->reg.u8.F & Flags::CARRY) == 0;
+            break;
+        case ConditionOperand::NZ:
+            condition_met = (this->reg.u8.F & Flags::ZERO) == 0;
+            break;
+    }
+
+    if (condition_met)
+    {
+        this->cycles += 4;
+
+        const auto imm_lsb = this->bus.read(this->reg.u16.PC++);
+        const auto imm_msb = this->bus.read(this->reg.u16.PC++);
+
+        this->reg.u16.PC = imm_msb << 8 | imm_lsb;
+    }
+}
+
 auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool rotate_through_carry) noexcept
 {
     auto has_new_carry = false;
@@ -1135,7 +1194,7 @@ void CPU::BIT_R8()
     this->BIT(this->reg.u8.*src, bit);
 }
 
-void CPU::cycle()
+size_t CPU::cycle()
 {
     if (this->cycles == 0)
     {
@@ -1154,6 +1213,7 @@ void CPU::cycle()
         (this->*inst.op)();
     }
     this->cycles--;
+    return this->cycles;
 }
 
 CPU::Register CPU::get_register() const noexcept

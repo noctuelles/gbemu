@@ -38,6 +38,14 @@ class CPU
         constexpr static Instruction ILL();
         constexpr static Instruction PREFIX();
 
+        /* Control flow */
+
+        constexpr static Instruction JP_IMM16();
+        constexpr static Instruction JP_HL();
+        constexpr static Instruction JP_CC_IMM16();
+
+        /* Prefixed instructions */
+
         constexpr static Instruction RRC_R8();
         constexpr static Instruction RRC_MEM_HL();
         constexpr static Instruction RLC_R8();
@@ -111,7 +119,7 @@ class CPU
     explicit CPU(Bus& bus);
     ~CPU();
 
-    void cycle();
+    size_t cycle();
 
     [[nodiscard]] Register get_register() const noexcept;
 
@@ -133,6 +141,14 @@ class CPU
         E = 0b011,
         H = 0b100,
         L = 0b101
+    };
+
+    enum class ConditionOperand : uint8_t
+    {
+        NZ = 0b00,
+        Z  = 0b01,
+        NC = 0b10,
+        C  = 0b11,
     };
 
     enum class InstructionBit : uint8_t
@@ -235,7 +251,7 @@ class CPU
      */
     void PUSH_R16();
 
-     /**
+    /**
      * @brief Pop register r16 onto the stack.
      */
     void POP_R16();
@@ -269,6 +285,21 @@ class CPU
      * @brief CB Prefix.
      */
     void PREFIX();
+
+    /**
+     * @brief Jump to address n16; effectively, store n16 into PC.
+     */
+    void JP_IMM16();
+
+    /**
+     * @brief Jump to address in HL; effectively, load PC with value in register HL.
+     */
+    void JP_HL();
+
+    /**
+     * @brief Jump to address n16 if condition cc is met.
+     */
+    void JP_CC_IMM16();
 
     /**
      * @brief Perform an 8-bit rotate through the carry flag.

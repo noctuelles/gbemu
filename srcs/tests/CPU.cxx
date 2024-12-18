@@ -25,7 +25,10 @@
     friend class CPUTesting_LD_R8_IMM8_Test;   \
     friend class CPUTesting_LD_R8_MEM_HL_Test; \
     friend class CPUTesting_LD_MEM_HL_R8_Test; \
-    friend class CPUTesting_LD_R16_IMM16_Test;
+    friend class CPUTesting_LD_R16_IMM16_Test; \
+    friend class CPUTesting_JP_CC_IMM16_Test;  \
+    friend class CPUTesting_JP_IMM16_Test;     \
+    friend class CPUTesting_JP_HL_Test;
 
 #include "CPU.hxx"
 
@@ -63,56 +66,15 @@ class CPUTesting : public ::testing::Test
         delete cpu;
     }
 
+  public:
     /**
      * @brief Execute on the fly instructions on the CPU.
-     * @param instructions Instructions to be executed by the CPU.
+     * @param instruction Instructions to be executed by the CPU.
      */
-    void execute_instructions(const std::initializer_list<uint8_t> instructions) const
+    void execute_instruction(const std::initializer_list<uint8_t> instruction) const
     {
-        bool             cb_prefixed{false};
-        CPU::Instruction inst{};
-        size_t           eat{};
-
-        this->bus->write(this->cpu->reg.u16.PC, instructions);
-
-        for (const auto& instruction : instructions)
-        {
-            if (eat)
-            {
-                eat--;
-                continue;
-            }
-
-            if (cb_prefixed)
-            {
-                inst        = CPU::cb_prefixed_inst_lookup[instruction];
-                cb_prefixed = false;
-            }
-            else
-            {
-                inst = CPU::inst_lookup[instruction];
-            }
-
-            if (inst == CPU::Instruction::PREFIX())
-            {
-                cb_prefixed = true;
-            }
-            if (inst == CPU::Instruction::LD_R8_IMM8())
-            {
-                eat = 1;
-            }
-            if (inst == CPU::Instruction::LD_R16_IMM16())
-            {
-                eat = 2;
-            }
-
-            while (inst.cycles--)
-            {
-                cpu->cycle();
-            }
-        }
-
-        this->cpu->reg.u16.PC -= instructions.size();
+        this->bus->write(this->cpu->reg.u16.PC, instruction);
+        while (cpu->cycle() != 0);
     }
 };
 
@@ -139,7 +101,7 @@ TEST_F(CPUTesting, SET_R8)
             const auto src         = CPU::get_register8_src_from_opcode(opcode);
             this->cpu->reg.u8.*src = 0b00000000;
 
-            this->execute_instructions({0xCB, opcode});
+            this->execute_instruction({0xCB, opcode});
 
             ASSERT_EQ(this->cpu->reg.u8.*src, (1U << bit_nbr));
 
@@ -169,7 +131,7 @@ TEST_F(CPUTesting, SET_MEM_HL)
             this->cpu->reg.u16.HL   = addr;
             this->bus->write(addr, 0b00000000U);
 
-            this->execute_instructions({0xCB, opcode});
+            this->execute_instruction({0xCB, opcode});
 
             ASSERT_EQ(this->bus->read(addr), (1U << bit_nbr));
 
@@ -193,7 +155,7 @@ TEST_F(CPUTesting, RES_R8)
             const auto src         = CPU::get_register8_src_from_opcode(opcode);
             this->cpu->reg.u8.*src = 0b11111111;
 
-            this->execute_instructions({0xCB, opcode});
+            this->execute_instruction({0xCB, opcode});
 
             ASSERT_EQ(this->cpu->reg.u8.*src, 0b11111111 & ~(1U << bit_nbr));
 
@@ -224,7 +186,7 @@ TEST_F(CPUTesting, RES_MEM_HL)
             this->cpu->reg.u16.HL = addr;
             this->bus->write(addr, 0b11111111U);
 
-            this->execute_instructions({0xCB, opcode});
+            this->execute_instruction({0xCB, opcode});
 
             ASSERT_EQ(this->bus->read(addr), 0b11111111U & ~(1U << bit_nbr));
 
@@ -261,7 +223,7 @@ TEST_F(CPUTesting, BIT)
             this->cpu->reg.u8.F |= CPU::Flags::SUBTRACT; /* This flag should be reset. */
             this->cpu->reg.u8.F |= CPU::Flags::CARRY;    /* This flag should not be modified. */
 
-            this->execute_instructions({0xCB, opcode});
+            this->execute_instruction({0xCB, opcode});
 
             ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::HALF_CARRY | CPU::Flags::CARRY);
 
@@ -274,7 +236,7 @@ TEST_F(CPUTesting, BIT)
                 this->cpu->reg.u8.*src ^= val;
             }
 
-            this->execute_instructions({0xCB, opcode});
+            this->execute_instruction({0xCB, opcode});
 
             ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::HALF_CARRY | CPU::Flags::CARRY | CPU::Flags::ZERO);
 
@@ -313,14 +275,14 @@ TEST_F(CPUTesting, SWAP_R8)
         this->cpu->reg.u8.F |=
             CPU::Flags::SUBTRACT | CPU::Flags::CARRY | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
 
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
 
         ASSERT_EQ(this->cpu->reg.u8.*src, swapped_val);
         ASSERT_EQ(this->cpu->reg.u8.F, 0);
 
         this->cpu->reg.u8.*src = 0;
 
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
 
         ASSERT_EQ(this->cpu->reg.u8.*src, 0);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::ZERO);
@@ -355,14 +317,14 @@ TEST_F(CPUTesting, SWAP_MEM_HL)
         this->cpu->reg.u8.F |=
             CPU::Flags::SUBTRACT | CPU::Flags::CARRY | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
 
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
 
         ASSERT_EQ(this->bus->read(addr), swapped_val);
         ASSERT_EQ(this->cpu->reg.u8.F, 0);
 
         this->bus->write(addr, 0);
 
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
 
         ASSERT_EQ(this->bus->read(addr), 0);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::ZERO);
@@ -383,7 +345,7 @@ TEST_F(CPUTesting, SRL_R8)
         this->cpu->reg.u8.F |= CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
 
@@ -391,7 +353,7 @@ TEST_F(CPUTesting, SRL_R8)
         shift_val = 0b00000000U;
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
 
@@ -399,7 +361,7 @@ TEST_F(CPUTesting, SRL_R8)
         shift_val = 0b00001000U;
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, 0);
     };
@@ -431,7 +393,7 @@ TEST_F(CPUTesting, SRA_R8)
         this->cpu->reg.u8.F |= CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
 
@@ -439,7 +401,7 @@ TEST_F(CPUTesting, SRA_R8)
         shift_val = 0b00000000U; /* Sign bit is preserved : 0 */
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
 
@@ -447,7 +409,7 @@ TEST_F(CPUTesting, SRA_R8)
         shift_val = 0b00010010U; /* Sign bit is preserved : 0 */
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
     };
@@ -479,7 +441,7 @@ TEST_F(CPUTesting, SLA_R8)
         this->cpu->reg.u8.F |= CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, 0);
 
@@ -487,7 +449,7 @@ TEST_F(CPUTesting, SLA_R8)
         shift_val = 0b00000000U;
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
 
@@ -495,7 +457,7 @@ TEST_F(CPUTesting, SLA_R8)
         shift_val = 0b01001010U;
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
         ASSERT_EQ(this->cpu->reg.u8.F, 0);
     };
@@ -527,23 +489,23 @@ TEST_F(CPUTesting, RL_R8)
         this->cpu->reg.u8.*src = val;
         this->cpu->reg.u8.F    = CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
 
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
         ASSERT_EQ(this->cpu->reg.u8.F, 0);
 
-        val = 0b10000000U;
+        val     = 0b10000000U;
         rot_val = 0b00000000U;
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
 
-        val = 0b00000000U;
+        val     = 0b00000000U;
         rot_val = 0b00000001U;
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
         ASSERT_EQ(this->cpu->reg.u8.F, 0);
     };
@@ -581,23 +543,23 @@ TEST_F(CPUTesting, RR_R8)
         this->cpu->reg.u8.*src = val;
         this->cpu->reg.u8.F    = CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
 
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
         ASSERT_EQ(this->cpu->reg.u8.F, 0);
 
-        val = 0b00110001U;
+        val     = 0b00110001U;
         rot_val = 0b00011000U;
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
         ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
 
-        val = 0b00000100U;
+        val     = 0b00000100U;
         rot_val = 0b10000010U;
 
         this->cpu->reg.u8.*src = val;
-        this->execute_instructions({0xCB, opcode});
+        this->execute_instruction({0xCB, opcode});
         ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
         ASSERT_EQ(this->cpu->reg.u8.F, 0);
     };
@@ -639,7 +601,7 @@ TEST_F(CPUTesting, LD_R8_R8)
             {
                 auto [dest, src]       = CPU::get_register8_dest_src_from_opcode(opcode);
                 this->cpu->reg.u8.*src = dist(gen);
-                this->execute_instructions({opcode});
+                this->execute_instruction({opcode});
                 ASSERT_EQ(this->cpu->reg.u8.*dest, this->cpu->reg.u8.*src);
             }
             opcode++;
@@ -666,7 +628,7 @@ TEST_F(CPUTesting, LD_R8_IMM8)
         const auto                             val{dist(gen)};
         const auto                             dest{CPU::get_register8_dest_from_opcode(opcode)};
 
-        this->execute_instructions({opcode, val});
+        this->execute_instruction({opcode, val});
 
         ASSERT_EQ(this->cpu->reg.u8.*dest, val);
     };
@@ -706,7 +668,7 @@ TEST_F(CPUTesting, LD_R8_MEM_HL)
         this->bus->write(addr, val);
         this->cpu->reg.u16.HL = addr;
 
-        this->execute_instructions({opcode});
+        this->execute_instruction({opcode});
 
         ASSERT_EQ(this->cpu->reg.u8.*dest, val);
     };
@@ -751,7 +713,7 @@ TEST_F(CPUTesting, LD_MEM_HL_R8)
             this->cpu->reg.u8.*src = val;
         }
 
-        this->execute_instructions({opcode});
+        this->execute_instruction({opcode});
 
         if (src != &CPU::Register::U8::H && src != &CPU::Register::U8::L)
         {
@@ -793,7 +755,7 @@ TEST_F(CPUTesting, LD_R16_IMM16)
         const auto                              val{dist(gen)};
         const auto                              dest{CPU::get_register16_dest_from_opcode(opcode)};
 
-        this->execute_instructions(
+        this->execute_instruction(
             {opcode, static_cast<uint8_t>(val & 0xFFU), static_cast<uint8_t>((val >> 8) & 0xFFU)});
 
         ASSERT_EQ(this->cpu->reg.u16.*dest, val);
@@ -802,13 +764,119 @@ TEST_F(CPUTesting, LD_R16_IMM16)
     repeat(TEST_REPEAT,
            [test_ld_r16_imm16]()
            {
-               SCOPED_TRACE("LD BC, imm16");
-               test_ld_r16_imm16(0x01);
-               SCOPED_TRACE("LD DE, imm16");
-               test_ld_r16_imm16(0x11);
-               SCOPED_TRACE("LD HL, imm16");
-               test_ld_r16_imm16(0x21);
-               SCOPED_TRACE("LD SP, imm16");
-               test_ld_r16_imm16(0x31);
+               {
+                   SCOPED_TRACE("LD BC, imm16");
+                   test_ld_r16_imm16(0x01);
+               }
+               {
+                   SCOPED_TRACE("LD DE, imm16");
+                   test_ld_r16_imm16(0x11);
+               }
+               {
+                   SCOPED_TRACE("LD HL, imm16");
+                   test_ld_r16_imm16(0x21);
+               }
+               {
+                   SCOPED_TRACE("LD SP, imm16");
+                   test_ld_r16_imm16(0x31);
+               }
+           });
+}
+
+auto TEST_JP_XX_IMM16(const CPUTesting* this_ptr, uint8_t opcode)
+{
+    std::random_device                      rd{};
+    std::mt19937                            gen{rd()};
+    std::uniform_int_distribution<uint16_t> dist{0x100, Bus::MEMORY_SIZE - 1};
+    const auto                              addr = dist(gen);
+
+    this_ptr->execute_instruction(
+        {opcode, static_cast<uint8_t>(addr & 0xFF), static_cast<uint8_t>((addr & 0xFF00) >> 8)});
+
+    return addr;
+}
+
+TEST_F(CPUTesting, JP_HL)
+{
+    repeat(TEST_REPEAT,
+           [this]()
+           {
+               std::random_device                      rd{};
+               std::mt19937                            gen{rd()};
+               std::uniform_int_distribution<uint16_t> dist{0x100, Bus::MEMORY_SIZE - 1};
+               const auto                              addr = dist(gen);
+
+               this->cpu->reg.u16.PC = 0;
+               this->cpu->reg.u16.HL = addr;
+               this->execute_instruction({0xE9});
+               ASSERT_EQ(this->cpu->reg.u16.PC, this->cpu->reg.u16.PC);
+           });
+}
+
+TEST_F(CPUTesting, JP_IMM16)
+{
+    repeat(TEST_REPEAT,
+           [this]()
+           {
+               SCOPED_TRACE("JP a16");
+               ASSERT_EQ(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xC3));
+               this->cpu->reg.u16.PC = 0;
+           });
+}
+
+TEST_F(CPUTesting, JP_CC_IMM16)
+{
+    repeat(TEST_REPEAT,
+           [this]
+           {
+               {
+                   /* Jump if flag ZERO is not set. */
+                   SCOPED_TRACE("JP NZ, A16");
+
+                   this->cpu->reg.u8.F &= ~CPU::Flags::ZERO;
+                   ASSERT_EQ(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xC2));
+                   this->cpu->reg.u16.PC = 0;
+
+                   this->cpu->reg.u8.F |= CPU::Flags::ZERO;
+                   ASSERT_NE(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xC2));
+                   this->cpu->reg.u16.PC = 0;
+               }
+               {
+                   /* Jump if flag ZERO is set. */
+                   SCOPED_TRACE("JP Z, A16");
+
+                   this->cpu->reg.u8.F |= CPU::Flags::ZERO;
+                   ASSERT_EQ(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xCA));
+                   this->cpu->reg.u16.PC = 0;
+
+                   this->cpu->reg.u8.F &= ~CPU::Flags::ZERO;
+                   ASSERT_NE(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xCA));
+                   this->cpu->reg.u16.PC = 0;
+               }
+               {
+                   /* Jump if flag CARRY is not set. */
+                   SCOPED_TRACE("JP NC, A16");
+
+                   this->cpu->reg.u8.F &= ~CPU::Flags::CARRY;
+                   ASSERT_EQ(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xD2));
+                   this->cpu->reg.u16.PC = 0;
+
+                   this->cpu->reg.u8.F |= CPU::Flags::CARRY;
+                   ASSERT_NE(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xD2));
+                   this->cpu->reg.u16.PC = 0;
+               }
+
+               {
+                   /* Jump if flag CARRY is set. */
+                   SCOPED_TRACE("JP C, A16");
+
+                   this->cpu->reg.u8.F |= CPU::Flags::CARRY;
+                   ASSERT_EQ(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xDA));
+                   this->cpu->reg.u16.PC = 0;
+
+                   this->cpu->reg.u8.F &= ~CPU::Flags::CARRY;
+                   ASSERT_NE(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xDA));
+                   this->cpu->reg.u16.PC = 0;
+               }
            });
 }
