@@ -471,10 +471,9 @@ class CPU
     void SET_MEM_HL();
 
     /**
-     * @brief General Purpose Registers
+     * @brief Registers
      */
     Register reg;
-
     /**
      * @brief Tracks the remaining machine cycles for the current instruction execution.
      */
@@ -483,13 +482,18 @@ class CPU
      * @brief Represents the current operation code being executed.
      */
     uint8_t opcode;
-
+    /**
+     * @brief If current instruction is cb_prefixed.
+     */
     bool cb_prefixed;
-
     /**
      * @brief Current instruction.
      */
     Instruction inst;
+    /**
+     * @brief Interupt Master Enable flag.
+     */
+    bool ime;
 
     Bus& bus;
 

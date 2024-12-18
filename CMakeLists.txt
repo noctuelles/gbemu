@@ -24,7 +24,9 @@ FetchContent_MakeAvailable(googletest sdl2)
 
 add_executable(gbemu srcs/CPU.cxx
         srcs/main.cxx
-        srcs/Bus.cxx)
+        srcs/Bus.cxx
+        srcs/Cartridge.cxx
+        includes/Cartridge.hxx)
 
 target_link_libraries(
         gbemu
