@@ -26,14 +26,14 @@
     friend class CPUTesting_LD_R8_MEM_HL_Test; \
     friend class CPUTesting_LD_MEM_HL_R8_Test; \
     friend class CPUTesting_LD_R16_IMM16_Test; \
-    friend class CPUTesting_JP_CC_IMM16_Test;  \
-    friend class CPUTesting_JP_IMM16_Test;     \
-    friend class CPUTesting_JP_HL_Test;
+    friend class CPUTesting_JP_Test;           \
+    friend class CPUTesting_CALL_Test;
 
 #include "CPU.hxx"
 
 #include <gtest/gtest.h>
 
+#include <Utils.hxx>
 #include <algorithm>
 #include <climits>
 #include <random>
@@ -51,8 +51,8 @@ class CPUTesting : public ::testing::Test
     static constexpr size_t TEST_REPEAT = 10000;
 
   protected:
-    CPU* cpu = nullptr;
-    Bus* bus = nullptr;
+    CPU* cpu{nullptr};
+    Bus* bus{nullptr};
 
     void SetUp() override
     {
@@ -75,6 +75,24 @@ class CPUTesting : public ::testing::Test
     {
         this->bus->write(this->cpu->reg.u16.PC, instruction);
         while (cpu->cycle() != 0);
+    }
+
+    static auto generate_address(std::pair<uint16_t, uint16_t>&& range = std::make_pair(0, Bus::MEMORY_SIZE - 1))
+    {
+        std::random_device                      rd{};
+        std::mt19937                            gen{rd()};
+        std::uniform_int_distribution<uint16_t> distrib{range.first, range.second};
+
+        return distrib(gen);
+    }
+
+    [[nodiscard]] static auto generate_byte()
+    {
+        std::random_device                     rd{};
+        std::mt19937                           gen{rd()};
+        std::uniform_int_distribution<uint8_t> distrib{0, UINT8_MAX};
+
+        return distrib(gen);
     }
 };
 
@@ -783,100 +801,165 @@ TEST_F(CPUTesting, LD_R16_IMM16)
            });
 }
 
-auto TEST_JP_XX_IMM16(const CPUTesting* this_ptr, uint8_t opcode)
+TEST_F(CPUTesting, JP)
 {
-    std::random_device                      rd{};
-    std::mt19937                            gen{rd()};
-    std::uniform_int_distribution<uint16_t> dist{0x100, Bus::MEMORY_SIZE - 1};
-    const auto                              addr = dist(gen);
+    constexpr size_t INSTRUCTION_SIZE = 3;
 
-    this_ptr->execute_instruction(
-        {opcode, static_cast<uint8_t>(addr & 0xFF), static_cast<uint8_t>((addr & 0xFF00) >> 8)});
+    const auto test_jp{[this](const uint8_t opcode, const bool should_perform_jmp)
+                       {
+                           const auto to   = generate_address({0x400, 0x1FFF});
+                           const auto from = generate_address({0x100, 0x200});
 
-    return addr;
-}
+                           this->cpu->reg.u16.PC = from;
+                           this->execute_instruction({opcode, u16_lsb(to), u16_msb(to)});
+                           if (should_perform_jmp)
+                           {
+                               ASSERT_EQ(this->cpu->reg.u16.PC, to);
+                           }
+                           else
+                           {
+                               ASSERT_EQ(this->cpu->reg.u16.PC, from + INSTRUCTION_SIZE);
+                           }
+                       }};
 
-TEST_F(CPUTesting, JP_HL)
-{
     repeat(TEST_REPEAT,
-           [this]()
+           [this, test_jp]
            {
-               std::random_device                      rd{};
-               std::mt19937                            gen{rd()};
-               std::uniform_int_distribution<uint16_t> dist{0x100, Bus::MEMORY_SIZE - 1};
-               const auto                              addr = dist(gen);
+               {
+                   SCOPED_TRACE("JP A16");
 
-               this->cpu->reg.u16.PC = 0;
-               this->cpu->reg.u16.HL = addr;
-               this->execute_instruction({0xE9});
-               ASSERT_EQ(this->cpu->reg.u16.PC, this->cpu->reg.u16.PC);
-           });
-}
+                   test_jp(0xC3, true);
+               }
+               {
+                   SCOPED_TRACE("JP HL");
 
-TEST_F(CPUTesting, JP_IMM16)
-{
-    repeat(TEST_REPEAT,
-           [this]()
-           {
-               SCOPED_TRACE("JP a16");
-               ASSERT_EQ(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xC3));
-               this->cpu->reg.u16.PC = 0;
-           });
-}
+                   const auto to   = generate_address({0x400, 0x1FFF});
+                   const auto from = generate_address({0x100, 0x200});
 
-TEST_F(CPUTesting, JP_CC_IMM16)
-{
-    repeat(TEST_REPEAT,
-           [this]
-           {
+                   this->cpu->reg.u16.PC = from;
+                   this->cpu->reg.u16.HL = to;
+
+                   this->execute_instruction({0xE9});
+
+                   ASSERT_EQ(this->cpu->reg.u16.PC, to);
+               }
                {
                    /* Jump if flag ZERO is not set. */
                    SCOPED_TRACE("JP NZ, A16");
 
                    this->cpu->reg.u8.F &= ~CPU::Flags::ZERO;
-                   ASSERT_EQ(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xC2));
-                   this->cpu->reg.u16.PC = 0;
-
+                   test_jp(0xC2, true);
                    this->cpu->reg.u8.F |= CPU::Flags::ZERO;
-                   ASSERT_NE(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xC2));
-                   this->cpu->reg.u16.PC = 0;
+                   test_jp(0xC2, false);
                }
                {
                    /* Jump if flag ZERO is set. */
                    SCOPED_TRACE("JP Z, A16");
 
-                   this->cpu->reg.u8.F |= CPU::Flags::ZERO;
-                   ASSERT_EQ(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xCA));
-                   this->cpu->reg.u16.PC = 0;
-
                    this->cpu->reg.u8.F &= ~CPU::Flags::ZERO;
-                   ASSERT_NE(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xCA));
-                   this->cpu->reg.u16.PC = 0;
+                   test_jp(0xCA, false);
+                   this->cpu->reg.u8.F |= CPU::Flags::ZERO;
+                   test_jp(0xCA, true);
                }
                {
                    /* Jump if flag CARRY is not set. */
                    SCOPED_TRACE("JP NC, A16");
 
                    this->cpu->reg.u8.F &= ~CPU::Flags::CARRY;
-                   ASSERT_EQ(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xD2));
-                   this->cpu->reg.u16.PC = 0;
-
+                   test_jp(0xD2, true);
                    this->cpu->reg.u8.F |= CPU::Flags::CARRY;
-                   ASSERT_NE(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xD2));
-                   this->cpu->reg.u16.PC = 0;
+                   test_jp(0xD2, false);
                }
 
                {
                    /* Jump if flag CARRY is set. */
                    SCOPED_TRACE("JP C, A16");
 
+                   this->cpu->reg.u8.F &= ~CPU::Flags::CARRY;
+                   test_jp(0xDA, false);
                    this->cpu->reg.u8.F |= CPU::Flags::CARRY;
-                   ASSERT_EQ(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xDA));
-                   this->cpu->reg.u16.PC = 0;
+                   test_jp(0xDA, true);
+               }
+           });
+}
+
+TEST_F(CPUTesting, CALL)
+{
+    constexpr size_t INSTRUCTION_SIZE{3};
+    const auto       test_call{
+        [this](const uint8_t opcode, const bool call_should_be_performed)
+        {
+            constexpr auto bp{0x1FFF};
+            const auto     from{generate_address({0x200, 0x500})};
+            const auto     to{generate_address({0x600, 0x700})};
+
+            this->cpu->reg.u16.SP = bp;
+            this->cpu->reg.u16.PC = from;
+
+            this->execute_instruction({opcode, u16_lsb(to), u16_msb(to)});
+
+            if (call_should_be_performed)
+            {
+                /* Have we jumped to the correct location ? */
+                ASSERT_EQ(this->cpu->reg.u16.PC, to);
+                /* Is the SP correctly decremented ? */
+                ASSERT_EQ(this->cpu->reg.u16.SP, bp - 2);
+                /* Is the return address correctly set on the stack ? */
+                ASSERT_EQ(this->bus->read(this->cpu->reg.u16.SP + 1), u16_lsb(from + INSTRUCTION_SIZE));
+                ASSERT_EQ(this->bus->read(this->cpu->reg.u16.SP + 2), u16_msb(from + INSTRUCTION_SIZE));
+            }
+            else
+            {
+                /* Is the PC intact ? */
+                ASSERT_EQ(this->cpu->reg.u16.PC, from + INSTRUCTION_SIZE);
+                /* Is the SP intact ? */
+                ASSERT_EQ(this->cpu->reg.u16.SP, bp);
+            }
+        }};
+
+    repeat(TEST_REPEAT,
+           [this, test_call]()
+           {
+               {
+                   SCOPED_TRACE("CALL A16");
+
+                   test_call(0xCD, true);
+               }
+               {
+                   /* CALL if flag ZERO is not set. */
+                   SCOPED_TRACE("CALL NZ, A16");
+
+                   this->cpu->reg.u8.F &= ~CPU::Flags::ZERO;
+                   test_call(0xC4, true);
+                   this->cpu->reg.u8.F |= CPU::Flags::ZERO;
+                   test_call(0xC4, false);
+               }
+               {
+                   /* CALL if flag ZERO is set. */
+                   SCOPED_TRACE("CALL Z, A16");
+
+                   this->cpu->reg.u8.F &= ~CPU::Flags::ZERO;
+                   test_call(0xCC, false);
+                   this->cpu->reg.u8.F |= CPU::Flags::ZERO;
+                   test_call(0xCC, true);
+               }
+               {
+                   /* CALL if flag CARRY is not set. */
+                   SCOPED_TRACE("CALL NC, A16");
 
                    this->cpu->reg.u8.F &= ~CPU::Flags::CARRY;
-                   ASSERT_NE(this->cpu->reg.u16.PC, TEST_JP_XX_IMM16(this, 0xDA));
-                   this->cpu->reg.u16.PC = 0;
+                   test_call(0xD4, true);
+                   this->cpu->reg.u8.F |= CPU::Flags::CARRY;
+                   test_call(0xD4, false);
+               }
+               {
+                   /* CALL if flag CARRY is set. */
+                   SCOPED_TRACE("CALL C, A16");
+
+                   this->cpu->reg.u8.F &= ~CPU::Flags::CARRY;
+                   test_call(0xDC, false);
+                   this->cpu->reg.u8.F |= CPU::Flags::CARRY;
+                   test_call(0xDC, true);
                }
            });
 }

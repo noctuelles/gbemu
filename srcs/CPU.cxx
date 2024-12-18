@@ -6,262 +6,262 @@
 #include <utility>
 
 const CPU::InstructionLookupTable CPU::inst_lookup{{
-    {},                                // 0x00
-    CPU::Instruction::LD_R16_IMM16(),  // 0x01
-    {},                                // 0x02
-    {},                                // 0x03
-    {},                                // 0x04
-    {},                                // 0x05
-    CPU::Instruction::LD_R8_IMM8(),    // 0x06
-    {},                                // 0x07
-    {},                                // 0x08
-    {},                                // 0x09
-    {},                                // 0x0A
-    {},                                // 0x0B
-    {},                                // 0x0C
-    {},                                // 0x0D
-    CPU::Instruction::LD_R8_IMM8(),    // 0x0E
-    {},                                // 0x0F
-    {},                                // 0x10
-    CPU::Instruction::LD_R16_IMM16(),  // 0x11
-    {},                                // 0x12
-    {},                                // 0x13
-    {},                                // 0x14
-    {},                                // 0x15
-    CPU::Instruction::LD_R8_IMM8(),    // 0x16
-    {},                                // 0x17
-    {},                                // 0x18
-    {},                                // 0x19
-    {},                                // 0x1A
-    {},                                // 0x1B
-    {},                                // 0x1C
-    {},                                // 0x1D
-    CPU::Instruction::LD_R8_IMM8(),    // 0x1E
-    {},                                // 0x1F
-    {},                                // 0x20
-    CPU::Instruction::LD_R16_IMM16(),  // 0x21
-    {},                                // 0x22
-    {},                                // 0x23
-    {},                                // 0x24
-    {},                                // 0x25
-    CPU::Instruction::LD_R8_IMM8(),    // 0x26
-    {},                                // 0x27
-    {},                                // 0x28
-    {},                                // 0x29
-    {},                                // 0x2A
-    {},                                // 0x2B
-    {},                                // 0x2C
-    {},                                // 0x2D
-    CPU::Instruction::LD_R8_IMM8(),    // 0x2E
-    {},                                // 0x2F
-    {},                                // 0x30
-    CPU::Instruction::LD_R16_IMM16(),  // 0x31
-    {},                                // 0x32
-    {},                                // 0x33
-    {},                                // 0x34
-    {},                                // 0x35
-    {},                                // 0x36
-    {},                                // 0x37
-    {},                                // 0x38
-    {},                                // 0x39
-    {},                                // 0x3A
-    {},                                // 0x3B
-    {},                                // 0x3C
-    {},                                // 0x3D
-    CPU::Instruction::LD_R8_IMM8(),    // 0x3E
-    {},                                // 0x3F
-    CPU::Instruction::LD_R8_R8(),      // 0x40
-    CPU::Instruction::LD_R8_R8(),      // 0x41
-    CPU::Instruction::LD_R8_R8(),      // 0x42
-    CPU::Instruction::LD_R8_R8(),      // 0x43
-    CPU::Instruction::LD_R8_R8(),      // 0x44
-    CPU::Instruction::LD_R8_R8(),      // 0x45
-    CPU::Instruction::LD_R8_MEM_HL(),  // 0x46
-    CPU::Instruction::LD_R8_R8(),      // 0x47
-    CPU::Instruction::LD_R8_R8(),      // 0x48
-    CPU::Instruction::LD_R8_R8(),      // 0x49
-    CPU::Instruction::LD_R8_R8(),      // 0x4A
-    CPU::Instruction::LD_R8_R8(),      // 0x4B
-    CPU::Instruction::LD_R8_R8(),      // 0x4C
-    CPU::Instruction::LD_R8_R8(),      // 0x4D
-    CPU::Instruction::LD_R8_MEM_HL(),  // 0x4E
-    CPU::Instruction::LD_R8_R8(),      // 0x4F
-    CPU::Instruction::LD_R8_R8(),      // 0x50
-    CPU::Instruction::LD_R8_R8(),      // 0x51
-    CPU::Instruction::LD_R8_R8(),      // 0x52
-    CPU::Instruction::LD_R8_R8(),      // 0x53
-    CPU::Instruction::LD_R8_R8(),      // 0x54
-    CPU::Instruction::LD_R8_R8(),      // 0x55
-    CPU::Instruction::LD_R8_MEM_HL(),  // 0x56
-    CPU::Instruction::LD_R8_R8(),      // 0x57
-    CPU::Instruction::LD_R8_R8(),      // 0x58
-    CPU::Instruction::LD_R8_R8(),      // 0x59
-    CPU::Instruction::LD_R8_R8(),      // 0x5A
-    CPU::Instruction::LD_R8_R8(),      // 0x5B
-    CPU::Instruction::LD_R8_R8(),      // 0x5C
-    CPU::Instruction::LD_R8_R8(),      // 0x5D
-    CPU::Instruction::LD_R8_MEM_HL(),  // 0x5E
-    CPU::Instruction::LD_R8_R8(),      // 0x5F
-    CPU::Instruction::LD_R8_R8(),      // 0x60
-    CPU::Instruction::LD_R8_R8(),      // 0x61
-    CPU::Instruction::LD_R8_R8(),      // 0x62
-    CPU::Instruction::LD_R8_R8(),      // 0x63
-    CPU::Instruction::LD_R8_R8(),      // 0x64
-    CPU::Instruction::LD_R8_R8(),      // 0x65
-    CPU::Instruction::LD_R8_MEM_HL(),  // 0x66
-    CPU::Instruction::LD_R8_R8(),      // 0x67
-    CPU::Instruction::LD_R8_R8(),      // 0x68
-    CPU::Instruction::LD_R8_R8(),      // 0x69
-    CPU::Instruction::LD_R8_R8(),      // 0x6A
-    CPU::Instruction::LD_R8_R8(),      // 0x6B
-    CPU::Instruction::LD_R8_R8(),      // 0x6C
-    CPU::Instruction::LD_R8_R8(),      // 0x6D
-    CPU::Instruction::LD_R8_MEM_HL(),  // 0x6E
-    CPU::Instruction::LD_R8_R8(),      // 0x6F
-    CPU::Instruction::LD_MEM_HL_R8(),  // 0x70
-    CPU::Instruction::LD_MEM_HL_R8(),  // 0x71
-    CPU::Instruction::LD_MEM_HL_R8(),  // 0x72
-    CPU::Instruction::LD_MEM_HL_R8(),  // 0x73
-    CPU::Instruction::LD_MEM_HL_R8(),  // 0x74
-    CPU::Instruction::LD_MEM_HL_R8(),  // 0x75
-    {},                                // 0x76
-    CPU::Instruction::LD_MEM_HL_R8(),  // 0x77
-    CPU::Instruction::LD_R8_R8(),      // 0x78
-    CPU::Instruction::LD_R8_R8(),      // 0x79
-    CPU::Instruction::LD_R8_R8(),      // 0x7A
-    CPU::Instruction::LD_R8_R8(),      // 0x7B
-    CPU::Instruction::LD_R8_R8(),      // 0x7C
-    CPU::Instruction::LD_R8_R8(),      // 0x7D
-    CPU::Instruction::LD_R8_MEM_HL(),  // 0x7E
-    CPU::Instruction::LD_R8_R8(),      // 0x7F
-    {},                                // 0x80
-    {},                                // 0x81
-    {},                                // 0x82
-    {},                                // 0x83
-    {},                                // 0x84
-    {},                                // 0x85
-    {},                                // 0x86
-    {},                                // 0x87
-    {},                                // 0x88
-    {},                                // 0x89
-    {},                                // 0x8A
-    {},                                // 0x8B
-    {},                                // 0x8C
-    {},                                // 0x8D
-    {},                                // 0x8E
-    {},                                // 0x8F
-    {},                                // 0x90
-    {},                                // 0x91
-    {},                                // 0x92
-    {},                                // 0x93
-    {},                                // 0x94
-    {},                                // 0x95
-    {},                                // 0x96
-    {},                                // 0x97
-    {},                                // 0x98
-    {},                                // 0x99
-    {},                                // 0x9A
-    {},                                // 0x9B
-    {},                                // 0x9C
-    {},                                // 0x9D
-    {},                                // 0x9E
-    {},                                // 0x9F
-    CPU::Instruction::AND_R8(),        // 0xA0
-    CPU::Instruction::AND_R8(),        // 0xA1
-    CPU::Instruction::AND_R8(),        // 0xA2
-    CPU::Instruction::AND_R8(),        // 0xA3
-    CPU::Instruction::AND_R8(),        // 0xA4
-    CPU::Instruction::AND_R8(),        // 0xA5
-    {},                                // 0xA6
-    CPU::Instruction::AND_R8(),        // 0xA7
-    CPU::Instruction::XOR_R8(),        // 0xA8
-    CPU::Instruction::XOR_R8(),        // 0xA9
-    CPU::Instruction::XOR_R8(),        // 0xAA
-    CPU::Instruction::XOR_R8(),        // 0xAB
-    CPU::Instruction::XOR_R8(),        // 0xAC
-    CPU::Instruction::XOR_R8(),        // 0xAD
-    {},                                // 0xAE
-    CPU::Instruction::XOR_R8(),        // 0xAF
-    CPU::Instruction::OR_R8(),         // 0xB0
-    CPU::Instruction::OR_R8(),         // 0xB1
-    CPU::Instruction::OR_R8(),         // 0xB2
-    CPU::Instruction::OR_R8(),         // 0xB3
-    CPU::Instruction::OR_R8(),         // 0xB4
-    CPU::Instruction::OR_R8(),         // 0xB5
-    {},                                // 0xB6
-    CPU::Instruction::OR_R8(),         // 0xB7
-    {},                                // 0xB8
-    {},                                // 0xB9
-    {},                                // 0xBA
-    {},                                // 0xBB
-    {},                                // 0xBC
-    {},                                // 0xBD
-    {},                                // 0xBE
-    {},                                // 0xBF
-    {},                                // 0xC0
-    {},                                // 0xC1
-    CPU::Instruction::JP_CC_IMM16(),   // 0xC2
-    CPU::Instruction::JP_IMM16(),      // 0xC3
-    {},                                // 0xC4
-    {},                                // 0xC5
-    {},                                // 0xC6
-    {},                                // 0xC7
-    {},                                // 0xC8
-    {},                                // 0xC9
-    CPU::Instruction::JP_CC_IMM16(),   // 0xCA
-    CPU::Instruction::PREFIX(),        // 0xCB
-    {},                                // 0xCC
-    {},                                // 0xCD
-    {},                                // 0xCE
-    {},                                // 0xCF
-    {},                                // 0xD0
-    {},                                // 0xD1
-    CPU::Instruction::JP_CC_IMM16(),   // 0xD2
-    {},                                // 0xD3
-    {},                                // 0xD4
-    {},                                // 0xD5
-    {},                                // 0xD6
-    {},                                // 0xD7
-    {},                                // 0xD8
-    {},                                // 0xD9
-    CPU::Instruction::JP_CC_IMM16(),   // 0xDA
-    {},                                // 0xDB
-    {},                                // 0xDC
-    {},                                // 0xDD
-    {},                                // 0xDE
-    {},                                // 0xDF
-    {},                                // 0xE0
-    {},                                // 0xE1
-    {},                                // 0xE2
-    {},                                // 0xE3
-    {},                                // 0xE4
-    {},                                // 0xE5
-    {},                                // 0xE6
-    {},                                // 0xE7
-    {},                                // 0xE8
-    CPU::Instruction::JP_HL(),         // 0xE9
-    {},                                // 0xEA
-    {},                                // 0xEB
-    {},                                // 0xEC
-    {},                                // 0xED
-    {},                                // 0xEE
-    {},                                // 0xEF
-    {},                                // 0xF0
-    {},                                // 0xF1
-    {},                                // 0xF2
-    {},                                // 0xF3
-    {},                                // 0xF4
-    {},                                // 0xF5
-    {},                                // 0xF6
-    {},                                // 0xF7
-    {},                                // 0xF8
-    {},                                // 0xF9
-    {},                                // 0xFA
-    {},                                // 0xFB
-    {},                                // 0xFC
-    {},                                // 0xFD
-    {},                                // 0xFE
-    {},                                // 0xFF
+    {},                                 // 0x00
+    CPU::Instruction::LD_R16_IMM16(),   // 0x01
+    {},                                 // 0x02
+    {},                                 // 0x03
+    {},                                 // 0x04
+    {},                                 // 0x05
+    CPU::Instruction::LD_R8_IMM8(),     // 0x06
+    {},                                 // 0x07
+    {},                                 // 0x08
+    {},                                 // 0x09
+    {},                                 // 0x0A
+    {},                                 // 0x0B
+    {},                                 // 0x0C
+    {},                                 // 0x0D
+    CPU::Instruction::LD_R8_IMM8(),     // 0x0E
+    {},                                 // 0x0F
+    {},                                 // 0x10
+    CPU::Instruction::LD_R16_IMM16(),   // 0x11
+    {},                                 // 0x12
+    {},                                 // 0x13
+    {},                                 // 0x14
+    {},                                 // 0x15
+    CPU::Instruction::LD_R8_IMM8(),     // 0x16
+    {},                                 // 0x17
+    {},                                 // 0x18
+    {},                                 // 0x19
+    {},                                 // 0x1A
+    {},                                 // 0x1B
+    {},                                 // 0x1C
+    {},                                 // 0x1D
+    CPU::Instruction::LD_R8_IMM8(),     // 0x1E
+    {},                                 // 0x1F
+    {},                                 // 0x20
+    CPU::Instruction::LD_R16_IMM16(),   // 0x21
+    {},                                 // 0x22
+    {},                                 // 0x23
+    {},                                 // 0x24
+    {},                                 // 0x25
+    CPU::Instruction::LD_R8_IMM8(),     // 0x26
+    {},                                 // 0x27
+    {},                                 // 0x28
+    {},                                 // 0x29
+    {},                                 // 0x2A
+    {},                                 // 0x2B
+    {},                                 // 0x2C
+    {},                                 // 0x2D
+    CPU::Instruction::LD_R8_IMM8(),     // 0x2E
+    {},                                 // 0x2F
+    {},                                 // 0x30
+    CPU::Instruction::LD_R16_IMM16(),   // 0x31
+    {},                                 // 0x32
+    {},                                 // 0x33
+    {},                                 // 0x34
+    {},                                 // 0x35
+    {},                                 // 0x36
+    {},                                 // 0x37
+    {},                                 // 0x38
+    {},                                 // 0x39
+    {},                                 // 0x3A
+    {},                                 // 0x3B
+    {},                                 // 0x3C
+    {},                                 // 0x3D
+    CPU::Instruction::LD_R8_IMM8(),     // 0x3E
+    {},                                 // 0x3F
+    CPU::Instruction::LD_R8_R8(),       // 0x40
+    CPU::Instruction::LD_R8_R8(),       // 0x41
+    CPU::Instruction::LD_R8_R8(),       // 0x42
+    CPU::Instruction::LD_R8_R8(),       // 0x43
+    CPU::Instruction::LD_R8_R8(),       // 0x44
+    CPU::Instruction::LD_R8_R8(),       // 0x45
+    CPU::Instruction::LD_R8_MEM_HL(),   // 0x46
+    CPU::Instruction::LD_R8_R8(),       // 0x47
+    CPU::Instruction::LD_R8_R8(),       // 0x48
+    CPU::Instruction::LD_R8_R8(),       // 0x49
+    CPU::Instruction::LD_R8_R8(),       // 0x4A
+    CPU::Instruction::LD_R8_R8(),       // 0x4B
+    CPU::Instruction::LD_R8_R8(),       // 0x4C
+    CPU::Instruction::LD_R8_R8(),       // 0x4D
+    CPU::Instruction::LD_R8_MEM_HL(),   // 0x4E
+    CPU::Instruction::LD_R8_R8(),       // 0x4F
+    CPU::Instruction::LD_R8_R8(),       // 0x50
+    CPU::Instruction::LD_R8_R8(),       // 0x51
+    CPU::Instruction::LD_R8_R8(),       // 0x52
+    CPU::Instruction::LD_R8_R8(),       // 0x53
+    CPU::Instruction::LD_R8_R8(),       // 0x54
+    CPU::Instruction::LD_R8_R8(),       // 0x55
+    CPU::Instruction::LD_R8_MEM_HL(),   // 0x56
+    CPU::Instruction::LD_R8_R8(),       // 0x57
+    CPU::Instruction::LD_R8_R8(),       // 0x58
+    CPU::Instruction::LD_R8_R8(),       // 0x59
+    CPU::Instruction::LD_R8_R8(),       // 0x5A
+    CPU::Instruction::LD_R8_R8(),       // 0x5B
+    CPU::Instruction::LD_R8_R8(),       // 0x5C
+    CPU::Instruction::LD_R8_R8(),       // 0x5D
+    CPU::Instruction::LD_R8_MEM_HL(),   // 0x5E
+    CPU::Instruction::LD_R8_R8(),       // 0x5F
+    CPU::Instruction::LD_R8_R8(),       // 0x60
+    CPU::Instruction::LD_R8_R8(),       // 0x61
+    CPU::Instruction::LD_R8_R8(),       // 0x62
+    CPU::Instruction::LD_R8_R8(),       // 0x63
+    CPU::Instruction::LD_R8_R8(),       // 0x64
+    CPU::Instruction::LD_R8_R8(),       // 0x65
+    CPU::Instruction::LD_R8_MEM_HL(),   // 0x66
+    CPU::Instruction::LD_R8_R8(),       // 0x67
+    CPU::Instruction::LD_R8_R8(),       // 0x68
+    CPU::Instruction::LD_R8_R8(),       // 0x69
+    CPU::Instruction::LD_R8_R8(),       // 0x6A
+    CPU::Instruction::LD_R8_R8(),       // 0x6B
+    CPU::Instruction::LD_R8_R8(),       // 0x6C
+    CPU::Instruction::LD_R8_R8(),       // 0x6D
+    CPU::Instruction::LD_R8_MEM_HL(),   // 0x6E
+    CPU::Instruction::LD_R8_R8(),       // 0x6F
+    CPU::Instruction::LD_MEM_HL_R8(),   // 0x70
+    CPU::Instruction::LD_MEM_HL_R8(),   // 0x71
+    CPU::Instruction::LD_MEM_HL_R8(),   // 0x72
+    CPU::Instruction::LD_MEM_HL_R8(),   // 0x73
+    CPU::Instruction::LD_MEM_HL_R8(),   // 0x74
+    CPU::Instruction::LD_MEM_HL_R8(),   // 0x75
+    {},                                 // 0x76
+    CPU::Instruction::LD_MEM_HL_R8(),   // 0x77
+    CPU::Instruction::LD_R8_R8(),       // 0x78
+    CPU::Instruction::LD_R8_R8(),       // 0x79
+    CPU::Instruction::LD_R8_R8(),       // 0x7A
+    CPU::Instruction::LD_R8_R8(),       // 0x7B
+    CPU::Instruction::LD_R8_R8(),       // 0x7C
+    CPU::Instruction::LD_R8_R8(),       // 0x7D
+    CPU::Instruction::LD_R8_MEM_HL(),   // 0x7E
+    CPU::Instruction::LD_R8_R8(),       // 0x7F
+    {},                                 // 0x80
+    {},                                 // 0x81
+    {},                                 // 0x82
+    {},                                 // 0x83
+    {},                                 // 0x84
+    {},                                 // 0x85
+    {},                                 // 0x86
+    {},                                 // 0x87
+    {},                                 // 0x88
+    {},                                 // 0x89
+    {},                                 // 0x8A
+    {},                                 // 0x8B
+    {},                                 // 0x8C
+    {},                                 // 0x8D
+    {},                                 // 0x8E
+    {},                                 // 0x8F
+    {},                                 // 0x90
+    {},                                 // 0x91
+    {},                                 // 0x92
+    {},                                 // 0x93
+    {},                                 // 0x94
+    {},                                 // 0x95
+    {},                                 // 0x96
+    {},                                 // 0x97
+    {},                                 // 0x98
+    {},                                 // 0x99
+    {},                                 // 0x9A
+    {},                                 // 0x9B
+    {},                                 // 0x9C
+    {},                                 // 0x9D
+    {},                                 // 0x9E
+    {},                                 // 0x9F
+    CPU::Instruction::AND_R8(),         // 0xA0
+    CPU::Instruction::AND_R8(),         // 0xA1
+    CPU::Instruction::AND_R8(),         // 0xA2
+    CPU::Instruction::AND_R8(),         // 0xA3
+    CPU::Instruction::AND_R8(),         // 0xA4
+    CPU::Instruction::AND_R8(),         // 0xA5
+    {},                                 // 0xA6
+    CPU::Instruction::AND_R8(),         // 0xA7
+    CPU::Instruction::XOR_R8(),         // 0xA8
+    CPU::Instruction::XOR_R8(),         // 0xA9
+    CPU::Instruction::XOR_R8(),         // 0xAA
+    CPU::Instruction::XOR_R8(),         // 0xAB
+    CPU::Instruction::XOR_R8(),         // 0xAC
+    CPU::Instruction::XOR_R8(),         // 0xAD
+    {},                                 // 0xAE
+    CPU::Instruction::XOR_R8(),         // 0xAF
+    CPU::Instruction::OR_R8(),          // 0xB0
+    CPU::Instruction::OR_R8(),          // 0xB1
+    CPU::Instruction::OR_R8(),          // 0xB2
+    CPU::Instruction::OR_R8(),          // 0xB3
+    CPU::Instruction::OR_R8(),          // 0xB4
+    CPU::Instruction::OR_R8(),          // 0xB5
+    {},                                 // 0xB6
+    CPU::Instruction::OR_R8(),          // 0xB7
+    {},                                 // 0xB8
+    {},                                 // 0xB9
+    {},                                 // 0xBA
+    {},                                 // 0xBB
+    {},                                 // 0xBC
+    {},                                 // 0xBD
+    {},                                 // 0xBE
+    {},                                 // 0xBF
+    {},                                 // 0xC0
+    {},                                 // 0xC1
+    CPU::Instruction::JP_CC_IMM16(),    // 0xC2
+    CPU::Instruction::JP_IMM16(),       // 0xC3
+    CPU::Instruction::CALL_CC_IMM16(),  // 0xC4
+    {},                                 // 0xC5
+    {},                                 // 0xC6
+    {},                                 // 0xC7
+    {},                                 // 0xC8
+    {},                                 // 0xC9
+    CPU::Instruction::JP_CC_IMM16(),    // 0xCA
+    CPU::Instruction::PREFIX(),         // 0xCB
+    CPU::Instruction::CALL_CC_IMM16(),  // 0xCC
+    CPU::Instruction::CALL_IMM16(),     // 0xCD
+    {},                                 // 0xCE
+    {},                                 // 0xCF
+    {},                                 // 0xD0
+    {},                                 // 0xD1
+    CPU::Instruction::JP_CC_IMM16(),    // 0xD2
+    {},                                 // 0xD3
+    CPU::Instruction::CALL_CC_IMM16(),  // 0xD4
+    {},                                 // 0xD5
+    {},                                 // 0xD6
+    {},                                 // 0xD7
+    {},                                 // 0xD8
+    {},                                 // 0xD9
+    CPU::Instruction::JP_CC_IMM16(),    // 0xDA
+    {},                                 // 0xDB
+    CPU::Instruction::CALL_CC_IMM16(),  // 0xDC
+    {},                                 // 0xDD
+    {},                                 // 0xDE
+    {},                                 // 0xDF
+    {},                                 // 0xE0
+    {},                                 // 0xE1
+    {},                                 // 0xE2
+    {},                                 // 0xE3
+    {},                                 // 0xE4
+    {},                                 // 0xE5
+    {},                                 // 0xE6
+    {},                                 // 0xE7
+    {},                                 // 0xE8
+    CPU::Instruction::JP_HL(),          // 0xE9
+    {},                                 // 0xEA
+    {},                                 // 0xEB
+    {},                                 // 0xEC
+    {},                                 // 0xED
+    {},                                 // 0xEE
+    {},                                 // 0xEF
+    {},                                 // 0xF0
+    {},                                 // 0xF1
+    {},                                 // 0xF2
+    {},                                 // 0xF3
+    {},                                 // 0xF4
+    {},                                 // 0xF5
+    {},                                 // 0xF6
+    {},                                 // 0xF7
+    {},                                 // 0xF8
+    {},                                 // 0xF9
+    {},                                 // 0xFA
+    {},                                 // 0xFB
+    {},                                 // 0xFC
+    {},                                 // 0xFD
+    {},                                 // 0xFE
+    {},                                 // 0xFF
 }};
 
 const CPU::InstructionLookupTable CPU::cb_prefixed_inst_lookup{{
@@ -593,6 +593,16 @@ constexpr CPU::Instruction CPU::Instruction::JP_HL()
 constexpr CPU::Instruction CPU::Instruction::JP_CC_IMM16()
 {
     return Instruction{12U, &CPU::JP_CC_IMM16};
+}
+
+constexpr CPU::Instruction CPU::Instruction::CALL_IMM16()
+{
+    return Instruction{24U, &CPU::CALL_IMM16};
+}
+
+constexpr CPU::Instruction CPU::Instruction::CALL_CC_IMM16()
+{
+    return Instruction{12U, &CPU::CALL_CC_IMM16};
 }
 
 constexpr CPU::Instruction CPU::Instruction::RRC_R8()
@@ -929,34 +939,45 @@ void CPU::JP_HL()
 
 void CPU::JP_CC_IMM16()
 {
-    const auto condition     = static_cast<ConditionOperand>((this->opcode >> 3) & 0b00000011U);
-    auto       condition_met = false;
-
-    switch (condition)
-    {
-        case ConditionOperand::C:
-            condition_met = (this->reg.u8.F & Flags::CARRY) != 0;
-            break;
-        case ConditionOperand::Z:
-            condition_met = (this->reg.u8.F & Flags::ZERO) != 0;
-            break;
-        case ConditionOperand::NC:
-            condition_met = (this->reg.u8.F & Flags::CARRY) == 0;
-            break;
-        case ConditionOperand::NZ:
-            condition_met = (this->reg.u8.F & Flags::ZERO) == 0;
-            break;
-    }
-
-    if (condition_met)
+    if (this->check_condition_from_opcode())
     {
         this->cycles += 4;
-
-        const auto imm_lsb = this->bus.read(this->reg.u16.PC++);
-        const auto imm_msb = this->bus.read(this->reg.u16.PC++);
-
-        this->reg.u16.PC = imm_msb << 8 | imm_lsb;
+        this->JP_IMM16();
     }
+    else
+    {
+        this->reg.u16.PC += 2;
+    }
+}
+
+void CPU::CALL_IMM16()
+{
+    const auto addr_lsb = this->bus.read(this->reg.u16.PC++);
+    const auto addr_msb = this->bus.read(this->reg.u16.PC++);
+    const auto pc_lsb   = static_cast<uint8_t>(this->reg.u16.PC & 0xFF);
+    const auto pc_msb   = static_cast<uint8_t>((this->reg.u16.PC & 0xFF00) >> 8);
+
+    this->PUSH_16(pc_msb, pc_lsb);
+    this->reg.u16.PC = addr_msb << 8 | addr_lsb;
+}
+
+void CPU::CALL_CC_IMM16()
+{
+    if (this->check_condition_from_opcode())
+    {
+        this->cycles += 12;
+        this->CALL_IMM16();
+    }
+    else
+    {
+        this->reg.u16.PC += 2;
+    }
+}
+
+void CPU::PUSH_16(const uint8_t msb, const uint8_t lsb)
+{
+    this->bus.write(this->reg.u16.SP--, msb);
+    this->bus.write(this->reg.u16.SP--, lsb);
 }
 
 auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool rotate_through_carry) noexcept
@@ -1299,4 +1320,33 @@ std::pair<CPU::Register8, CPU::Register8> CPU::get_register8_dest_src_from_opcod
 std::pair<CPU::Register8, CPU::Register8> CPU::get_register8_dest_src_from_opcode(uint8_t opcode)
 {
     return std::make_pair(get_register8_dest_from_opcode(opcode), get_register8_src_from_opcode(opcode));
+}
+
+bool CPU::check_condition_from_opcode() const
+{
+    return check_condition_from_opcode(this->opcode);
+}
+
+bool CPU::check_condition_from_opcode(const uint8_t opcode) const
+{
+    const auto condition     = static_cast<ConditionOperand>((opcode >> 3) & 0b00000011U);
+    auto       condition_met = false;
+
+    switch (condition)
+    {
+        case ConditionOperand::C:
+            condition_met = (this->reg.u8.F & Flags::CARRY) != 0;
+            break;
+        case ConditionOperand::Z:
+            condition_met = (this->reg.u8.F & Flags::ZERO) != 0;
+            break;
+        case ConditionOperand::NC:
+            condition_met = (this->reg.u8.F & Flags::CARRY) == 0;
+            break;
+        case ConditionOperand::NZ:
+            condition_met = (this->reg.u8.F & Flags::ZERO) == 0;
+            break;
+    }
+
+    return condition_met;
 }

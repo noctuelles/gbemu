@@ -44,6 +44,9 @@ class CPU
         constexpr static Instruction JP_HL();
         constexpr static Instruction JP_CC_IMM16();
 
+        constexpr static Instruction CALL_IMM16();
+        constexpr static Instruction CALL_CC_IMM16();
+
         /* Prefixed instructions */
 
         constexpr static Instruction RRC_R8();
@@ -73,7 +76,8 @@ class CPU
 
         constexpr static Instruction SET_R8();
         constexpr static Instruction SET_MEM_HL();
-        bool                         operator==(const Instruction& prefix) const = default;
+
+        bool operator==(const Instruction& prefix) const = default;
     };
 
     using InstructionLookupTable = std::array<Instruction, 0x100>;
@@ -207,7 +211,8 @@ class CPU
     [[nodiscard]] std::pair<Register8, Register8>        get_register8_dest_src_from_opcode() const;
     [[nodiscard]] static std::pair<Register8, Register8> get_register8_dest_src_from_opcode(uint8_t opcode);
 
-    void set_register16(OperandRegister16 reg, uint16_t value);
+    [[nodiscard]] bool check_condition_from_opcode() const;
+    [[nodiscard]] bool check_condition_from_opcode(uint8_t opcode) const;
 
     void NOP();
     /**
@@ -300,6 +305,19 @@ class CPU
      * @brief Jump to address n16 if condition cc is met.
      */
     void JP_CC_IMM16();
+
+    /**
+     * @brief Call address n16. This pushes the address of the instruction after the CALL on the stack, such that RET
+     * can pop it later; then, it executes an implicit JP n16.
+     */
+    void CALL_IMM16();
+
+    /*
+     * @brief Call address n16 if condition cc is met.
+     */
+    void CALL_CC_IMM16();
+
+    void PUSH_16(uint8_t msb, uint8_t lsb);
 
     /**
      * @brief Perform an 8-bit rotate through the carry flag.
