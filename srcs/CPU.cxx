@@ -1,9 +1,13 @@
 #include "CPU.hxx"
 
-#include <x86intrin.h>
+/**
+ * @note https://gbdev.io/gb-opcodes/optables/
+ * https://rgbds.gbdev.io/docs/v0.8.0/gbz80.7
+ * https://dn790000.ca.archive.org/0/items/GameBoyProgManVer1.1/GameBoyProgManVer1.1.pdf
+ */
+
 
 #include <Utils.hxx>
-#include <iomanip>
 #include <utility>
 
 const CPU::InstructionLookupTable CPU::inst_lookup{{
