@@ -47,6 +47,9 @@ class CPU
         constexpr static Instruction CALL_IMM16();
         constexpr static Instruction CALL_CC_IMM16();
 
+        constexpr static Instruction RET();
+        constexpr static Instruction RET_CC();
+
         /* Stack manipulation */
 
         constexpr static Instruction PUSH_R16();
@@ -345,6 +348,16 @@ class CPU
      * @brief Call address n16 if condition cc is met.
      */
     void CALL_CC_IMM16();
+
+    /**
+     * @brief Return from subroutine. This is basically a POP PC (if such an instruction existed).
+     */
+    void RET();
+
+    /**
+     * @brief Return from subroutine if condition cc is met.
+     */
+    void RET_CC();
 
     /**
      * @brief Perform an 8-bit rotate through the carry flag.

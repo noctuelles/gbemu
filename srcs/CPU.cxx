@@ -199,7 +199,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0xBD
     {},                            // 0xBE
     {},                            // 0xBF
-    {},                            // 0xC0
+    Instruction::RET_CC(),         // 0xC0
     Instruction::POP_R16(),        // 0xC1
     Instruction::JP_CC_IMM16(),    // 0xC2
     Instruction::JP_IMM16(),       // 0xC3
@@ -207,15 +207,15 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::PUSH_R16(),       // 0xC5
     {},                            // 0xC6
     {},                            // 0xC7
-    {},                            // 0xC8
-    {},                            // 0xC9
+    Instruction::RET_CC(),         // 0xC8
+    Instruction::RET(),            // 0xC9
     Instruction::JP_CC_IMM16(),    // 0xCA
     Instruction::PREFIX(),         // 0xCB
     Instruction::CALL_CC_IMM16(),  // 0xCC
     Instruction::CALL_IMM16(),     // 0xCD
     {},                            // 0xCE
     {},                            // 0xCF
-    {},                            // 0xD0
+    Instruction::RET_CC(),         // 0xD0
     Instruction::POP_R16(),        // 0xD1
     Instruction::JP_CC_IMM16(),    // 0xD2
     {},                            // 0xD3
@@ -223,7 +223,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::PUSH_R16(),       // 0xD5
     {},                            // 0xD6
     {},                            // 0xD7
-    {},                            // 0xD8
+    Instruction::RET_CC(),         // 0xD8
     {},                            // 0xD9
     Instruction::JP_CC_IMM16(),    // 0xDA
     {},                            // 0xDB
@@ -606,6 +606,16 @@ constexpr CPU::Instruction CPU::Instruction::CALL_CC_IMM16()
     return Instruction{12U, &CPU::CALL_CC_IMM16};
 }
 
+constexpr CPU::Instruction CPU::Instruction::RET()
+{
+    return Instruction{16U, &CPU::RET};
+}
+
+constexpr CPU::Instruction CPU::Instruction::RET_CC()
+{
+    return Instruction{8U, &CPU::RET_CC};
+}
+
 constexpr CPU::Instruction CPU::Instruction::PUSH_R16()
 {
     return Instruction{16U, &CPU::PUSH_R16};
@@ -952,11 +962,9 @@ void CPU::CALL_IMM16()
 {
     const auto addr_lsb = this->bus.read(this->reg.u16.PC++);
     const auto addr_msb = this->bus.read(this->reg.u16.PC++);
-    const auto pc_lsb   = static_cast<uint8_t>(this->reg.u16.PC & 0xFF);
-    const auto pc_msb   = static_cast<uint8_t>((this->reg.u16.PC & 0xFF00) >> 8);
 
-    this->push_16(pc_msb, pc_lsb);
-    this->reg.u16.PC = addr_msb << 8 | addr_lsb;
+    this->push_16(u16_msb(this->reg.u16.PC), u16_lsb(this->reg.u16.PC));
+    this->reg.u16.PC = u8_to_u16({addr_msb, addr_lsb});
 }
 
 void CPU::CALL_CC_IMM16()
@@ -972,17 +980,18 @@ void CPU::CALL_CC_IMM16()
     }
 }
 
-void CPU::push_16(const uint8_t msb, const uint8_t lsb)
+void CPU::RET()
 {
-    this->bus.write(this->reg.u16.SP--, msb);
-    this->bus.write(this->reg.u16.SP--, lsb);
+    this->reg.u16.PC = this->pop_16();
 }
 
-uint16_t CPU::pop_16()
+void CPU::RET_CC()
 {
-    const auto lsb = this->bus.read(++this->reg.u16.SP);
-    const auto msb = this->bus.read(++this->reg.u16.SP);
-    return u8_to_u16({msb, lsb});
+    if (this->check_condition_from_opcode())
+    {
+        this->cycles += 12;
+        this->RET();
+    }
 }
 
 auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool rotate_through_carry) noexcept
@@ -1245,6 +1254,19 @@ size_t CPU::cycle()
 CPU::Register CPU::get_register() const noexcept
 {
     return this->reg;
+}
+
+void CPU::push_16(const uint8_t msb, const uint8_t lsb)
+{
+    this->bus.write(this->reg.u16.SP--, msb);
+    this->bus.write(this->reg.u16.SP--, lsb);
+}
+
+uint16_t CPU::pop_16()
+{
+    const auto lsb = this->bus.read(++this->reg.u16.SP);
+    const auto msb = this->bus.read(++this->reg.u16.SP);
+    return u8_to_u16({msb, lsb});
 }
 
 CPU::Register8 CPU::get_register8(const OperandRegister8 reg)
