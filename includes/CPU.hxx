@@ -47,6 +47,11 @@ class CPU
         constexpr static Instruction CALL_IMM16();
         constexpr static Instruction CALL_CC_IMM16();
 
+        /* Stack manipulation */
+
+        constexpr static Instruction PUSH_R16();
+        constexpr static Instruction POP_R16();
+
         /* Prefixed instructions */
 
         constexpr static Instruction RRC_R8();
@@ -155,6 +160,14 @@ class CPU
         C  = 0b11,
     };
 
+    enum class PushPopRegisterOperand : uint8_t
+    {
+        BC = 0b00,
+        DE = 0b01,
+        HL = 0b10,
+        AF = 0b11,
+    };
+
     enum class InstructionBit : uint8_t
     {
         ZERO  = 0b000,
@@ -199,6 +212,8 @@ class CPU
     static Register8  get_register8(OperandRegister8 reg);
     static Register16 get_register16(OperandRegister16 reg);
 
+    [[nodiscard]] Register16 get_push_pop_register_from_opcode() const;
+
     [[nodiscard]] Register16        get_register16_dest_from_opcode() const;
     [[nodiscard]] static Register16 get_register16_dest_from_opcode(uint8_t opcode);
 
@@ -213,6 +228,20 @@ class CPU
 
     [[nodiscard]] bool check_condition_from_opcode() const;
     [[nodiscard]] bool check_condition_from_opcode(uint8_t opcode) const;
+
+    /**
+     * Push a 16 bit value into the stack.
+     *
+     * @param msb Most Significant Byte
+     * @param lsb Least Significant Byte
+     */
+    void     push_16(uint8_t msb, uint8_t lsb);
+
+    /**
+     * Pop a 16 bit value off the stack.
+     * @return uint16_t value
+     */
+    uint16_t pop_16();
 
     void NOP();
     /**
@@ -316,8 +345,6 @@ class CPU
      * @brief Call address n16 if condition cc is met.
      */
     void CALL_CC_IMM16();
-
-    void PUSH_16(uint8_t msb, uint8_t lsb);
 
     /**
      * @brief Perform an 8-bit rotate through the carry flag.
