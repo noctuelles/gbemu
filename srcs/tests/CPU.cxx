@@ -617,7 +617,7 @@ TEST_F(CPUTesting, LD_R8_R8)
         {
             if (i != 6) /* Skip the MEM_HL */
             {
-                auto [dest, src]       = CPU::get_register8_dest_src_from_opcode(opcode);
+                auto [dest, src]       = CPU::get_register8_pair_from_opcode(opcode);
                 this->cpu->reg.u8.*src = dist(gen);
                 this->execute_instruction({opcode});
                 ASSERT_EQ(this->cpu->reg.u8.*dest, this->cpu->reg.u8.*src);
@@ -771,7 +771,7 @@ TEST_F(CPUTesting, LD_R16_IMM16)
         std::mt19937                            gen{rd()};
         std::uniform_int_distribution<uint16_t> dist{0, UINT16_MAX};
         const auto                              val{dist(gen)};
-        const auto                              dest{CPU::get_register16_dest_from_opcode(opcode)};
+        const auto                              dest{CPU::get_register16_from_opcode(opcode)};
 
         this->execute_instruction(
             {opcode, static_cast<uint8_t>(val & 0xFFU), static_cast<uint8_t>((val >> 8) & 0xFFU)});

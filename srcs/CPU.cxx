@@ -7,6 +7,7 @@
  */
 
 #include <Utils.hxx>
+#include <format>
 #include <utility>
 
 const CPU::InstructionLookupTable CPU::inst_lookup{{
@@ -791,13 +792,14 @@ void CPU::NOP() {}
 
 void CPU::LD_R8_R8()
 {
-    const auto [dest, src] = this->get_register8_dest_src_from_opcode();
-    this->reg.u8.*dest     = this->reg.u8.*src;
+    const auto dest{this->get_register8(Register8Position::LEFTMOST)};
+    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
+    this->reg.u8.*dest = this->reg.u8.*src;
 }
 
 void CPU::LD_R8_IMM8()
 {
-    const auto dest = this->get_register8_dest_from_opcode();
+    const auto dest{this->get_register8(Register8Position::LEFTMOST)};
     const auto imm{this->bus.read(this->reg.u16.PC++)};
 
     this->reg.u8.*dest = imm;
@@ -805,7 +807,7 @@ void CPU::LD_R8_IMM8()
 
 void CPU::LD_R16_IMM16()
 {
-    const auto dest{this->get_register16_dest_from_opcode()};
+    const auto dest{this->get_register16()};
     const auto imm_lsb{this->bus.read(this->reg.u16.PC++)};
     const auto imm_msb{this->bus.read(this->reg.u16.PC++)};
 
@@ -815,7 +817,7 @@ void CPU::LD_R16_IMM16()
 void CPU::LD_R8_MEM_HL()
 {
     const auto src{this->get_register8_dest_from_opcode()};
-    const auto mem_val = this->bus.read(this->reg.u16.HL);
+    const auto mem_val{this->bus.read(this->reg.u16.HL)};
 
     this->reg.u8.*src = mem_val;
 }
@@ -826,6 +828,8 @@ void CPU::LD_MEM_HL_R8()
     this->bus.write(this->reg.u16.HL, this->reg.u8.*src);
 }
 
+void CPU::LD_A_MEM_R16() {}
+
 void CPU::LD_MEM_HL_IMM8()
 {
     this->bus.write(this->reg.u16.HL, this->bus.read(this->reg.u16.PC++));
@@ -833,16 +837,16 @@ void CPU::LD_MEM_HL_IMM8()
 
 void CPU::PUSH_R16()
 {
-    const auto src = this->get_push_pop_register_from_opcode();
-    this->push_16(u16_msb(this->reg.u16.*src), u16_lsb(this->reg.u16.*src));
+    const auto reg = this->get_register16_stack();
+    this->push_16(u16_msb(this->reg.u16.*reg), u16_lsb(this->reg.u16.*reg));
 }
 
 void CPU::POP_R16()
 {
-    const auto dest = this->get_push_pop_register_from_opcode();
-    const auto val  = this->pop_16();
+    const auto reg = this->get_register16_stack();
+    const auto val = this->pop_16();
 
-    this->reg.u16.*dest = val;
+    this->reg.u16.*reg = val;
 }
 
 void CPU::RES_R8()
@@ -883,7 +887,7 @@ void CPU::SET_MEM_HL()
 
 void CPU::AND_R8()
 {
-    const auto src = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
+    const auto src = get_register8(static_cast<Register8Placeholder>(this->opcode & 0b00000111));
 
     this->reg.u8.A &= this->reg.u8.*src;
     if (this->reg.u8.A == 0)
@@ -919,7 +923,7 @@ void CPU::OR_R8()
 
 void CPU::XOR_R8()
 {
-    const auto r_src = get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111));
+    const auto r_src = get_register8(static_cast<Register8Placeholder>(this->opcode & 0b00000111));
 
     this->reg.u8.A ^= this->reg.u8.*r_src;
     if (this->reg.u8.A == 0)
@@ -993,25 +997,25 @@ uint8_t CPU::STEP_IMM8(uint8_t value, const StepType type)
 
 void CPU::INC_R8()
 {
-    const auto dest = this->get_register8_dest_from_opcode();
-    this->reg.u8.*dest += this->STEP_IMM8(this->reg.u8.*dest, StepType::INCREMENT);
+    const auto operand = this->get_register8(Register8Position::LEFTMOST);
+    this->reg.u8.*operand += this->STEP_IMM8(this->reg.u8.*operand, StepType::INCREMENT);
 }
 
 void CPU::DEC_R8()
 {
-    const auto dest = this->get_register8_dest_from_opcode();
-    this->reg.u8.*dest += this->STEP_IMM8(this->reg.u8.*dest, StepType::DECREMENT);
+    const auto operand = this->get_register8(Register8Position::LEFTMOST);
+    this->reg.u8.*operand += this->STEP_IMM8(this->reg.u8.*operand, StepType::DECREMENT);
 }
 
 void CPU::INC_R16()
 {
-    const auto dest = this->get_register16_dest_from_opcode();
-    this->reg.u16.*dest += 1;
+    const auto operand = this->get_register16();
+    this->reg.u16.*operand += 1;
 }
 
 void CPU::DEC_R16()
 {
-    const auto dest = this->get_register16_dest_from_opcode();
+    const auto dest = this->get_register16();
     this->reg.u16.*dest -= 1;
 }
 
@@ -1029,7 +1033,7 @@ void CPU::DEC_MEM_HL()
 
 void CPU::ILL()
 {
-    throw IllegalInstruction();
+    throw IllegalInstruction(this->opcode);
 }
 
 void CPU::PREFIX()
@@ -1052,7 +1056,7 @@ void CPU::JP_HL()
 
 void CPU::JP_CC_IMM16()
 {
-    if (this->check_condition_from_opcode())
+    if (this->check_condition_is_met())
     {
         this->cycles += 4;
         this->JP_IMM16();
@@ -1074,7 +1078,7 @@ void CPU::CALL_IMM16()
 
 void CPU::CALL_CC_IMM16()
 {
-    if (this->check_condition_from_opcode())
+    if (this->check_condition_is_met())
     {
         this->cycles += 12;
         this->CALL_IMM16();
@@ -1093,7 +1097,7 @@ void CPU::JR_IMM8()
 
 void CPU::JR_CC_IMM8()
 {
-    if (this->check_condition_from_opcode())
+    if (this->check_condition_is_met())
     {
         this->cycles += 4;
         this->JR_IMM8();
@@ -1111,7 +1115,7 @@ void CPU::RET()
 
 void CPU::RET_CC()
 {
-    if (this->check_condition_from_opcode())
+    if (this->check_condition_is_met())
     {
         this->cycles += 12;
         this->RET();
@@ -1164,8 +1168,8 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
 
 void CPU::RLC_R8()
 {
-    const auto src    = this->get_register8_src_from_opcode();
-    this->reg.u8.*src = this->ROTATE(this->reg.u8.*src, RotateDirection::LEFT, false);
+    const auto operand    = this->get_register8(Register8Position::RIGHTMOST);
+    this->reg.u8.*operand = this->ROTATE(this->reg.u8.*operand, RotateDirection::LEFT, false);
 }
 
 void CPU::RLC_MEM_HL()
@@ -1177,8 +1181,8 @@ void CPU::RLC_MEM_HL()
 
 void CPU::RRC_R8()
 {
-    const auto src    = this->get_register8_src_from_opcode();
-    this->reg.u8.*src = this->ROTATE(this->reg.u8.*src, RotateDirection::RIGHT, false);
+    const auto operand    = this->get_register8(Register8Position::RIGHTMOST);
+    this->reg.u8.*operand = this->ROTATE(this->reg.u8.*operand, RotateDirection::RIGHT, false);
 }
 
 void CPU::RRC_MEM_HL()
@@ -1190,8 +1194,8 @@ void CPU::RRC_MEM_HL()
 
 void CPU::RL_R8()
 {
-    const auto src    = this->get_register8_src_from_opcode();
-    this->reg.u8.*src = this->ROTATE(this->reg.u8.*src, RotateDirection::LEFT, true);
+    const auto operand    = this->get_register8(Register8Position::RIGHTMOST);
+    this->reg.u8.*operand = this->ROTATE(this->reg.u8.*operand, RotateDirection::LEFT, true);
 }
 void CPU::RL_MEM_HL()
 {
@@ -1202,8 +1206,8 @@ void CPU::RL_MEM_HL()
 
 void CPU::RR_R8()
 {
-    const auto src    = this->get_register8_src_from_opcode();
-    this->reg.u8.*src = this->ROTATE(this->reg.u8.*src, RotateDirection::RIGHT, true);
+    const auto operand    = this->get_register8(Register8Position::RIGHTMOST);
+    this->reg.u8.*operand = this->ROTATE(this->reg.u8.*operand, RotateDirection::RIGHT, true);
 }
 
 void CPU::RR_MEM_HL()
@@ -1255,7 +1259,7 @@ auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection sh
 
 void CPU::SRA_R8()
 {
-    const auto src    = this->get_register8_src_from_opcode();
+    const auto src    = this->get_register8(Register8Position::RIGHTMOST);
     this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftType::ARITHMETIC, ShiftDirection::RIGHT);
 }
 
@@ -1268,7 +1272,7 @@ void CPU::SRA_MEM_HL()
 
 void CPU::SLA_R8()
 {
-    const auto src    = this->get_register8_src_from_opcode();
+    const auto src    = this->get_register8(Register8Position::RIGHTMOST);
     this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftType::ARITHMETIC, ShiftDirection::LEFT);
 }
 
@@ -1281,7 +1285,7 @@ void CPU::SLA_MEM_HL()
 
 void CPU::SRL_R8()
 {
-    const auto src    = this->get_register8_src_from_opcode();
+    const auto src    = this->get_register8(Register8Position::RIGHTMOST);
     this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftType::LOGICAL, ShiftDirection::RIGHT);
 }
 
@@ -1314,7 +1318,7 @@ auto CPU::SWAP(uint8_t val)
 
 void CPU::SWAP_R8()
 {
-    const auto src    = this->get_register8_src_from_opcode();
+    const auto src    = this->get_register8(Register8Position::RIGHTMOST);
     this->reg.u8.*src = this->SWAP(this->reg.u8.*src);
 }
 
@@ -1348,7 +1352,7 @@ void CPU::BIT_MEM_HL()
 
 void CPU::BIT_R8()
 {
-    const auto src = this->get_register8_src_from_opcode();
+    const auto src = this->get_register8(Register8Position::RIGHTMOST);
     const auto bit = static_cast<uint8_t>((this->opcode & 0b00111000U) >> 3U);
     this->BIT(this->reg.u8.*src, bit);
 }
@@ -1380,6 +1384,11 @@ CPU::Register CPU::get_register() const noexcept
     return this->reg;
 }
 
+uint8_t CPU::get_b3() const
+{
+    return (this->opcode >> 3) & 0b00000111;
+}
+
 void CPU::push_16(const uint8_t msb, const uint8_t lsb)
 {
     this->bus.write(this->reg.u16.SP--, msb);
@@ -1393,125 +1402,96 @@ uint16_t CPU::pop_16()
     return u8_to_u16({msb, lsb});
 }
 
-CPU::Register8 CPU::get_register8(const OperandRegister8 reg)
+CPU::Register8 CPU::get_register8(const Register8Position shift) const
 {
-    switch (reg)
+    switch (static_cast<Register8Placeholder>((this->opcode >> static_cast<uint8_t>(shift)) & 0b00000011U))
     {
-        case OperandRegister8::A:
+        case Register8Placeholder::A:
             return &Register::U8::A;
-        case OperandRegister8::B:
+        case Register8Placeholder::B:
             return &Register::U8::B;
-        case OperandRegister8::C:
+        case Register8Placeholder::C:
             return &Register::U8::C;
-        case OperandRegister8::D:
+        case Register8Placeholder::D:
             return &Register::U8::D;
-        case OperandRegister8::E:
+        case Register8Placeholder::E:
             return &Register::U8::E;
-        case OperandRegister8::H:
+        case Register8Placeholder::H:
             return &Register::U8::H;
-        case OperandRegister8::L:
+        case Register8Placeholder::L:
             return &Register::U8::L;
         default:
             throw BadRegister();
     }
 }
 
-CPU::Register16 CPU::get_register16(const OperandRegister16 reg)
+CPU::Register16 CPU::get_register16() const
 {
-    switch (reg)
+    switch (static_cast<Register16Placeholder>((this->opcode & 0b00110000U) >> 4))
     {
-        case OperandRegister16::BC:
+        case Register16Placeholder::BC:
             return &Register::U16::BC;
-        case OperandRegister16::DE:
+        case Register16Placeholder::DE:
             return &Register::U16::DE;
-        case OperandRegister16::HL:
+        case Register16Placeholder::HL:
             return &Register::U16::HL;
-        case OperandRegister16::SP:
+        case Register16Placeholder::SP:
             return &Register::U16::SP;
         default:
             throw BadRegister();
     }
 }
 
-CPU::Register16 CPU::get_push_pop_register_from_opcode() const
+CPU::Register16 CPU::get_register16_memory() const
 {
-    switch (static_cast<PushPopRegisterOperand>((this->opcode & 0b00110000U) >> 4))
+    switch (static_cast<Register16MemoryPlaceholder>((this->opcode & 0b00110000U) >> 4))
     {
-        case PushPopRegisterOperand::BC:
+        case Register16MemoryPlaceholder::BC:
             return &Register::U16::BC;
-        case PushPopRegisterOperand::DE:
+        case Register16MemoryPlaceholder::DE:
             return &Register::U16::DE;
-        case PushPopRegisterOperand::HL:
+        case Register16MemoryPlaceholder::HL_PLUS:
+        case Register16MemoryPlaceholder::HL_MINUS:
             return &Register::U16::HL;
-        case PushPopRegisterOperand::AF:
+        default:
+            throw BadRegister();
+    }
+}
+
+CPU::Register16 CPU::get_register16_stack() const
+{
+    switch (static_cast<Register16StackPlaceholder>((this->opcode & 0b00110000U) >> 4))
+    {
+        case Register16StackPlaceholder::BC:
+            return &Register::U16::BC;
+        case Register16StackPlaceholder::DE:
+            return &Register::U16::DE;
+        case Register16StackPlaceholder::HL:
+            return &Register::U16::HL;
+        case Register16StackPlaceholder::AF:
             return &Register::U16::AF;
         default:
             throw BadRegister();
     }
 }
 
-CPU::Register16 CPU::get_register16_dest_from_opcode() const
+bool CPU::check_condition_is_met() const
 {
-    return get_register16(static_cast<OperandRegister16>((this->opcode >> 4) & 0b00000011U));
-}
-
-CPU::Register16 CPU::get_register16_dest_from_opcode(const uint8_t opcode)
-{
-    return get_register16(static_cast<OperandRegister16>((opcode >> 4) & 0b00000011U));
-}
-
-CPU::Register8 CPU::get_register8_dest_from_opcode() const
-{
-    return get_register8(static_cast<OperandRegister8>((this->opcode >> 3) & 0b00000111U));
-}
-
-CPU::Register8 CPU::get_register8_dest_from_opcode(const uint8_t opcode)
-{
-    return get_register8(static_cast<OperandRegister8>((opcode >> 3) & 0b00000111U));
-}
-
-CPU::Register8 CPU::get_register8_src_from_opcode() const
-{
-    return get_register8(static_cast<OperandRegister8>(this->opcode & 0b00000111U));
-}
-
-CPU::Register8 CPU::get_register8_src_from_opcode(const uint8_t opcode)
-{
-    return get_register8(static_cast<OperandRegister8>(opcode & 0b00000111U));
-}
-
-std::pair<CPU::Register8, CPU::Register8> CPU::get_register8_dest_src_from_opcode() const
-{
-    return std::make_pair(this->get_register8_dest_from_opcode(), this->get_register8_src_from_opcode());
-}
-
-std::pair<CPU::Register8, CPU::Register8> CPU::get_register8_dest_src_from_opcode(uint8_t opcode)
-{
-    return std::make_pair(get_register8_dest_from_opcode(opcode), get_register8_src_from_opcode(opcode));
-}
-
-bool CPU::check_condition_from_opcode() const
-{
-    return check_condition_from_opcode(this->opcode);
-}
-
-bool CPU::check_condition_from_opcode(const uint8_t opcode) const
-{
-    const auto condition     = static_cast<ConditionOperand>((opcode >> 3) & 0b00000011U);
+    const auto condition     = static_cast<ConditionalPlaceholder>((this->opcode >> 3) & 0b00000011U);
     auto       condition_met = false;
 
     switch (condition)
     {
-        case ConditionOperand::C:
+        case ConditionalPlaceholder::C:
             condition_met = (this->reg.u8.F & Flags::CARRY) != 0;
             break;
-        case ConditionOperand::Z:
+        case ConditionalPlaceholder::Z:
             condition_met = (this->reg.u8.F & Flags::ZERO) != 0;
             break;
-        case ConditionOperand::NC:
+        case ConditionalPlaceholder::NC:
             condition_met = (this->reg.u8.F & Flags::CARRY) == 0;
             break;
-        case ConditionOperand::NZ:
+        case ConditionalPlaceholder::NZ:
             condition_met = (this->reg.u8.F & Flags::ZERO) == 0;
             break;
     }

@@ -2,15 +2,14 @@
 #define CPU_H
 
 #include <array>
-#include <functional>
-#include <string>
+#include <format>
+#include <stdexcept>
 
 #include "Bus.hxx"
 
 #ifndef TEST_FRIENDS
 #define TEST_FRIENDS
 #endif
-
 class CPU
 {
   public:
@@ -129,8 +128,12 @@ class CPU
         [[nodiscard]] const char* what() const noexcept override;
     };
 
-    class IllegalInstruction final : public std::exception
+    struct IllegalInstruction final : std::runtime_error
     {
+        explicit IllegalInstruction(uint8_t opcode)
+            : std::runtime_error(std::format("Illegal instruction ({:#x})", opcode))
+        {
+        }
     };
 
     class InstructionNotImplemented final : public std::exception
@@ -145,7 +148,7 @@ class CPU
     [[nodiscard]] Register get_register() const noexcept;
 
   private:
-    enum class OperandRegister16 : uint8_t
+    enum class Register16Placeholder : uint8_t
     {
         BC = 0b00,
         DE = 0b01,
@@ -153,7 +156,7 @@ class CPU
         SP = 0b11,
     };
 
-    enum class PushPopRegisterOperand : uint8_t
+    enum class Register16StackPlaceholder : uint8_t
     {
         BC = 0b00,
         DE = 0b01,
@@ -161,7 +164,15 @@ class CPU
         AF = 0b11,
     };
 
-    enum class OperandRegister8 : uint8_t
+    enum class Register16MemoryPlaceholder : uint8_t
+    {
+        BC       = 0b00,
+        DE       = 0b01,
+        HL_PLUS  = 0b10,
+        HL_MINUS = 0b11,
+    };
+
+    enum class Register8Placeholder : uint8_t
     {
         A = 0b111,
         B = 0b000,
@@ -172,7 +183,7 @@ class CPU
         L = 0b101
     };
 
-    enum class ConditionOperand : uint8_t
+    enum class ConditionalPlaceholder : uint8_t
     {
         NZ = 0b00,
         Z  = 0b01,
@@ -180,7 +191,7 @@ class CPU
         C  = 0b11,
     };
 
-    enum class InstructionBit : uint8_t
+    enum class BitIndexPlaceholder : uint8_t
     {
         ZERO  = 0b000,
         ONE   = 0b001,
@@ -227,25 +238,18 @@ class CPU
         };
     };
 
-    static Register8  get_register8(OperandRegister8 reg);
-    static Register16 get_register16(OperandRegister16 reg);
+    enum class Register8Position : uint8_t
+    {
+        LEFTMOST  = 3U,
+        RIGHTMOST = 0U,
+    };
 
-    [[nodiscard]] Register16 get_push_pop_register_from_opcode() const;
-
-    [[nodiscard]] Register16        get_register16_dest_from_opcode() const;
-    [[nodiscard]] static Register16 get_register16_dest_from_opcode(uint8_t opcode);
-
-    [[nodiscard]] Register8        get_register8_dest_from_opcode() const;
-    [[nodiscard]] static Register8 get_register8_dest_from_opcode(uint8_t opcode);
-
-    [[nodiscard]] Register8        get_register8_src_from_opcode() const;
-    [[nodiscard]] static Register8 get_register8_src_from_opcode(uint8_t opcode);
-
-    [[nodiscard]] std::pair<Register8, Register8>        get_register8_dest_src_from_opcode() const;
-    [[nodiscard]] static std::pair<Register8, Register8> get_register8_dest_src_from_opcode(uint8_t opcode);
-
-    [[nodiscard]] bool check_condition_from_opcode() const;
-    [[nodiscard]] bool check_condition_from_opcode(uint8_t opcode) const;
+    [[nodiscard]] uint8_t    get_b3() const;
+    [[nodiscard]] Register8  get_register8(Register8Position shift) const;
+    [[nodiscard]] Register16 get_register16() const;
+    [[nodiscard]] Register16 get_register16_memory() const;
+    [[nodiscard]] Register16 get_register16_stack() const;
+    [[nodiscard]] bool       check_condition_is_met() const;
 
     /**
      * Push a 16 bit value into the stack.
@@ -292,6 +296,11 @@ class CPU
      * @brief Load from 16-bit address to 8-bit register A.
      */
     void LD_A_MEM_16();
+
+    /**
+     * @brief Load value in register A from the byte pointed to by register r16.
+     */
+    void LD_A_MEM_R16();
 
     /**
      * @brief Load from 8-bit immediate to memory pointed by HL.
