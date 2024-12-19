@@ -11,9 +11,6 @@
 #define TEST_FRIENDS
 #endif
 
-#define REG16_PAIR_GET(r1, r2) (static_cast<uint16_t>((r1 << 8) | r2))
-#define REG16_PAIR_SET(val, r1, r2) (r1 = static_cast<uint8_t>(val >> 8), r2 = static_cast<uint8_t>(val & 0xFF))
-
 class CPU
 {
   public:
@@ -38,6 +35,15 @@ class CPU
         constexpr static Instruction ILL();
         constexpr static Instruction PREFIX();
 
+        /* Arithmetic */
+
+        constexpr static Instruction INC_R8();
+        constexpr static Instruction DEC_R8();
+        constexpr static Instruction INC_R16();
+        constexpr static Instruction DEC_R16();
+        constexpr static Instruction INC_MEM_HL();
+        constexpr static Instruction DEC_MEM_HL();
+
         /* Control flow */
 
         constexpr static Instruction JP_IMM16();
@@ -49,6 +55,9 @@ class CPU
 
         constexpr static Instruction RET();
         constexpr static Instruction RET_CC();
+
+        constexpr static Instruction JR_IMM8();
+        constexpr static Instruction JR_CC_IMM8();
 
         /* Stack manipulation */
 
@@ -144,6 +153,14 @@ class CPU
         SP = 0b11,
     };
 
+    enum class PushPopRegisterOperand : uint8_t
+    {
+        BC = 0b00,
+        DE = 0b01,
+        HL = 0b10,
+        AF = 0b11,
+    };
+
     enum class OperandRegister8 : uint8_t
     {
         A = 0b111,
@@ -161,14 +178,6 @@ class CPU
         Z  = 0b01,
         NC = 0b10,
         C  = 0b11,
-    };
-
-    enum class PushPopRegisterOperand : uint8_t
-    {
-        BC = 0b00,
-        DE = 0b01,
-        HL = 0b10,
-        AF = 0b11,
     };
 
     enum class InstructionBit : uint8_t
@@ -199,6 +208,12 @@ class CPU
     {
         LOGICAL,
         ARITHMETIC
+    };
+
+    enum class StepType : bool
+    {
+        INCREMENT,
+        DECREMENT,
     };
 
     struct Flags
@@ -238,7 +253,7 @@ class CPU
      * @param msb Most Significant Byte
      * @param lsb Least Significant Byte
      */
-    void     push_16(uint8_t msb, uint8_t lsb);
+    void push_16(uint8_t msb, uint8_t lsb);
 
     /**
      * Pop a 16 bit value off the stack.
@@ -313,10 +328,33 @@ class CPU
      */
     void ADD_A_R8();
 
+    uint8_t STEP_IMM8(uint8_t value, StepType type);
     /**
-     * @brief Increment by one an 8-bit register.
+     * @brief Increment value in register r8 by 1.
      */
     void INC_R8();
+    /**
+     * @brief Decrement value in register r8 by 1.
+     */
+    void DEC_R8();
+    /**
+     * @brief Increment value in register r16 by 1.
+     */
+    void INC_R16();
+    /**
+     * @brief Decrement value in register r16 by 1.
+     */
+    void DEC_R16();
+
+    /**
+     * @brief Increment value pointer by register HL by 1.
+     */
+    void INC_MEM_HL();
+
+    /**
+     * @brief Decrement value pointer by register HL by 1.
+     */
+    void DEC_MEM_HL();
 
     /**
      * @brief CB Prefix.
@@ -348,6 +386,17 @@ class CPU
      * @brief Call address n16 if condition cc is met.
      */
     void CALL_CC_IMM16();
+
+    /**
+     * @brief Relative Jump to address n16. The address is encoded as a signed 8-bit offset from the address immediately
+     * following the JR instruction, so the target address n16 must be between -128 and 127 bytes away.
+     */
+    void JR_IMM8();
+
+    /**
+     * @brief Relative Jump to address n16 if condition cc is met.
+     */
+    void JR_CC_IMM8();
 
     /**
      * @brief Return from subroutine. This is basically a POP PC (if such an instruction existed).

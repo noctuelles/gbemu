@@ -77,7 +77,7 @@ class CPUTesting : public ::testing::Test
         while (cpu->cycle() != 0);
     }
 
-    static auto generate_address(std::pair<uint16_t, uint16_t>&& range = std::make_pair(0, Bus::MEMORY_SIZE - 1))
+    static auto generate_address(std::pair<uint16_t, uint16_t>&& range = std::make_pair(0, Bus::RAM_SIZE - 1))
     {
         std::random_device                      rd{};
         std::mt19937                            gen{rd()};
@@ -678,7 +678,7 @@ TEST_F(CPUTesting, LD_R8_MEM_HL)
         std::random_device                      rd{};
         std::mt19937                            gen{rd()};
         std::uniform_int_distribution<uint8_t>  dist_u8{0, UINT8_MAX};
-        std::uniform_int_distribution<uint16_t> dist_u16{1, Bus::MEMORY_SIZE - 1};
+        std::uniform_int_distribution<uint16_t> dist_u16{1, Bus::RAM_SIZE - 1};
         const auto                              val{dist_u8(gen)};
         const auto                              addr{dist_u16(gen)};
         const auto                              dest{CPU::get_register8_dest_from_opcode(opcode)};
@@ -718,7 +718,7 @@ TEST_F(CPUTesting, LD_MEM_HL_R8)
         std::random_device                      rd{};
         std::mt19937                            gen{rd()};
         std::uniform_int_distribution<uint8_t>  dist_u8{0, UINT8_MAX};
-        std::uniform_int_distribution<uint16_t> dist_u16{1, Bus::MEMORY_SIZE - 1};
+        std::uniform_int_distribution<uint16_t> dist_u16{1, Bus::RAM_SIZE - 1};
 
         const auto val  = dist_u8(gen);
         const auto addr = dist_u16(gen);

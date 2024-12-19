@@ -8,7 +8,7 @@
 #include <string_view>
 #include <unordered_map>
 
-constexpr std::unordered_map<std::uint8_t, std::string_view> old_licensee_code{{
+const std::unordered_map<std::uint8_t, std::string_view> old_licensee_code{{
     {0x00, "None"},
     {0x01, "Nintendo"},
     {0x08, "Capcom"},
@@ -157,7 +157,7 @@ constexpr std::unordered_map<std::uint8_t, std::string_view> old_licensee_code{{
     {0xFF, "LJN"},
 }};
 
-constexpr std::unordered_map<std::string_view, std::string_view> new_licensee_code{{
+const std::unordered_map<std::string_view, std::string_view> new_licensee_code{{
     {"00", "None"},
     {"01", "Nintendo Research & Development 1"},
     {"08", "Capcom"},

@@ -6,24 +6,23 @@
 #define BUS_HXX
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
-#include <span>
 
 class Bus
 {
   public:
+    static constexpr size_t RAM_SIZE = 1 << 16;
+
     Bus();
     ~Bus();
 
-    static constexpr size_t MEMORY_SIZE = 8192;
-
-    [[nodiscard]] uint8_t  read(uint16_t addr) const;
-
-    void write(uint16_t addr, uint8_t data);
-    void write(uint16_t addr, std::initializer_list<uint8_t> data);
+    [[nodiscard]] uint8_t read(uint16_t addr) const;
+    void                  write(uint16_t addr, uint8_t data);
+    void                  write(uint16_t addr, std::initializer_list<uint8_t> data);
 
   private:
-    std::array<uint8_t, MEMORY_SIZE> memory;
+    std::array<uint8_t, RAM_SIZE> ram{};
 };
 
 #endif  // BUS_HXX
