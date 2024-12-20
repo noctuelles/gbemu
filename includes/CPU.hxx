@@ -39,7 +39,9 @@ class CPU
         constexpr static Instruction ADC_A_R8();
         constexpr static Instruction ADC_A_MEM_HL();
         constexpr static Instruction ADD_A_R8();
+        constexpr static Instruction ADD_A_IMM8();
         constexpr static Instruction ADD_A_MEM_HL();
+        constexpr static Instruction ADD_HL_R16();
 
         constexpr static Instruction INC_R8();
         constexpr static Instruction DEC_R8();

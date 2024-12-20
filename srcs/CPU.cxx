@@ -20,7 +20,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::LD_R8_IMM8(),     // 0x06
     {},                            // 0x07
     {},                            // 0x08
-    {},                            // 0x09
+    Instruction::ADD_HL_R16(),     // 0x09
     {},                            // 0x0A
     Instruction::DEC_R16(),        // 0x0B
     Instruction::INC_R8(),         // 0x0C
@@ -36,7 +36,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::LD_R8_IMM8(),     // 0x16
     {},                            // 0x17
     Instruction::JR_IMM8(),        // 0x18
-    {},                            // 0x19
+    Instruction::ADD_HL_R16(),     // 0x19
     {},                            // 0x1A
     Instruction::DEC_R16(),        // 0x1B
     Instruction::INC_R8(),         // 0x1C
@@ -52,7 +52,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::LD_R8_IMM8(),     // 0x26
     {},                            // 0x27
     Instruction::JR_CC_IMM8(),     // 0x28
-    {},                            // 0x29
+    Instruction::ADD_HL_R16(),     // 0x29
     {},                            // 0x2A
     Instruction::DEC_R16(),        // 0x2B
     Instruction::INC_R8(),         // 0x2C
@@ -68,7 +68,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0x36
     {},                            // 0x37
     Instruction::JR_CC_IMM8(),     // 0x38
-    {},                            // 0x39
+    Instruction::ADD_HL_R16(),     // 0x39
     {},                            // 0x3A
     Instruction::DEC_R16(),        // 0x3B
     Instruction::INC_R8(),         // 0x3C
@@ -209,7 +209,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::JP_IMM16(),       // 0xC3
     Instruction::CALL_CC_IMM16(),  // 0xC4
     Instruction::PUSH_R16(),       // 0xC5
-    {},                            // 0xC6
+    Instruction::ADD_A_IMM8(),     // 0xC6
     {},                            // 0xC7
     Instruction::RET_CC(),         // 0xC8
     Instruction::RET(),            // 0xC9
@@ -591,9 +591,29 @@ constexpr CPU::Instruction CPU::Instruction::ADC_A_R8()
     return Instruction{4U, &CPU::ADC_A_R8};
 }
 
+constexpr CPU::Instruction CPU::Instruction::ADC_A_MEM_HL()
+{
+    return Instruction{4U, &CPU::ADC_A_MEM_HL};
+}
+
 constexpr CPU::Instruction CPU::Instruction::ADD_A_R8()
 {
     return Instruction{4U, &CPU::ADD_A_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::ADD_A_IMM8()
+{
+    return Instruction{4U, &CPU::ADD_A_IMM8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::ADD_A_MEM_HL()
+{
+    return Instruction{4U, &CPU::ADD_A_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::ADD_HL_R16()
+{
+    return Instruction{8U, &CPU::ADD_HL_R16};
 }
 
 constexpr CPU::Instruction CPU::Instruction::INC_R8()
@@ -949,7 +969,30 @@ void CPU::XOR_R8()
     this->reg.u8.F &= ~Flags::CARRY;
 }
 
-uint16_t CPU::ADD_16(const uint16_t a, const uint16_t b) {}
+uint16_t CPU::ADD_16(const uint16_t a, const uint16_t b)
+{
+    uint32_t result32{};
+
+    if (((a & 0x7FF) + (b & 0x7FF)) & 0x800 != 0)
+    {
+        this->reg.u8.F |= Flags::HALF_CARRY;
+    }
+    else
+    {
+        this->reg.u8.F &= ~Flags::HALF_CARRY;
+    }
+    result32 = a + b;
+    if ((result32 & 0x1000) != 0)
+    {
+        this->reg.u8.F |= Flags::CARRY;
+    }
+    else
+    {
+        this->reg.u8.F &= ~Flags::CARRY;
+    }
+    this->reg.u8.F &= ~Flags::SUBTRACT;
+    return static_cast<uint16_t>(result32);
+}
 
 uint8_t CPU::ADD_8(const uint8_t a, const uint8_t b, bool add_carry)
 {
@@ -1010,6 +1053,7 @@ void CPU::ADD_A_IMM8()
 void CPU::ADD_HL_R16()
 {
     const auto operand{this->get_register16()};
+    this->reg.u16.HL = this->ADD_16(this->reg.u16.HL, this->reg.u16.*operand);
 }
 
 void CPU::ADC_A_R8()
