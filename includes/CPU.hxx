@@ -36,6 +36,11 @@ class CPU
 
         /* Arithmetic */
 
+        constexpr static Instruction ADC_A_R8();
+        constexpr static Instruction ADC_A_MEM_HL();
+        constexpr static Instruction ADD_A_R8();
+        constexpr static Instruction ADD_A_MEM_HL();
+
         constexpr static Instruction INC_R8();
         constexpr static Instruction DEC_R8();
         constexpr static Instruction INC_R16();
@@ -332,10 +337,37 @@ class CPU
      */
     void XOR_R8();
 
+    uint16_t ADD_16(uint16_t a, uint16_t b);
+    uint8_t  ADD_8(uint8_t a, uint8_t b, bool add_carry);
     /**
-     * @brief ADD from 8-bit register to register A.
+     * @brief Add the value in r8 to A.
      */
     void ADD_A_R8();
+
+    /**
+     * @brief Add the byte pointed to by HL to A.
+     */
+    void ADD_A_MEM_HL();
+
+    /**
+     * @brief Add the value imm8 to A.
+     */
+    void ADD_A_IMM8();
+
+    /**
+     * @brief Add the value in r16 to HL.
+     */
+    void ADD_HL_R16();
+
+    /**
+     * @brief Add the value in r8 plus the carry flag to A.
+     */
+    void ADC_A_R8();
+
+    /**
+     * @brief Add the byte pointed to by HL plus the carry flag to A.
+     */
+    void ADC_A_MEM_HL();
 
     uint8_t STEP_IMM8(uint8_t value, StepType type);
     /**

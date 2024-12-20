@@ -35,7 +35,8 @@ target_link_libraries(
 
 add_executable(gbemu_test srcs/tests/CPU.cxx
         srcs/CPU.cxx
-        srcs/Bus.cxx)
+        srcs/Bus.cxx
+        srcs/tests/Integration.cxx)
 
 target_link_libraries(
         gbemu_test

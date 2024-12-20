@@ -139,22 +139,22 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::LD_R8_R8(),       // 0x7D
     Instruction::LD_R8_MEM_HL(),   // 0x7E
     Instruction::LD_R8_R8(),       // 0x7F
-    {},                            // 0x80
-    {},                            // 0x81
-    {},                            // 0x82
-    {},                            // 0x83
-    {},                            // 0x84
-    {},                            // 0x85
-    {},                            // 0x86
-    {},                            // 0x87
-    {},                            // 0x88
-    {},                            // 0x89
-    {},                            // 0x8A
-    {},                            // 0x8B
-    {},                            // 0x8C
-    {},                            // 0x8D
-    {},                            // 0x8E
-    {},                            // 0x8F
+    Instruction::ADD_A_R8(),       // 0x80
+    Instruction::ADD_A_R8(),       // 0x81
+    Instruction::ADD_A_R8(),       // 0x82
+    Instruction::ADD_A_R8(),       // 0x83
+    Instruction::ADD_A_R8(),       // 0x84
+    Instruction::ADD_A_R8(),       // 0x85
+    Instruction::ADD_A_MEM_HL(),   // 0x86
+    Instruction::ADD_A_R8(),       // 0x87
+    Instruction::ADC_A_R8(),       // 0x88
+    Instruction::ADC_A_R8(),       // 0x8b
+    Instruction::ADC_A_R8(),       // 0x8A
+    Instruction::ADC_A_R8(),       // 0x8B
+    Instruction::ADC_A_R8(),       // 0x8C
+    Instruction::ADC_A_R8(),       // 0x8D
+    Instruction::ADC_A_MEM_HL(),   // 0x8E
+    Instruction::ADC_A_R8(),       // 0x90
     {},                            // 0x90
     {},                            // 0x91
     {},                            // 0x92
@@ -586,6 +586,16 @@ constexpr CPU::Instruction CPU::Instruction::PREFIX()
     return Instruction{4U, &CPU::PREFIX};
 }
 
+constexpr CPU::Instruction CPU::Instruction::ADC_A_R8()
+{
+    return Instruction{4U, &CPU::ADC_A_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::ADD_A_R8()
+{
+    return Instruction{4U, &CPU::ADD_A_R8};
+}
+
 constexpr CPU::Instruction CPU::Instruction::INC_R8()
 {
     return Instruction{4U, &CPU::INC_R8};
@@ -837,13 +847,13 @@ void CPU::LD_MEM_HL_IMM8()
 
 void CPU::PUSH_R16()
 {
-    const auto reg = this->get_register16_stack();
+    const auto reg{this->get_register16_stack()};
     this->push_16(u16_msb(this->reg.u16.*reg), u16_lsb(this->reg.u16.*reg));
 }
 
 void CPU::POP_R16()
 {
-    const auto reg = this->get_register16_stack();
+    const auto reg{this->get_register16_stack()};
     const auto val = this->pop_16();
 
     this->reg.u16.*reg = val;
@@ -851,16 +861,16 @@ void CPU::POP_R16()
 
 void CPU::RES_R8()
 {
-    const auto src = this->get_register8_src_from_opcode();
-    const auto bit = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
+    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
+    const auto bit{this->get_b3()};
 
     this->reg.u8.*src &= ~(1 << bit);
 }
 
 void CPU::RES_MEM_HL()
 {
-    const auto bit     = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
-    auto       mem_val = this->bus.read(this->reg.u16.HL);
+    const auto bit{this->get_b3()};
+    auto       mem_val{this->bus.read(this->reg.u16.HL)};
 
     mem_val &= ~(1 << bit);
 
@@ -869,15 +879,15 @@ void CPU::RES_MEM_HL()
 
 void CPU::SET_R8()
 {
-    const auto src = this->get_register8_src_from_opcode();
-    const auto bit = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
+    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
+    const auto bit{this->get_b3()};
 
     this->reg.u8.*src |= 1U << bit;
 }
 
 void CPU::SET_MEM_HL()
 {
-    const auto bit     = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
+    const auto bit{this->get_b3()};
     auto       mem_val = this->bus.read(this->reg.u16.HL);
 
     mem_val |= 1U << bit;
@@ -887,7 +897,7 @@ void CPU::SET_MEM_HL()
 
 void CPU::AND_R8()
 {
-    const auto src = get_register8(static_cast<Register8Placeholder>(this->opcode & 0b00000111));
+    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
 
     this->reg.u8.A &= this->reg.u8.*src;
     if (this->reg.u8.A == 0)
@@ -905,7 +915,7 @@ void CPU::AND_R8()
 
 void CPU::OR_R8()
 {
-    const auto src = this->get_register8_src_from_opcode();
+    const auto src = get_register8(Register8Position::RIGHTMOST);
 
     this->reg.u8.A |= this->reg.u8.*src;
     if (this->reg.u8.A == 0)
@@ -923,7 +933,7 @@ void CPU::OR_R8()
 
 void CPU::XOR_R8()
 {
-    const auto r_src = get_register8(static_cast<Register8Placeholder>(this->opcode & 0b00000111));
+    const auto r_src{get_register8(Register8Position::RIGHTMOST)};
 
     this->reg.u8.A ^= this->reg.u8.*r_src;
     if (this->reg.u8.A == 0)
@@ -939,13 +949,16 @@ void CPU::XOR_R8()
     this->reg.u8.F &= ~Flags::CARRY;
 }
 
-void CPU::ADD_A_R8()
-{
-    const auto src        = this->get_register8_src_from_opcode();
-    uint8_t    half_carry = 0;
+uint16_t CPU::ADD_16(const uint16_t a, const uint16_t b) {}
 
-    half_carry = ((this->reg.u8.A & 0x0F) + (this->reg.u8.*src & 0x0F)) & 0x10;
-    if (half_carry)
+uint8_t CPU::ADD_8(const uint8_t a, const uint8_t b, bool add_carry)
+{
+    uint16_t result16{};
+    uint8_t  result8{};
+
+    add_carry = this->reg.u8.F & Flags::CARRY ? true : false;
+
+    if (((a & 0b1111) + (b & 0b1111) + add_carry) & 0b10000 != 0)
     {
         this->reg.u8.F |= Flags::HALF_CARRY;
     }
@@ -953,15 +966,62 @@ void CPU::ADD_A_R8()
     {
         this->reg.u8.F &= ~Flags::HALF_CARRY;
     }
-    if (__builtin_add_overflow(this->reg.u8.A, this->reg.u8.*src, &this->reg.u8.A))
+    result16 = a + b + add_carry;
+    if ((result16 & 0b100000000U) != 0)
     {
         this->reg.u8.F |= Flags::CARRY;
     }
-    if (this->reg.u8.A == 0)
+    else
+    {
+        this->reg.u8.F &= ~Flags::CARRY;
+    }
+    result8 = static_cast<uint8_t>(result16);
+    if (result8 == 0)
     {
         this->reg.u8.F |= Flags::ZERO;
     }
+    else
+    {
+        this->reg.u8.F &= ~Flags::ZERO;
+    }
     this->reg.u8.F &= ~Flags::SUBTRACT;
+
+    return (result8);
+}
+
+void CPU::ADD_A_R8()
+{
+    const auto operand{this->get_register8(Register8Position::RIGHTMOST)};
+    this->reg.u8.A = this->ADD_8(this->reg.u8.A, this->reg.u8.*operand, false);
+}
+
+void CPU::ADD_A_MEM_HL()
+{
+    const auto operand{this->bus.read(this->reg.u16.HL)};
+    this->bus.write(this->reg.u16.HL, this->ADD_8(this->reg.u8.A, operand, false));
+}
+
+void CPU::ADD_A_IMM8()
+{
+    const auto operand{this->bus.read(this->reg.u16.PC++)};
+    this->reg.u8.A = this->ADD_8(this->reg.u8.A, operand, false);
+}
+
+void CPU::ADD_HL_R16()
+{
+    const auto operand{this->get_register16()};
+}
+
+void CPU::ADC_A_R8()
+{
+    const auto operand{this->get_register8(Register8Position::RIGHTMOST)};
+    this->reg.u8.A = this->ADD_8(this->reg.u8.A, this->reg.u8.*operand, true);
+}
+
+void CPU::ADC_A_MEM_HL()
+{
+    const auto operand{this->bus.read(this->reg.u16.HL)};
+    this->bus.write(this->reg.u16.HL, this->ADD_8(this->reg.u8.A, operand, true));
 }
 
 uint8_t CPU::STEP_IMM8(uint8_t value, const StepType type)
