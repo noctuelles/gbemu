@@ -32,6 +32,7 @@
 #include "CPU.hxx"
 
 #include <gtest/gtest.h>
+#include "Utils.hxx"
 
 #include <Utils.hxx>
 #include <algorithm>

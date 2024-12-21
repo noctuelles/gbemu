@@ -258,6 +258,18 @@ class CPU
     [[nodiscard]] Register16 get_register16_stack() const;
     [[nodiscard]] bool       check_condition_is_met() const;
 
+    void set_carry(bool carry);
+    [[nodiscard]] bool carry() const;
+
+    void set_half_carry(bool half_carry);
+    [[nodiscard]] bool half_carry() const;
+
+    void set_subtract(bool subtract);
+    [[nodiscard]] bool subtract() const;
+
+    void set_zero(bool zero);
+    [[nodiscard]] bool zero() const;
+
     /**
      * Push a 16 bit value into the stack.
      *

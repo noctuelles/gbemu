@@ -973,24 +973,10 @@ uint16_t CPU::ADD_16(const uint16_t a, const uint16_t b)
 {
     uint32_t result32{};
 
-    if (((a & 0x7FF) + (b & 0x7FF)) & 0x800 != 0)
-    {
-        this->reg.u8.F |= Flags::HALF_CARRY;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::HALF_CARRY;
-    }
+    this->set_half_carry(((a & 0x7FF) + (b & 0x7FF)) > 0x800);
     result32 = a + b;
-    if ((result32 & 0x1000) != 0)
-    {
-        this->reg.u8.F |= Flags::CARRY;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::CARRY;
-    }
-    this->reg.u8.F &= ~Flags::SUBTRACT;
+    this->set_carry(result32 > 0xFFFF);
+    this->set_subtract(false);
     return static_cast<uint16_t>(result32);
 }
 
@@ -999,35 +985,16 @@ uint8_t CPU::ADD_8(const uint8_t a, const uint8_t b, bool add_carry)
     uint16_t result16{};
     uint8_t  result8{};
 
-    add_carry = this->reg.u8.F & Flags::CARRY ? true : false;
-
-    if (((a & 0b1111) + (b & 0b1111) + add_carry) & 0b10000 != 0)
+    if (add_carry)
     {
-        this->reg.u8.F |= Flags::HALF_CARRY;
+        add_carry = this->carry();
     }
-    else
-    {
-        this->reg.u8.F &= ~Flags::HALF_CARRY;
-    }
+    this->set_half_carry((a & 0xF) + (b & 0XF) + add_carry > 0xF);
     result16 = a + b + add_carry;
-    if ((result16 & 0b100000000U) != 0)
-    {
-        this->reg.u8.F |= Flags::CARRY;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::CARRY;
-    }
+    this->set_carry(result16 > 0xFF);
     result8 = static_cast<uint8_t>(result16);
-    if (result8 == 0)
-    {
-        this->reg.u8.F |= Flags::ZERO;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::ZERO;
-    }
-    this->reg.u8.F &= ~Flags::SUBTRACT;
+    this->set_zero(result8 == 0);
+    this->set_subtract(false);
 
     return (result8);
 }
@@ -1073,29 +1040,14 @@ uint8_t CPU::STEP_IMM8(uint8_t value, const StepType type)
     if (type == StepType::INCREMENT)
     {
         value += 1;
-        this->reg.u8.F &= ~Flags::SUBTRACT;
     }
     else
     {
         value -= 1;
-        this->reg.u8.F |= Flags::SUBTRACT;
     }
-    if (value == 0)
-    {
-        this->reg.u8.F |= Flags::ZERO;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::ZERO;
-    }
-    if (value & 0b00010000U)
-    {
-        this->reg.u8.F |= Flags::HALF_CARRY;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::HALF_CARRY;
-    }
+    this->set_subtract(type == StepType::DECREMENT);
+    this->set_zero(value == 0);
+    this->set_half_carry(value & 0b00010000 != 0);
     return value;
 }
 
@@ -1236,7 +1188,7 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
         val <<= 1;
         if (rotate_through_carry)
         {
-            val |= (this->reg.u8.F & Flags::CARRY ? 0b00000001U : 0b00000000U);
+            val |= (this->carry() ? 0b00000001U : 0b00000000U);
         }
     }
     else
@@ -1245,28 +1197,13 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
         val >>= 1;
         if (rotate_through_carry)
         {
-            val |= (this->reg.u8.F & Flags::CARRY ? 0b10000000U : 0b00000000U);
+            val |= (this->carry() ? 0b10000000U : 0b00000000U);
         }
     }
-    if (val == 0)
-    {
-        this->reg.u8.F |= Flags::ZERO;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::ZERO;
-    }
-    if (has_new_carry)
-    {
-        this->reg.u8.F |= Flags::CARRY;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::CARRY;
-    }
-    this->reg.u8.F &= ~Flags::HALF_CARRY;
-    this->reg.u8.F &= ~Flags::SUBTRACT;
-
+    this->set_zero(val == 0);
+    this->set_carry(has_new_carry);
+    this->set_half_carry(false);
+    this->set_subtract(false);
     return (val);
 }
 
@@ -1325,14 +1262,7 @@ auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection sh
 {
     auto sign_bit = false;
 
-    if (val & ((shift_direction == ShiftDirection::RIGHT) ? 0b00000001U : 0b10000000U))
-    {
-        this->reg.u8.F |= Flags::CARRY;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::CARRY;
-    }
+    this->set_carry((val & (shift_direction == ShiftDirection::RIGHT ? 0b00000001U : 0b10000000U)) != 0);
     sign_bit = (val & 0b10000000U) != 0;
     if (shift_direction == ShiftDirection::RIGHT)
     {
@@ -1346,17 +1276,9 @@ auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection sh
     {
         val |= 0b10000000U;
     }
-    if (val == 0)
-    {
-        this->reg.u8.F |= Flags::ZERO;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::ZERO;
-    }
-
-    this->reg.u8.F &= ~Flags::HALF_CARRY;
-    this->reg.u8.F &= ~Flags::SUBTRACT;
+    this->set_zero(val == 0);
+    this->set_half_carry(false);
+    this->set_subtract(false);
 
     return val;
 }
@@ -1402,20 +1324,12 @@ void CPU::SRL_MEM_HL()
 
 auto CPU::SWAP(uint8_t val)
 {
-    val = ((val & 0b11110000) >> 4) | ((val & 0b00001111) << 4);
+    val = (val & 0b11110000) >> 4 | (val & 0b00001111) << 4;
 
-    this->reg.u8.F &= ~Flags::SUBTRACT;
-    this->reg.u8.F &= ~Flags::HALF_CARRY;
-    this->reg.u8.F &= ~Flags::CARRY;
-
-    if (val == 0)
-    {
-        this->reg.u8.F |= Flags::ZERO;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::ZERO;
-    }
+    this->set_zero(val == 0);
+    this->set_subtract(false);
+    this->set_half_carry(false);
+    this->set_carry(false);
 
     return (val);
 }
@@ -1435,16 +1349,9 @@ void CPU::SWAP_MEM_HL()
 
 void CPU::BIT(const uint8_t val, const uint8_t bit)
 {
-    if (val & (1 << bit))
-    {
-        this->reg.u8.F &= ~Flags::ZERO;
-    }
-    else
-    {
-        this->reg.u8.F |= Flags::ZERO;
-    }
-    this->reg.u8.F |= Flags::HALF_CARRY;
-    this->reg.u8.F &= ~Flags::SUBTRACT;
+    this->set_zero(val & (1 << bit) == 0);
+    this->set_subtract(false);
+    this->set_half_carry(false);
 }
 
 void CPU::BIT_MEM_HL()
@@ -1601,4 +1508,44 @@ bool CPU::check_condition_is_met() const
     }
 
     return condition_met;
+}
+
+void CPU::set_carry(const bool carry)
+{
+    this->reg.u8.F = this->reg.u8.F & ~Flags::CARRY | carry << Flags::CARRY;
+}
+
+bool CPU::carry() const
+{
+    return this->reg.u8.F & Flags::CARRY != 0;
+}
+
+void CPU::set_half_carry(const bool half_carry)
+{
+    this->reg.u8.F = this->reg.u8.F & ~Flags::HALF_CARRY | half_carry << Flags::HALF_CARRY;
+}
+
+bool CPU::half_carry() const
+{
+    return this->reg.u8.F & Flags::HALF_CARRY != 0;
+}
+
+void CPU::set_subtract(const bool subtract)
+{
+    this->reg.u8.F = this->reg.u8.F & ~Flags::SUBTRACT | subtract << Flags::SUBTRACT;
+}
+
+bool CPU::subtract() const
+{
+    return this->reg.u8.F & Flags::SUBTRACT != 0;
+}
+
+void CPU::set_zero(const bool zero)
+{
+    this->reg.u8.F = this->reg.u8.F & ~Flags::ZERO | zero << Flags::ZERO;
+}
+
+bool CPU::zero() const
+{
+    return this->reg.u8.F & Flags::ZERO != 0;
 }
