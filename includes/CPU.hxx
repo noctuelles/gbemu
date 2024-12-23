@@ -600,7 +600,8 @@ class CPU
         {
             uint8_t u8_lsb, u8_msb;
         };
-    } fetched_data;
+    } fetched_data{};
+    bool condition{false};
 
     /**
      * @brief Micro operation queue. A micro operation is an operation whose T-cycle equals to 4, or 1 M-cycle.
@@ -628,7 +629,7 @@ class CPU
     /**
      * @brief Interupt Master Enable flag.
      */
-    bool ime;
+    bool ime{};
 
     Bus& bus;
 

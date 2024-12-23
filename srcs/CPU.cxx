@@ -528,7 +528,7 @@ const CPU::InstructionLookupTable CPU::cb_prefixed_inst_lookup{{
     Instruction::SET_R8(),       // 0xFF
 }};
 
-constexpr CPU::Instruction::Instruction() : op(&CPU::ILL) {}
+constexpr CPU::Instruction::Instruction() : format("ILL"), op(&CPU::ILL) {}
 
 constexpr CPU::Instruction::Instruction(const std::string_view format, void (CPU::*op)()) : format(format), op(op) {}
 
@@ -556,6 +556,7 @@ constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_R8()
 {
     return Instruction{"LD [HL], {:s}", &CPU::LD_MEM_HL_R8};
 }
+
 constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_IMM8()
 {
     return Instruction{"LD [HL], {:X}h", &CPU::LD_MEM_HL_IMM8};
@@ -563,122 +564,122 @@ constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_IMM8()
 
 constexpr CPU::Instruction CPU::Instruction::AND_R8()
 {
-    return Instruction{4U, &CPU::AND_R8};
+    return Instruction{"AND {:s}", &CPU::AND_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::XOR_R8()
 {
-    return Instruction{4U, &CPU::XOR_R8};
+    return Instruction{"XOR {:s}", &CPU::XOR_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::OR_R8()
 {
-    return Instruction{4U, &CPU::OR_R8};
+    return Instruction{"OR {:s}", &CPU::OR_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::ILL()
 {
-    return Instruction{0U, &CPU::ILL};
+    return Instruction{"ILL", &CPU::ILL};
 }
 
 constexpr CPU::Instruction CPU::Instruction::PREFIX()
 {
-    return Instruction{4U, &CPU::PREFIX};
+    return Instruction{"", &CPU::PREFIX};
 }
 
 constexpr CPU::Instruction CPU::Instruction::ADC_A_R8()
 {
-    return Instruction{4U, &CPU::ADC_A_R8};
+    return Instruction{"ADC A, {:s}", &CPU::ADC_A_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::ADC_A_MEM_HL()
 {
-    return Instruction{4U, &CPU::ADC_A_MEM_HL};
+    return Instruction{"ADC A, [HL]", &CPU::ADC_A_MEM_HL};
 }
 
 constexpr CPU::Instruction CPU::Instruction::ADD_A_R8()
 {
-    return Instruction{4U, &CPU::ADD_A_R8};
+    return Instruction{"ADD A, {:s}", &CPU::ADD_A_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::ADD_A_IMM8()
 {
-    return Instruction{4U, &CPU::ADD_A_IMM8};
+    return Instruction{"ADD A, {:X}h", &CPU::ADD_A_IMM8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::ADD_A_MEM_HL()
 {
-    return Instruction{4U, &CPU::ADD_A_MEM_HL};
+    return Instruction{"ADD A, [HL]", &CPU::ADD_A_MEM_HL};
 }
 
 constexpr CPU::Instruction CPU::Instruction::ADD_HL_R16()
 {
-    return Instruction{8U, &CPU::ADD_HL_R16};
+    return Instruction{"ADD HL, {:s}", &CPU::ADD_HL_R16};
 }
 
 constexpr CPU::Instruction CPU::Instruction::INC_R8()
 {
-    return Instruction{4U, &CPU::INC_R8};
+    return Instruction{"INC {:s}", &CPU::INC_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::DEC_R8()
 {
-    return Instruction{4U, &CPU::DEC_R8};
+    return Instruction{"DEC {:s}", &CPU::DEC_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::INC_R16()
 {
-    return Instruction{8U, &CPU::INC_R16};
+    return Instruction{"INC {:s}", &CPU::INC_R16};
 }
 
 constexpr CPU::Instruction CPU::Instruction::DEC_R16()
 {
-    return Instruction{8U, &CPU::DEC_R16};
+    return Instruction{"DEC {:s}", &CPU::DEC_R16};
 }
 
 constexpr CPU::Instruction CPU::Instruction::INC_MEM_HL()
 {
-    return Instruction{12U, &CPU::INC_MEM_HL};
+    return Instruction{"INC [HL]", &CPU::INC_MEM_HL};
 }
 
 constexpr CPU::Instruction CPU::Instruction::DEC_MEM_HL()
 {
-    return Instruction{12U, &CPU::DEC_MEM_HL};
+    return Instruction{"DEC [HL]", &CPU::DEC_MEM_HL};
 }
 
 constexpr CPU::Instruction CPU::Instruction::JP_IMM16()
 {
-    return Instruction{16U, &CPU::JP_IMM16};
+    return Instruction{"JP {:04X}h", &CPU::JP_IMM16};
 }
 
 constexpr CPU::Instruction CPU::Instruction::JP_HL()
 {
-    return Instruction{4U, &CPU::JP_HL};
+    return Instruction{"JP HL", &CPU::JP_HL};
 }
 
 constexpr CPU::Instruction CPU::Instruction::JP_CC_IMM16()
 {
-    return Instruction{12U, &CPU::JP_CC_IMM16};
+    return Instruction{"JP {:s}, {:04X}h", &CPU::JP_CC_IMM16};
 }
 
 constexpr CPU::Instruction CPU::Instruction::CALL_IMM16()
 {
-    return Instruction{24U, &CPU::CALL_IMM16};
+    return Instruction{"CALL {:04X}h", &CPU::CALL_IMM16};
 }
 
 constexpr CPU::Instruction CPU::Instruction::CALL_CC_IMM16()
 {
-    return Instruction{12U, &CPU::CALL_CC_IMM16};
+    return Instruction{"CALL {:s}, {:04X}h", &CPU::CALL_CC_IMM16};
 }
 
 constexpr CPU::Instruction CPU::Instruction::RET()
 {
-    return Instruction{16U, &CPU::RET};
+    return Instruction{"RET", &CPU::RET};
 }
 
 constexpr CPU::Instruction CPU::Instruction::RET_CC()
 {
-    return Instruction{8U, &CPU::RET_CC};
+    return Instruction{"RET {:s}", &CPU::RET_CC};
 }
 
 constexpr CPU::Instruction CPU::Instruction::JR_IMM8()
@@ -772,41 +773,41 @@ constexpr CPU::Instruction CPU::Instruction::SRA_MEM_HL()
 
 constexpr CPU::Instruction CPU::Instruction::SWAP_R8()
 {
-    return Instruction{8U, &CPU::SWAP_R8};
+    return Instruction{"SWAP {:s}", &CPU::SWAP_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::SWAP_MEM_HL()
 {
-    return Instruction{16U, &CPU::SWAP_MEM_HL};
+    return Instruction{"SWAP [HL]", &CPU::SWAP_MEM_HL};
 }
 
 constexpr CPU::Instruction CPU::Instruction::BIT_R8()
 {
-    return Instruction{8U, &CPU::BIT_R8};
+    return Instruction{"BIT {:d}, {:s}", &CPU::BIT_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::BIT_MEM_HL()
 {
-    return Instruction{12U, &CPU::BIT_MEM_HL};
+    return Instruction{"BIT {:d}, [HL]", &CPU::BIT_MEM_HL};
 }
 
 constexpr CPU::Instruction CPU::Instruction::RES_R8()
 {
-    return Instruction{8U, &CPU::RES_R8};
+    return Instruction{"RES {:d}, {:s}", &CPU::RES_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::RES_MEM_HL()
 {
-    return Instruction{16U, &CPU::RES_MEM_HL};
+    return Instruction{"RES {:d}, [HL]", &CPU::RES_MEM_HL};
 }
 constexpr CPU::Instruction CPU::Instruction::SET_R8()
 {
-    return Instruction{8U, &CPU::SET_R8};
+    return Instruction{"SET {:d}, {:s}", &CPU::SET_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::SET_MEM_HL()
 {
-    return Instruction{16U, &CPU::SET_MEM_HL};
+    return Instruction{"SET {:d}, [HL]", &CPU::SET_MEM_HL};
 }
 
 const char* CPU::BadRegister::what() const noexcept
@@ -818,9 +819,10 @@ CPU::CPU(Bus& bus) : reg(), ticks(0), opcode(0), cb_prefixed(false), inst(inst_l
 
 CPU::~CPU() = default;
 
-void CPU::write_data() {}
-
-void CPU::NOP() {}
+void CPU::NOP()
+{
+    (void) this->opcode;
+}
 
 void CPU::LD_R8_R8()
 {
@@ -1106,18 +1108,8 @@ void CPU::PREFIX()
 
 void CPU::JP_IMM16()
 {
-    this->micro_ops.emplace(
-        [this]()
-        {
-            this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.PC);
-            this->reg.u16.PC++;
-        });
-    this->micro_ops.emplace(
-        [this]()
-        {
-            this->fetched_data.u8_msb = this->bus.read(this->reg.u16.PC);
-            this->reg.u16.PC++;
-        });
+    this->micro_ops.emplace([this]() { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.PC++); });
+    this->micro_ops.emplace([this]() { this->fetched_data.u8_msb = this->bus.read(this->reg.u16.PC++); });
     this->micro_ops.emplace([this]() { this->reg.u16.PC = this->fetched_data.u16; });
 }
 
@@ -1130,7 +1122,6 @@ void CPU::JP_CC_IMM16()
 {
     if (this->check_condition_is_met())
     {
-        this->ticks += 4;
         this->JP_IMM16();
     }
     else
@@ -1163,35 +1154,44 @@ void CPU::CALL_CC_IMM16()
 
 void CPU::JR_IMM8()
 {
-    const auto displacement = static_cast<int8_t>(this->bus.read(this->reg.u16.PC++));
-    this->reg.u16.PC += displacement;
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.PC++); });
+    this->micro_ops.emplace([this] { this->reg.u16.PC += static_cast<int8_t>(this->fetched_data.u8_lsb); });
 }
 
 void CPU::JR_CC_IMM8()
 {
-    if (this->check_condition_is_met())
-    {
-        this->ticks += 4;
-        this->JR_IMM8();
-    }
-    else
-    {
-        this->reg.u16.PC += 1;
-    }
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.PC++);
+            if (this->check_condition_is_met())
+            {
+                this->micro_ops.emplace([this] { this->reg.u16.PC += static_cast<int8_t>(this->fetched_data.u8_lsb); });
+            }
+        });
 }
 
 void CPU::RET()
 {
-    this->reg.u16.PC = this->pop_16();
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(++this->reg.u16.PC); });
+    this->micro_ops.emplace([this] { this->fetched_data.u8_msb = this->bus.read(++this->reg.u16.PC); });
+    this->micro_ops.emplace([this] { this->reg.u16.PC = this->fetched_data.u16; });
 }
 
 void CPU::RET_CC()
 {
-    if (this->check_condition_is_met())
-    {
-        this->ticks += 12;
-        this->RET();
-    }
+    this->micro_ops.emplace(
+        [this]
+        {
+            if (this->check_condition_is_met())
+            {
+                this->RET();
+            }
+            else
+            {
+                this->reg.u16.PC += 2;
+            }
+        });
 }
 
 auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool rotate_through_carry) noexcept
