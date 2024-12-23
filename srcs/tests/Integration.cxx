@@ -33,6 +33,6 @@ TEST(Integration, BootRom)
 
     while (true)
     {
-        cpu.cycle();
+        cpu.tick();
     }
 }

@@ -75,7 +75,7 @@ class CPUTesting : public ::testing::Test
     void execute_instruction(const std::initializer_list<uint8_t> instruction) const
     {
         this->bus->write(this->cpu->reg.u16.PC, instruction);
-        while (cpu->cycle() != 0);
+        while (cpu->tick() != 0);
     }
 
     static auto generate_address(std::pair<uint16_t, uint16_t>&& range = std::make_pair(0, Bus::RAM_SIZE - 1))

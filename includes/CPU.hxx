@@ -3,6 +3,9 @@
 
 #include <array>
 #include <format>
+#include <functional>
+#include <queue>
+#include <stack>
 #include <stdexcept>
 
 #include "Bus.hxx"
@@ -13,9 +16,30 @@
 class CPU
 {
   public:
+    enum class InputMode : uint8_t
+    {
+        RA,
+        R8,
+        R8_MEM_HL,
+        R16,
+        IMM8,
+        IMM16,
+        MEMORY,
+        NONE,
+    };
+
+    enum class OutputMode : uint8_t
+    {
+        R_A,
+        R8,
+        NONE
+    };
+
     struct Instruction
     {
-        size_t cycles;
+        size_t     cycles;
+        InputMode  input_mode;
+        OutputMode output_mode;
         void (CPU::*op)();
 
         constexpr Instruction();
@@ -150,7 +174,9 @@ class CPU
     explicit CPU(Bus& bus);
     ~CPU();
 
-    size_t cycle();
+    void fetch_data();
+    void write_data();
+    void tick();
 
     [[nodiscard]] Register get_register() const noexcept;
 
@@ -251,6 +277,12 @@ class CPU
         RIGHTMOST = 0U,
     };
 
+    enum class CPUState : bool
+    {
+        FETCH_DECODE,
+        EXECUTE
+    };
+
     [[nodiscard]] uint8_t    get_b3() const;
     [[nodiscard]] Register8  get_register8(Register8Position shift) const;
     [[nodiscard]] Register16 get_register16() const;
@@ -258,16 +290,16 @@ class CPU
     [[nodiscard]] Register16 get_register16_stack() const;
     [[nodiscard]] bool       check_condition_is_met() const;
 
-    void set_carry(bool carry);
+    void               set_carry(bool carry);
     [[nodiscard]] bool carry() const;
 
-    void set_half_carry(bool half_carry);
+    void               set_half_carry(bool half_carry);
     [[nodiscard]] bool half_carry() const;
 
-    void set_subtract(bool subtract);
+    void               set_subtract(bool subtract);
     [[nodiscard]] bool subtract() const;
 
-    void set_zero(bool zero);
+    void               set_zero(bool zero);
     [[nodiscard]] bool zero() const;
 
     /**
@@ -578,6 +610,22 @@ class CPU
      * @brief Registers
      */
     Register reg;
+
+    struct
+    {
+        union
+        {
+            uint16_t u16;
+        };
+        union
+        {
+            uint8_t u8_lsb, u8_msb;
+        };
+    } fetched_data;
+
+    std::queue<std::function<void()>> micro_ops{};
+    CPUState                          state{CPUState::FETCH_DECODE};
+
     /**
      * @brief Tracks the remaining machine cycles for the current instruction execution.
      */

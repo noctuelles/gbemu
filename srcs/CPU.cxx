@@ -818,6 +818,8 @@ CPU::CPU(Bus& bus) : reg(), cycles(0), opcode(0), cb_prefixed(false), inst(inst_
 
 CPU::~CPU() = default;
 
+void CPU::write_data() {}
+
 void CPU::NOP() {}
 
 void CPU::LD_R8_R8()
@@ -829,19 +831,26 @@ void CPU::LD_R8_R8()
 
 void CPU::LD_R8_IMM8()
 {
-    const auto dest{this->get_register8(Register8Position::LEFTMOST)};
-    const auto imm{this->bus.read(this->reg.u16.PC++)};
+    this->micro_ops.emplace(
+        [this]()
+        {
+            const auto dest{this->get_register8(Register8Position::LEFTMOST)};
+            const auto imm{this->bus.read(this->reg.u16.PC++)};
 
-    this->reg.u8.*dest = imm;
+            this->reg.u8.*dest = imm;
+        });
 }
 
 void CPU::LD_R16_IMM16()
 {
-    const auto dest{this->get_register16()};
-    const auto imm_lsb{this->bus.read(this->reg.u16.PC++)};
-    const auto imm_msb{this->bus.read(this->reg.u16.PC++)};
-
-    this->reg.u16.*dest = static_cast<uint16_t>(imm_msb << 8 | imm_lsb);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.PC++); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            const auto dest{this->get_register16()};
+            this->fetched_data.u8_msb = this->bus.read(this->reg.u16.PC++);
+            this->reg.u16.*dest       = this->fetched_data.u16;
+        });
 }
 
 void CPU::LD_R8_MEM_HL()
@@ -1099,10 +1108,19 @@ void CPU::PREFIX()
 
 void CPU::JP_IMM16()
 {
-    const auto imm_lsb = this->bus.read(this->reg.u16.PC++);
-    const auto imm_msb = this->bus.read(this->reg.u16.PC++);
-
-    this->reg.u16.PC = imm_msb << 8 | imm_lsb;
+    this->micro_ops.emplace(
+        [this]()
+        {
+            this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.PC);
+            this->reg.u16.PC++;
+        });
+    this->micro_ops.emplace(
+        [this]()
+        {
+            this->fetched_data.u8_msb = this->bus.read(this->reg.u16.PC);
+            this->reg.u16.PC++;
+        });
+    this->micro_ops.emplace([this]() { this->reg.u16.PC = this->fetched_data.u16; });
 }
 
 void CPU::JP_HL()
@@ -1342,9 +1360,13 @@ void CPU::SWAP_R8()
 
 void CPU::SWAP_MEM_HL()
 {
-    auto val = this->bus.read(this->reg.u16.HL);
-    val      = this->SWAP(val);
-    this->bus.write(this->reg.u16.HL, val);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb = this->SWAP(this->fetched_data.u8_lsb);
+            this->bus.write(this->reg.u16.HL, this->fetched_data.u8_lsb);
+        });
 }
 
 void CPU::BIT(const uint8_t val, const uint8_t bit)
@@ -1356,38 +1378,60 @@ void CPU::BIT(const uint8_t val, const uint8_t bit)
 
 void CPU::BIT_MEM_HL()
 {
-    const auto bit     = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
-    const auto mem_val = this->bus.read(this->reg.u16.HL);
-    this->BIT(mem_val, bit);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            const auto bit = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
+            this->BIT(this->fetched_data.u8_lsb, bit);
+        });
 }
 
 void CPU::BIT_R8()
 {
-    const auto src = this->get_register8(Register8Position::RIGHTMOST);
-    const auto bit = static_cast<uint8_t>((this->opcode & 0b00111000U) >> 3U);
-    this->BIT(this->reg.u8.*src, bit);
+    this->micro_ops.emplace(
+        [this]
+        {
+            const auto src = this->get_register8(Register8Position::RIGHTMOST);
+            const auto bit = static_cast<uint8_t>((this->opcode & 0b00111000U) >> 3U);
+            this->BIT(this->reg.u8.*src, bit);
+        });
 }
 
-size_t CPU::cycle()
+void CPU::tick()
 {
-    if (this->cycles == 0)
+    if (this->cycles++ < 4)
     {
-        this->opcode = this->bus.read(this->reg.u16.PC);
-        if (this->cb_prefixed)
-        {
-            this->inst        = cb_prefixed_inst_lookup.at(opcode);
-            this->cb_prefixed = false;
-        }
-        else
-        {
-            this->inst = inst_lookup.at(opcode);
-        }
-        this->cycles = this->inst.cycles;
-        this->reg.u16.PC++;
-        (this->*inst.op)();
+        return;
     }
-    this->cycles--;
-    return this->cycles;
+    this->cycles = 0;
+    switch (this->state)
+    {
+        case CPUState::FETCH_DECODE:
+            this->opcode = this->bus.read(this->reg.u16.PC++);
+            if (this->cb_prefixed)
+            {
+                this->inst        = cb_prefixed_inst_lookup.at(opcode);
+                this->cb_prefixed = false;
+            }
+            else
+            {
+                this->inst = inst_lookup.at(opcode);
+            }
+            (this->*inst.op)();
+            if (!this->micro_ops.empty())
+            {
+                this->state = CPUState::EXECUTE;
+            }
+            break;
+        case CPUState::EXECUTE:
+            this->micro_ops.front()();
+            if (this->micro_ops.empty())
+            {
+                this->state = CPUState::FETCH_DECODE;
+            }
+            break;
+    };
 }
 
 CPU::Register CPU::get_register() const noexcept
