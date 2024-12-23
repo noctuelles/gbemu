@@ -16,34 +16,13 @@
 class CPU
 {
   public:
-    enum class InputMode : uint8_t
-    {
-        RA,
-        R8,
-        R8_MEM_HL,
-        R16,
-        IMM8,
-        IMM16,
-        MEMORY,
-        NONE,
-    };
-
-    enum class OutputMode : uint8_t
-    {
-        R_A,
-        R8,
-        NONE
-    };
-
     struct Instruction
     {
-        size_t     cycles;
-        InputMode  input_mode;
-        OutputMode output_mode;
+        std::string_view format;
         void (CPU::*op)();
 
         constexpr Instruction();
-        constexpr Instruction(size_t cycles, void (CPU::*op)());
+        constexpr Instruction(std::string_view format, void (CPU::*op)());
 
         constexpr static Instruction LD_R8_R8();
         constexpr static Instruction LD_R16_IMM16();
@@ -623,13 +602,17 @@ class CPU
         };
     } fetched_data;
 
+    /**
+     * @brief Micro operation queue. A micro operation is an operation whose T-cycle equals to 4, or 1 M-cycle.
+     */
     std::queue<std::function<void()>> micro_ops{};
-    CPUState                          state{CPUState::FETCH_DECODE};
 
     /**
-     * @brief Tracks the remaining machine cycles for the current instruction execution.
+     * @brief State of the CPU.
      */
-    uint8_t cycles;
+    CPUState state{CPUState::FETCH_DECODE};
+
+    uint8_t ticks;
     /**
      * @brief Represents the current operation code being executed.
      */

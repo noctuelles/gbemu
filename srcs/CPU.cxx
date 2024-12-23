@@ -528,37 +528,37 @@ const CPU::InstructionLookupTable CPU::cb_prefixed_inst_lookup{{
     Instruction::SET_R8(),       // 0xFF
 }};
 
-constexpr CPU::Instruction::Instruction() : cycles(0), op(&CPU::ILL) {}
+constexpr CPU::Instruction::Instruction() : op(&CPU::ILL) {}
 
-constexpr CPU::Instruction::Instruction(const size_t cycles, void (CPU::*op)()) : cycles(cycles), op(op) {}
+constexpr CPU::Instruction::Instruction(const std::string_view format, void (CPU::*op)()) : format(format), op(op) {}
 
 constexpr CPU::Instruction CPU::Instruction::LD_R8_R8()
 {
-    return Instruction{8U, &CPU::LD_R8_R8};
+    return Instruction{"LD {:s}, {:s}", &CPU::LD_R8_R8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::LD_R8_IMM8()
 {
-    return Instruction{8U, &CPU::LD_R8_IMM8};
+    return Instruction{"LD {:s}, {:X}h", &CPU::LD_R8_IMM8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::LD_R16_IMM16()
 {
-    return Instruction{12U, &CPU::LD_R16_IMM16};
+    return Instruction{"LD {:s}, {:X}h", &CPU::LD_R16_IMM16};
 }
 
 constexpr CPU::Instruction CPU::Instruction::LD_R8_MEM_HL()
 {
-    return Instruction{8U, &CPU::LD_R8_MEM_HL};
+    return Instruction{"LD {:s}, [HL]", &CPU::LD_R8_MEM_HL};
 }
 
 constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_R8()
 {
-    return Instruction{8U, &CPU::LD_MEM_HL_R8};
+    return Instruction{"LD [HL], {:s}", &CPU::LD_MEM_HL_R8};
 }
 constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_IMM8()
 {
-    return Instruction{8U, &CPU::LD_MEM_HL_IMM8};
+    return Instruction{"LD [HL], {:X}h", &CPU::LD_MEM_HL_IMM8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::AND_R8()
@@ -814,7 +814,7 @@ const char* CPU::BadRegister::what() const noexcept
     return "Bad Register";
 }
 
-CPU::CPU(Bus& bus) : reg(), cycles(0), opcode(0), cb_prefixed(false), inst(inst_lookup[0]), bus(bus) {}
+CPU::CPU(Bus& bus) : reg(), ticks(0), opcode(0), cb_prefixed(false), inst(inst_lookup[0]), bus(bus) {}
 
 CPU::~CPU() = default;
 
@@ -891,37 +891,35 @@ void CPU::POP_R16()
 void CPU::RES_R8()
 {
     const auto src{this->get_register8(Register8Position::RIGHTMOST)};
-    const auto bit{this->get_b3()};
-
-    this->reg.u8.*src &= ~(1 << bit);
+    this->reg.u8.*src &= ~(1 << this->get_b3());
 }
 
 void CPU::RES_MEM_HL()
 {
-    const auto bit{this->get_b3()};
-    auto       mem_val{this->bus.read(this->reg.u16.HL)};
-
-    mem_val &= ~(1 << bit);
-
-    this->bus.write(this->reg.u16.HL, mem_val);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb &= ~(1 << this->get_b3());
+            this->bus.write(this->reg.u16.HL, this->fetched_data.u8_lsb);
+        });
 }
 
 void CPU::SET_R8()
 {
     const auto src{this->get_register8(Register8Position::RIGHTMOST)};
-    const auto bit{this->get_b3()};
-
-    this->reg.u8.*src |= 1U << bit;
+    this->reg.u8.*src |= 1U << this->get_b3();
 }
 
 void CPU::SET_MEM_HL()
 {
-    const auto bit{this->get_b3()};
-    auto       mem_val = this->bus.read(this->reg.u16.HL);
-
-    mem_val |= 1U << bit;
-
-    this->bus.write(this->reg.u16.HL, mem_val);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb |= 1U << this->get_b3();
+            this->bus.write(this->reg.u16.HL, this->fetched_data.u8_lsb);
+        });
 }
 
 void CPU::AND_R8()
@@ -1132,7 +1130,7 @@ void CPU::JP_CC_IMM16()
 {
     if (this->check_condition_is_met())
     {
-        this->cycles += 4;
+        this->ticks += 4;
         this->JP_IMM16();
     }
     else
@@ -1154,7 +1152,7 @@ void CPU::CALL_CC_IMM16()
 {
     if (this->check_condition_is_met())
     {
-        this->cycles += 12;
+        this->ticks += 12;
         this->CALL_IMM16();
     }
     else
@@ -1173,7 +1171,7 @@ void CPU::JR_CC_IMM8()
 {
     if (this->check_condition_is_met())
     {
-        this->cycles += 4;
+        this->ticks += 4;
         this->JR_IMM8();
     }
     else
@@ -1191,7 +1189,7 @@ void CPU::RET_CC()
 {
     if (this->check_condition_is_met())
     {
-        this->cycles += 12;
+        this->ticks += 12;
         this->RET();
     }
 }
@@ -1202,20 +1200,20 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
 
     if (rotate_direction == RotateDirection::LEFT)
     {
-        has_new_carry = (val & 0b10000000U) != 0;
+        has_new_carry = (val & 0x80) != 0;
         val <<= 1;
         if (rotate_through_carry)
         {
-            val |= (this->carry() ? 0b00000001U : 0b00000000U);
+            val |= (this->carry() ? 0x01 : 0x00);
         }
     }
     else
     {
-        has_new_carry = (val & 0b00000001U) != 0;
+        has_new_carry = (val & 0x01) != 0;
         val >>= 1;
         if (rotate_through_carry)
         {
-            val |= (this->carry() ? 0b10000000U : 0b00000000U);
+            val |= (this->carry() ? 0x80 : 0x00);
         }
     }
     this->set_zero(val == 0);
@@ -1227,28 +1225,36 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
 
 void CPU::RLC_R8()
 {
-    const auto operand    = this->get_register8(Register8Position::RIGHTMOST);
+    const auto operand{this->get_register8(Register8Position::RIGHTMOST)};
     this->reg.u8.*operand = this->ROTATE(this->reg.u8.*operand, RotateDirection::LEFT, false);
 }
 
 void CPU::RLC_MEM_HL()
 {
-    auto val = this->bus.read(this->reg.u16.HL);
-    val      = this->ROTATE(val, RotateDirection::LEFT, false);
-    this->bus.write(this->reg.u16.HL, val);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb = this->ROTATE(this->fetched_data.u8_lsb, RotateDirection::LEFT, false);
+            this->bus.write(this->reg.u16.HL, this->fetched_data.u8_lsb);
+        });
 }
 
 void CPU::RRC_R8()
 {
-    const auto operand    = this->get_register8(Register8Position::RIGHTMOST);
+    const auto operand{this->get_register8(Register8Position::RIGHTMOST)};
     this->reg.u8.*operand = this->ROTATE(this->reg.u8.*operand, RotateDirection::RIGHT, false);
 }
 
 void CPU::RRC_MEM_HL()
 {
-    auto val = this->bus.read(this->reg.u16.HL);
-    val      = this->ROTATE(val, RotateDirection::RIGHT, false);
-    this->bus.write(this->reg.u16.HL, val);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb = this->ROTATE(this->fetched_data.u8_lsb, RotateDirection::RIGHT, false);
+            this->bus.write(this->reg.u16.HL, this->fetched_data.u8_lsb);
+        });
 }
 
 void CPU::RL_R8()
@@ -1258,30 +1264,38 @@ void CPU::RL_R8()
 }
 void CPU::RL_MEM_HL()
 {
-    auto val = this->bus.read(this->reg.u16.HL);
-    val      = this->ROTATE(val, RotateDirection::LEFT, true);
-    this->bus.write(this->reg.u16.HL, val);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb = this->ROTATE(this->fetched_data.u8_lsb, RotateDirection::LEFT, true);
+            this->bus.write(this->reg.u16.HL, this->fetched_data.u8_lsb);
+        });
 }
 
 void CPU::RR_R8()
 {
-    const auto operand    = this->get_register8(Register8Position::RIGHTMOST);
+    const auto operand{this->get_register8(Register8Position::RIGHTMOST)};
     this->reg.u8.*operand = this->ROTATE(this->reg.u8.*operand, RotateDirection::RIGHT, true);
 }
 
 void CPU::RR_MEM_HL()
 {
-    auto val = this->bus.read(this->reg.u16.HL);
-    val      = this->ROTATE(val, RotateDirection::LEFT, true);
-    this->bus.write(this->reg.u16.HL, val);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb = this->ROTATE(this->fetched_data.u8_lsb, RotateDirection::RIGHT, true);
+            this->bus.write(this->reg.u16.HL, this->fetched_data.u8_lsb);
+        });
 }
 
 auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection shift_direction) noexcept
 {
     auto sign_bit = false;
 
-    this->set_carry((val & (shift_direction == ShiftDirection::RIGHT ? 0b00000001U : 0b10000000U)) != 0);
-    sign_bit = (val & 0b10000000U) != 0;
+    this->set_carry((val & (shift_direction == ShiftDirection::RIGHT ? 0x01 : 0x80)) != 0);
+    sign_bit = (val & 0x80) != 0;
     if (shift_direction == ShiftDirection::RIGHT)
     {
         val >>= 1;
@@ -1292,7 +1306,7 @@ auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection sh
     }
     if (sign_bit && shift_type == ShiftType::ARITHMETIC && shift_direction == ShiftDirection::RIGHT)
     {
-        val |= 0b10000000U;
+        val |= 0x80;
     }
     this->set_zero(val == 0);
     this->set_half_carry(false);
@@ -1303,41 +1317,56 @@ auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection sh
 
 void CPU::SRA_R8()
 {
-    const auto src    = this->get_register8(Register8Position::RIGHTMOST);
+    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
     this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftType::ARITHMETIC, ShiftDirection::RIGHT);
 }
 
 void CPU::SRA_MEM_HL()
 {
-    auto val = this->bus.read(this->reg.u16.HL);
-    val      = this->SHIFT(val, ShiftType::ARITHMETIC, ShiftDirection::RIGHT);
-    this->bus.write(this->reg.u16.HL, val);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb =
+                this->SHIFT(this->fetched_data.u8_lsb, ShiftType::ARITHMETIC, ShiftDirection::RIGHT);
+            this->bus.write(this->reg.u16.HL, this->fetched_data.u8_lsb);
+        });
 }
 
 void CPU::SLA_R8()
 {
-    const auto src    = this->get_register8(Register8Position::RIGHTMOST);
+    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
     this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftType::ARITHMETIC, ShiftDirection::LEFT);
 }
 
 void CPU::SLA_MEM_HL()
 {
-    auto val = this->bus.read(this->reg.u16.HL);
-    val      = this->SHIFT(val, ShiftType::ARITHMETIC, ShiftDirection::LEFT);
-    this->bus.write(this->reg.u16.HL, val);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb =
+                this->SHIFT(this->fetched_data.u8_lsb, ShiftType::ARITHMETIC, ShiftDirection::LEFT);
+            this->bus.write(this->reg.u16.HL, this->fetched_data.u8_lsb);
+        });
 }
 
 void CPU::SRL_R8()
 {
-    const auto src    = this->get_register8(Register8Position::RIGHTMOST);
+    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
     this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftType::LOGICAL, ShiftDirection::RIGHT);
 }
 
 void CPU::SRL_MEM_HL()
 {
-    auto val = this->bus.read(this->reg.u16.HL);
-    val      = this->SHIFT(val, ShiftType::LOGICAL, ShiftDirection::RIGHT);
-    this->bus.write(this->reg.u16.HL, val);
+    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->fetched_data.u8_lsb =
+                this->SHIFT(this->fetched_data.u8_lsb, ShiftType::LOGICAL, ShiftDirection::RIGHT);
+            this->bus.write(this->reg.u16.HL, this->fetched_data.u8_lsb);
+        });
 }
 
 auto CPU::SWAP(uint8_t val)
@@ -1354,7 +1383,7 @@ auto CPU::SWAP(uint8_t val)
 
 void CPU::SWAP_R8()
 {
-    const auto src    = this->get_register8(Register8Position::RIGHTMOST);
+    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
     this->reg.u8.*src = this->SWAP(this->reg.u8.*src);
 }
 
@@ -1373,38 +1402,32 @@ void CPU::BIT(const uint8_t val, const uint8_t bit)
 {
     this->set_zero(val & (1 << bit) == 0);
     this->set_subtract(false);
-    this->set_half_carry(false);
+    this->set_half_carry(true);
 }
 
 void CPU::BIT_MEM_HL()
 {
-    this->micro_ops.emplace([this] { this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL); });
     this->micro_ops.emplace(
         [this]
         {
-            const auto bit = static_cast<uint8_t>((this->opcode & 0b00111000) >> 3);
-            this->BIT(this->fetched_data.u8_lsb, bit);
+            this->fetched_data.u8_lsb = this->bus.read(this->reg.u16.HL);
+            this->BIT(this->fetched_data.u8_lsb, this->get_b3());
         });
 }
 
 void CPU::BIT_R8()
 {
-    this->micro_ops.emplace(
-        [this]
-        {
-            const auto src = this->get_register8(Register8Position::RIGHTMOST);
-            const auto bit = static_cast<uint8_t>((this->opcode & 0b00111000U) >> 3U);
-            this->BIT(this->reg.u8.*src, bit);
-        });
+    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
+    this->BIT(this->reg.u8.*src, this->get_b3());
 }
 
 void CPU::tick()
 {
-    if (this->cycles++ < 4)
+    if (this->ticks++ < 4)
     {
         return;
     }
-    this->cycles = 0;
+    this->ticks = 0;
     switch (this->state)
     {
         case CPUState::FETCH_DECODE:
