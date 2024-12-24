@@ -68,6 +68,8 @@ class CPU
         constexpr static Instruction JR_IMM8();
         constexpr static Instruction JR_CC_IMM8();
 
+        constexpr static Instruction RST_VEC();
+
         /* Stack manipulation */
 
         constexpr static Instruction PUSH_R16();
@@ -263,6 +265,7 @@ class CPU
     };
 
     [[nodiscard]] uint8_t    get_b3() const;
+    [[nodiscard]] uint8_t    get_tgt3() const;
     [[nodiscard]] Register8  get_register8(Register8Position shift) const;
     [[nodiscard]] Register16 get_register16() const;
     [[nodiscard]] Register16 get_register16_memory() const;
@@ -280,20 +283,6 @@ class CPU
 
     void               set_zero(bool zero);
     [[nodiscard]] bool zero() const;
-
-    /**
-     * Push a 16 bit value into the stack.
-     *
-     * @param msb Most Significant Byte
-     * @param lsb Least Significant Byte
-     */
-    void push_16(uint8_t msb, uint8_t lsb);
-
-    /**
-     * Pop a 16 bit value off the stack.
-     * @return uint16_t value
-     */
-    uint16_t pop_16();
 
     void NOP();
     /**
@@ -475,6 +464,11 @@ class CPU
     void RET_CC();
 
     /**
+     * @brief Call address vec. This is a shorter and faster equivalent to CALL for suitable values of vec.
+     */
+    void RST_VEC();
+
+    /**
      * @brief Perform an 8-bit rotate through the carry flag.
      * @return Operation result.
      */
@@ -594,14 +588,13 @@ class CPU
     {
         union
         {
-            uint16_t u16;
+            uint16_t WZ;
         };
         union
         {
-            uint8_t u8_lsb, u8_msb;
+            uint8_t Z, W;
         };
-    } fetched_data{};
-    bool condition{false};
+    } tmp{};
 
     /**
      * @brief Micro operation queue. A micro operation is an operation whose T-cycle equals to 4, or 1 M-cycle.
