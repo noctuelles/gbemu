@@ -2,10 +2,8 @@
 #define CPU_H
 
 #include <array>
-#include <format>
 #include <functional>
 #include <queue>
-#include <stack>
 #include <stdexcept>
 
 #include "Bus.hxx"
@@ -30,6 +28,14 @@ class CPU
         constexpr static Instruction LD_R8_MEM_HL();
         constexpr static Instruction LD_MEM_HL_R8();
         constexpr static Instruction LD_MEM_HL_IMM8();
+
+        constexpr static Instruction LD_MEM_R16_A();
+        constexpr static Instruction LD_A_MEM_R16();
+
+        constexpr static Instruction LDH_MEM_16_A();
+        constexpr static Instruction LDH_A_MEM_16();
+        constexpr static Instruction LDH_MEM_C_A();
+        constexpr static Instruction LDH_A_MEM_C();
 
         constexpr static Instruction AND_R8();
         constexpr static Instruction XOR_R8();
@@ -142,8 +148,8 @@ class CPU
 
     struct IllegalInstruction final : std::runtime_error
     {
-        explicit IllegalInstruction(uint8_t opcode)
-            : std::runtime_error(std::format("Illegal instruction ({:#x})", opcode))
+        explicit IllegalInstruction(uint8_t opcode, uint16_t pc)
+            : std::runtime_error("Illegal instruction " + std::to_string(opcode) + " " + std::to_string(pc))
         {
         }
     };
@@ -245,10 +251,10 @@ class CPU
     {
         enum Value : uint8_t
         {
-            ZERO       = 1 << 7,
-            SUBTRACT   = 1 << 6,
-            HALF_CARRY = 1 << 5,
-            CARRY      = 1 << 4
+            ZERO       = 1U << 7,
+            SUBTRACT   = 1U << 6,
+            HALF_CARRY = 1U << 5,
+            CARRY      = 1U << 4
         };
     };
 
@@ -264,13 +270,13 @@ class CPU
         EXECUTE
     };
 
-    [[nodiscard]] uint8_t    get_b3() const;
-    [[nodiscard]] uint8_t    get_tgt3() const;
-    [[nodiscard]] Register8  get_register8(Register8Position shift) const;
-    [[nodiscard]] Register16 get_register16() const;
-    [[nodiscard]] Register16 get_register16_memory() const;
-    [[nodiscard]] Register16 get_register16_stack() const;
-    [[nodiscard]] bool       check_condition_is_met() const;
+    [[nodiscard]] uint8_t                                            get_b3() const;
+    [[nodiscard]] uint8_t                                            get_tgt3() const;
+    [[nodiscard]] Register8                                          get_register8(Register8Position shift) const;
+    [[nodiscard]] Register16                                         get_register16() const;
+    [[nodiscard]] std::pair<Register16MemoryPlaceholder, Register16> get_register16_memory() const;
+    [[nodiscard]] Register16                                         get_register16_stack() const;
+    [[nodiscard]] bool                                               check_condition_is_met() const;
 
     void               set_carry(bool carry);
     [[nodiscard]] bool carry() const;
@@ -305,6 +311,17 @@ class CPU
     /**
      * @brief Load from memory pointed by HL to 8-bit register.
      */
+
+    /**
+     * @brief Store value in register A into the byte pointed to by register r16.
+     */
+    void LD_MEM_R16_A();
+
+    /**
+     * @brief Load value in register A from the byte pointed to by register r16.
+     */
+    void LD_A_MEM_R16();
+
     void LD_R8_MEM_HL();
     /**
      * @brief Load from 8-bit register to memory pointed by HL.
@@ -317,14 +334,29 @@ class CPU
     void LD_A_MEM_16();
 
     /**
-     * @brief Load value in register A from the byte pointed to by register r16.
-     */
-    void LD_A_MEM_R16();
-
-    /**
      * @brief Load from 8-bit immediate to memory pointed by HL.
      */
     void LD_MEM_HL_IMM8();
+
+    /**
+     * @brief Store value in register A into the byte at address n16, provided the address is between $FF00 and $FFFF.
+     */
+    void LDH_MEM_16_A();
+
+    /**
+     * @brief Load value in register A from the byte at address n16, provided the address is between $FF00 and $FFFF.
+     */
+    void LDH_A_MEM_16();
+
+    /**
+     * @brief Store value in register A into the byte at address $FF00+C.
+     */
+    void LDH_MEM_C_A();
+
+    /**
+     * @brief Load value in register A from the byte at address $FF00+c.
+     */
+    void LDH_A_MEM_C();
 
     /**
      * @brief Push register r16 into the stack.
@@ -584,17 +616,15 @@ class CPU
      */
     Register reg;
 
-    struct
+    union
     {
-        union
+        uint16_t WZ;
+        struct
         {
-            uint16_t WZ;
+            uint8_t Z;
+            uint8_t W;
         };
-        union
-        {
-            uint8_t Z, W;
-        };
-    } tmp{};
+    } __attribute__((packed)) tmp{};
 
     /**
      * @brief Micro operation queue. A micro operation is an operation whose T-cycle equals to 4, or 1 M-cycle.

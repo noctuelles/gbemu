@@ -33,7 +33,7 @@ target_link_libraries(
         SDL2::SDL2
 )
 
-add_executable(gbemu_test srcs/tests/CPU.cxx
+add_executable(gbemu_test
         srcs/CPU.cxx
         srcs/Bus.cxx
         srcs/tests/Integration.cxx)

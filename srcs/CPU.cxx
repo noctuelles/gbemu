@@ -7,13 +7,13 @@
  */
 
 #include <Utils.hxx>
-#include <format>
+#include <iostream>
 #include <utility>
 
 const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0x00
     Instruction::LD_R16_IMM16(),   // 0x01
-    {},                            // 0x02
+    Instruction::LD_MEM_R16_A(),   // 0x02
     Instruction::INC_R16(),        // 0x03
     Instruction::INC_R8(),         // 0x04
     Instruction::DEC_R8(),         // 0x05
@@ -21,7 +21,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0x07
     {},                            // 0x08
     Instruction::ADD_HL_R16(),     // 0x09
-    {},                            // 0x0A
+    Instruction::LD_A_MEM_R16(),   // 0x0A
     Instruction::DEC_R16(),        // 0x0B
     Instruction::INC_R8(),         // 0x0C
     Instruction::DEC_R8(),         // 0x0D
@@ -29,7 +29,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0x0F
     {},                            // 0x10
     Instruction::LD_R16_IMM16(),   // 0x11
-    {},                            // 0x12
+    Instruction::LD_MEM_R16_A(),   // 0x12
     Instruction::INC_R16(),        // 0x13
     Instruction::INC_R8(),         // 0x14
     Instruction::DEC_R8(),         // 0x15
@@ -37,7 +37,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0x17
     Instruction::JR_IMM8(),        // 0x18
     Instruction::ADD_HL_R16(),     // 0x19
-    {},                            // 0x1A
+    Instruction::LD_A_MEM_R16(),   // 0x1A
     Instruction::DEC_R16(),        // 0x1B
     Instruction::INC_R8(),         // 0x1C
     Instruction::DEC_R8(),         // 0x1D
@@ -45,7 +45,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0x1F
     Instruction::JR_CC_IMM8(),     // 0x20
     Instruction::LD_R16_IMM16(),   // 0x21
-    {},                            // 0x22
+    Instruction::LD_MEM_R16_A(),   // 0x22
     Instruction::INC_R16(),        // 0x23
     Instruction::INC_R8(),         // 0x24
     Instruction::DEC_R8(),         // 0x25
@@ -53,7 +53,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0x27
     Instruction::JR_CC_IMM8(),     // 0x28
     Instruction::ADD_HL_R16(),     // 0x29
-    {},                            // 0x2A
+    Instruction::LD_A_MEM_R16(),   // 0x2A
     Instruction::DEC_R16(),        // 0x2B
     Instruction::INC_R8(),         // 0x2C
     Instruction::DEC_R8(),         // 0x2D
@@ -61,7 +61,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0x2F
     Instruction::JR_CC_IMM8(),     // 0x30
     Instruction::LD_R16_IMM16(),   // 0x31
-    {},                            // 0x32
+    Instruction::LD_MEM_R16_A(),   // 0x32
     Instruction::INC_R16(),        // 0x33
     Instruction::INC_MEM_HL(),     // 0x34
     Instruction::DEC_MEM_HL(),     // 0x35
@@ -69,7 +69,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0x37
     Instruction::JR_CC_IMM8(),     // 0x38
     Instruction::ADD_HL_R16(),     // 0x39
-    {},                            // 0x3A
+    Instruction::LD_A_MEM_R16(),   // 0x3A
     Instruction::DEC_R16(),        // 0x3B
     Instruction::INC_R8(),         // 0x3C
     Instruction::DEC_R8(),         // 0x3D
@@ -235,9 +235,9 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0xDD
     {},                            // 0xDE
     Instruction::RST_VEC(),        // 0xDF
-    {},                            // 0xE0
+    Instruction::LDH_MEM_16_A(),   // 0xE0
     Instruction::POP_R16(),        // 0xE1
-    {},                            // 0xE2
+    Instruction::LDH_MEM_C_A(),    // 0xE2
     {},                            // 0xE3
     {},                            // 0xE4
     Instruction::PUSH_R16(),       // 0xE5
@@ -251,9 +251,9 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                            // 0xED
     {},                            // 0xEE
     Instruction::RST_VEC(),        // 0xEF
-    {},                            // 0xF0
+    Instruction::LDH_A_MEM_16(),   // 0xF0
     Instruction::POP_R16(),        // 0xF1
-    {},                            // 0xF2
+    Instruction::LDH_A_MEM_C(),    // 0xF2
     {},                            // 0xF3
     {},                            // 0xF4
     Instruction::PUSH_R16(),       // 0xF5
@@ -562,6 +562,36 @@ constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_IMM8()
     return Instruction{"LD [HL], {:X}h", &CPU::LD_MEM_HL_IMM8};
 }
 
+constexpr CPU::Instruction CPU::Instruction::LD_MEM_R16_A()
+{
+    return Instruction{"LD [{:s}], A", &CPU::LD_MEM_R16_A};
+}
+
+constexpr CPU::Instruction CPU::Instruction::LD_A_MEM_R16()
+{
+    return Instruction{"LD A, [{:s}]", &CPU::LD_A_MEM_R16};
+}
+
+constexpr CPU::Instruction CPU::Instruction::LDH_MEM_16_A()
+{
+    return Instruction{"LD [FF00h + {:02X}], A", &CPU::LDH_MEM_16_A};
+}
+
+constexpr CPU::Instruction CPU::Instruction::LDH_A_MEM_16()
+{
+    return Instruction{"LD A, [FF00h + {:02X}h]", &CPU::LDH_MEM_16_A};
+}
+
+constexpr CPU::Instruction CPU::Instruction::LDH_MEM_C_A()
+{
+    return Instruction{"LD [FF00h + C], A", &CPU::LDH_MEM_C_A};
+}
+
+constexpr CPU::Instruction CPU::Instruction::LDH_A_MEM_C()
+{
+    return Instruction{"LD A, [FF00h + C]", &CPU::LDH_A_MEM_C};
+}
+
 constexpr CPU::Instruction CPU::Instruction::AND_R8()
 {
     return Instruction{"AND {:s}", &CPU::AND_R8};
@@ -831,9 +861,8 @@ void CPU::NOP()
 
 void CPU::LD_R8_R8()
 {
-    const auto dest{this->get_register8(Register8Position::LEFTMOST)};
-    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
-    this->reg.u8.*dest = this->reg.u8.*src;
+    this->reg.u8.*this->get_register8(Register8Position::LEFTMOST) =
+        this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST);
 }
 
 void CPU::LD_R8_IMM8()
@@ -860,25 +889,102 @@ void CPU::LD_R16_IMM16()
         });
 }
 
+void CPU::LD_MEM_R16_A()
+{
+    this->micro_ops.emplace(
+        [this]
+        {
+            const auto [placeholder, dest]{this->get_register16_memory()};
+            this->bus.write(this->reg.u16.*dest, this->reg.u8.A);
+            if (placeholder == Register16MemoryPlaceholder::HL_PLUS)
+            {
+                this->reg.u16.HL += 1;
+            }
+            else if (placeholder == Register16MemoryPlaceholder::HL_MINUS)
+            {
+                this->reg.u16.HL -= 1;
+            }
+        });
+}
+
+void CPU::LD_A_MEM_R16()
+{
+    this->micro_ops.emplace(
+        [this]
+        {
+            const auto [placeholder, source]{this->get_register16_memory()};
+            this->reg.u8.A = this->bus.read(this->reg.u16.*source);
+            if (placeholder == Register16MemoryPlaceholder::HL_PLUS)
+            {
+                this->reg.u16.HL += 1;
+            }
+            else if (placeholder == Register16MemoryPlaceholder::HL_MINUS)
+            {
+                this->reg.u16.HL -= 1;
+            }
+        });
+}
+
 void CPU::LD_R8_MEM_HL()
 {
-    const auto src{this->get_register8_dest_from_opcode()};
-    const auto mem_val{this->bus.read(this->reg.u16.HL)};
-
-    this->reg.u8.*src = mem_val;
+    this->micro_ops.emplace(
+        [this] { this->reg.u8.*this->get_register8(Register8Position::LEFTMOST) = this->bus.read(this->reg.u16.HL); });
 }
 
 void CPU::LD_MEM_HL_R8()
 {
-    const auto src{this->get_register8_src_from_opcode()};
-    this->bus.write(this->reg.u16.HL, this->reg.u8.*src);
+    this->micro_ops.emplace(
+        [this] { this->bus.write(this->reg.u16.HL, this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST)); });
 }
-
-void CPU::LD_A_MEM_R16() {}
 
 void CPU::LD_MEM_HL_IMM8()
 {
-    this->bus.write(this->reg.u16.HL, this->bus.read(this->reg.u16.PC++));
+    this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.PC++); });
+    this->micro_ops.emplace([this] { this->bus.write(this->reg.u16.HL, this->tmp.Z); });
+}
+
+void CPU::LDH_MEM_16_A()
+{
+    this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.PC++); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->tmp.W = 0xFF;
+            this->bus.write(this->tmp.WZ, this->tmp.Z);
+        });
+}
+
+void CPU::LDH_A_MEM_16()
+{
+    this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.PC++); });
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->tmp.W    = 0xFF;
+            this->reg.u8.A = this->bus.read(this->tmp.WZ);
+        });
+}
+
+void CPU::LDH_MEM_C_A()
+{
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->tmp.W = 0xFF;
+            this->tmp.Z = this->reg.u8.C;
+            this->bus.write(this->tmp.WZ, this->reg.u8.A);
+        });
+}
+
+void CPU::LDH_A_MEM_C()
+{
+    this->micro_ops.emplace(
+        [this]
+        {
+            this->tmp.W    = 0xFF;
+            this->tmp.Z    = this->reg.u8.C;
+            this->reg.u8.A = this->bus.read(this->tmp.WZ);
+        });
 }
 
 void CPU::PUSH_R16()
@@ -903,8 +1009,7 @@ void CPU::POP_R16()
 
 void CPU::RES_R8()
 {
-    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
-    this->reg.u8.*src &= ~(1 << this->get_b3());
+    this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST) &= ~(1 << this->get_b3());
 }
 
 void CPU::RES_MEM_HL()
@@ -1074,13 +1179,13 @@ uint8_t CPU::STEP_IMM8(uint8_t value, const StepType type)
 void CPU::INC_R8()
 {
     const auto operand = this->get_register8(Register8Position::LEFTMOST);
-    this->reg.u8.*operand += this->STEP_IMM8(this->reg.u8.*operand, StepType::INCREMENT);
+    this->reg.u8.*operand = this->STEP_IMM8(this->reg.u8.*operand, StepType::INCREMENT);
 }
 
 void CPU::DEC_R8()
 {
     const auto operand = this->get_register8(Register8Position::LEFTMOST);
-    this->reg.u8.*operand += this->STEP_IMM8(this->reg.u8.*operand, StepType::DECREMENT);
+    this->reg.u8.*operand = this->STEP_IMM8(this->reg.u8.*operand, StepType::DECREMENT);
 }
 
 void CPU::INC_R16()
@@ -1109,7 +1214,7 @@ void CPU::DEC_MEM_HL()
 
 void CPU::ILL()
 {
-    throw IllegalInstruction(this->opcode);
+    throw IllegalInstruction(this->opcode, this->reg.u16.PC);
 }
 
 void CPU::PREFIX()
@@ -1431,7 +1536,7 @@ void CPU::SWAP_MEM_HL()
 
 void CPU::BIT(const uint8_t val, const uint8_t bit)
 {
-    this->set_zero(val & (1 << bit) == 0);
+    this->set_zero((val & (1U << bit)) == 0);
     this->set_subtract(false);
     this->set_half_carry(true);
 }
@@ -1471,7 +1576,7 @@ void CPU::tick()
             else
             {
                 this->inst = inst_lookup.at(opcode);
-            }
+            }  // PC:21
             (this->*inst.op)();
             if (!this->micro_ops.empty())
             {
@@ -1480,6 +1585,7 @@ void CPU::tick()
             break;
         case CPUState::EXECUTE:
             this->micro_ops.front()();
+            this->micro_ops.pop();
             if (this->micro_ops.empty())
             {
                 this->state = CPUState::FETCH_DECODE;
@@ -1505,7 +1611,7 @@ uint8_t CPU::get_tgt3() const
 
 CPU::Register8 CPU::get_register8(const Register8Position shift) const
 {
-    switch (static_cast<Register8Placeholder>((this->opcode >> static_cast<uint8_t>(shift)) & 0b00000011U))
+    switch (static_cast<Register8Placeholder>((this->opcode >> static_cast<uint8_t>(shift)) & 0b00000111U))
     {
         case Register8Placeholder::A:
             return &Register::U8::A;
@@ -1543,20 +1649,28 @@ CPU::Register16 CPU::get_register16() const
     }
 }
 
-CPU::Register16 CPU::get_register16_memory() const
+std::pair<CPU::Register16MemoryPlaceholder, CPU::Register16> CPU::get_register16_memory() const
 {
-    switch (static_cast<Register16MemoryPlaceholder>((this->opcode & 0b00110000U) >> 4))
+    const auto r16placeholder{static_cast<Register16MemoryPlaceholder>((this->opcode & 0b00110000U) >> 4)};
+    Register16 reg{};
+
+    switch (r16placeholder)
     {
         case Register16MemoryPlaceholder::BC:
-            return &Register::U16::BC;
+            reg = &Register::U16::BC;
+            break;
         case Register16MemoryPlaceholder::DE:
-            return &Register::U16::DE;
+            reg = &Register::U16::DE;
+            break;
         case Register16MemoryPlaceholder::HL_PLUS:
         case Register16MemoryPlaceholder::HL_MINUS:
-            return &Register::U16::HL;
+            reg = &Register::U16::HL;
+            break;
         default:
             throw BadRegister();
     }
+
+    return std::make_pair(r16placeholder, reg);
 }
 
 CPU::Register16 CPU::get_register16_stack() const
@@ -1595,40 +1709,40 @@ bool CPU::check_condition_is_met() const
 
 void CPU::set_carry(const bool carry)
 {
-    this->reg.u8.F = this->reg.u8.F & ~Flags::CARRY | carry << Flags::CARRY;
+    this->reg.u8.F = this->reg.u8.F & ~Flags::CARRY | (carry ? Flags::CARRY : 0);
 }
 
 bool CPU::carry() const
 {
-    return this->reg.u8.F & Flags::CARRY != 0;
+    return (this->reg.u8.F & Flags::CARRY) != 0;
 }
 
 void CPU::set_half_carry(const bool half_carry)
 {
-    this->reg.u8.F = this->reg.u8.F & ~Flags::HALF_CARRY | half_carry << Flags::HALF_CARRY;
+    this->reg.u8.F = this->reg.u8.F & ~Flags::HALF_CARRY | (half_carry ? Flags::HALF_CARRY : 0);
 }
 
 bool CPU::half_carry() const
 {
-    return this->reg.u8.F & Flags::HALF_CARRY != 0;
+    return (this->reg.u8.F & Flags::HALF_CARRY) != 0;
 }
 
 void CPU::set_subtract(const bool subtract)
 {
-    this->reg.u8.F = this->reg.u8.F & ~Flags::SUBTRACT | subtract << Flags::SUBTRACT;
+    this->reg.u8.F = this->reg.u8.F & ~Flags::SUBTRACT | (subtract ? Flags::SUBTRACT : 0);
 }
 
 bool CPU::subtract() const
 {
-    return this->reg.u8.F & Flags::SUBTRACT != 0;
+    return (this->reg.u8.F & Flags::SUBTRACT) != 0;
 }
 
 void CPU::set_zero(const bool zero)
 {
-    this->reg.u8.F = this->reg.u8.F & ~Flags::ZERO | zero << Flags::ZERO;
+    this->reg.u8.F = this->reg.u8.F & ~Flags::ZERO | (zero ? Flags::ZERO : 0);
 }
 
 bool CPU::zero() const
 {
-    return this->reg.u8.F & Flags::ZERO != 0;
+    return (this->reg.u8.F & Flags::ZERO) != 0;
 }
