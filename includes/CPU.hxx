@@ -47,6 +47,8 @@ class CPU
         constexpr static Instruction LDH_A_MEM_C();
 
         constexpr static Instruction AND_R8();
+        constexpr static Instruction AND_MEM_HL();
+        constexpr static Instruction AND_IMM8();
         constexpr static Instruction XOR_R8();
         constexpr static Instruction OR_R8();
         constexpr static Instruction ILL();
@@ -435,10 +437,21 @@ class CPU
      */
     void POP_R16();
 
+    void AND(uint8_t operand);
     /**
-     * @brief AND from 8-bit register to register A.
+     * @brief Set A to the bitwise AND between the value in r8 and A.
      */
     void AND_R8();
+
+    /**
+     * @brief Set A to the bitwise AND between the byte pointed to by HL and A.
+     */
+    void AND_MEM_HL();
+
+    /**
+     * @brief Set A to the bitwise AND between the value n8 and A.
+     */
+    void AND_IMM8();
 
     /**
      * @brief AND from 8-bit register to register A.

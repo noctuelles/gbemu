@@ -177,7 +177,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::AND_R8(),          // 0xA3
     Instruction::AND_R8(),          // 0xA4
     Instruction::AND_R8(),          // 0xA5
-    {},                             // 0xA6
+    Instruction::AND_MEM_HL(),      // 0xA6
     Instruction::AND_R8(),          // 0xA7
     Instruction::XOR_R8(),          // 0xA8
     Instruction::XOR_R8(),          // 0xA9
@@ -241,7 +241,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                             // 0xE3
     {},                             // 0xE4
     Instruction::PUSH_R16(),        // 0xE5
-    {},                             // 0xE6
+    Instruction::AND_IMM8(),        // 0xE6
     Instruction::RST_VEC(),         // 0xE7
     {},                             // 0xE8
     Instruction::JP_HL(),           // 0xE9
@@ -635,6 +635,16 @@ constexpr CPU::Instruction CPU::Instruction::LDH_A_MEM_C()
 constexpr CPU::Instruction CPU::Instruction::AND_R8()
 {
     return Instruction{"AND {:s}", &CPU::AND_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::AND_MEM_HL()
+{
+    return Instruction{"AND [HL]", &CPU::AND_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::AND_IMM8()
+{
+    return Instruction{"AND {:02X}h", &CPU::AND_IMM8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::XOR_R8()
@@ -1166,22 +1176,29 @@ void CPU::SET_MEM_HL()
         });
 }
 
+void CPU::AND(const uint8_t operand)
+{
+    this->reg.u8.A &= operand;
+
+    this->set_zero(this->reg.u8.A == 0);
+    this->set_half_carry(true);
+    this->set_subtract(false);
+    this->set_carry(false);
+}
+
 void CPU::AND_R8()
 {
-    const auto src{this->get_register8(Register8Position::RIGHTMOST)};
+    this->AND(this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST));
+}
 
-    this->reg.u8.A &= this->reg.u8.*src;
-    if (this->reg.u8.A == 0)
-    {
-        this->reg.u8.F |= Flags::ZERO;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::ZERO;
-    }
-    this->reg.u8.F |= Flags::HALF_CARRY;
-    this->reg.u8.F &= ~Flags::SUBTRACT;
-    this->reg.u8.F &= ~Flags::CARRY;
+void CPU::AND_MEM_HL()
+{
+    this->micro_ops.emplace([this] { this->AND(this->bus.read(this->reg.u16.HL)); });
+}
+
+void CPU::AND_IMM8()
+{
+    this->micro_ops.emplace([this] { this->AND(this->bus.read(this->reg.u16.PC++)); });
 }
 
 void CPU::OR_R8()
