@@ -22,6 +22,14 @@ class CPU
         constexpr Instruction();
         constexpr Instruction(std::string_view format, void (CPU::*op)());
 
+        constexpr static Instruction NOP();
+        constexpr static Instruction STOP();
+        constexpr static Instruction HALT();
+        constexpr static Instruction CPL();
+        constexpr static Instruction CCF();
+        constexpr static Instruction DAA();
+        constexpr static Instruction SCF();
+
         constexpr static Instruction LD_R8_R8();
         constexpr static Instruction LD_R16_IMM16();
         constexpr static Instruction LD_R8_IMM8();
@@ -30,6 +38,7 @@ class CPU
         constexpr static Instruction LD_MEM_HL_IMM8();
 
         constexpr static Instruction LD_MEM_R16_A();
+        constexpr static Instruction LD_MEM_16_SP();
         constexpr static Instruction LD_A_MEM_R16();
 
         constexpr static Instruction LDH_MEM_16_A();
@@ -81,7 +90,7 @@ class CPU
         constexpr static Instruction PUSH_R16();
         constexpr static Instruction POP_R16();
 
-        /* Prefixed instructions */
+        /* Bit manipulation */
 
         constexpr static Instruction RRC_R8();
         constexpr static Instruction RRC_MEM_HL();
@@ -92,6 +101,8 @@ class CPU
         constexpr static Instruction RL_R8();
         constexpr static Instruction RLA();
         constexpr static Instruction RLCA();
+        constexpr static Instruction RRA();
+        constexpr static Instruction RRCA();
         constexpr static Instruction RL_MEM_HL();
 
         constexpr static Instruction SLA_R8();
@@ -292,27 +303,72 @@ class CPU
     void               set_zero(bool zero);
     [[nodiscard]] bool zero() const;
 
+    /**
+     * @brief No OPeration.
+     */
     void NOP();
+
+    /**
+     * @brief Enter CPU very low power mode. Also used to switch between GBC double speed and normal speed CPU modes.
+     */
+    void STOP();
+
+    /**
+     * @brief Enter CPU low-power consumption mode until an interrupt occurs.
+     */
+    void HALT();
+
+    /**
+     * @brief ComPLement accumulator (A = ~A); also called bitwise NOT.
+     */
+    void CPL();
+
+    /**
+     * @brief Complement Carry Flag.
+     */
+    void CCF();
+
+    /**
+    * @brief Decimal Adjust Accumulator. Designed to be used after performing an arithmetic instruction (ADD, ADC, SUB,
+    SBC) whose inputs were in Binary-Coded Decimal (BCD), adjusting the result to likewise be in BCD.
+     */
+    void DAA();
+
+    /**
+     * @brief Set Carry Flag.
+     */
+    void SCF();
+
     /**
      * @brief Illegal instruction.
      */
     void ILL();
 
     /**
+     * @brief Disables interrupt handling by setting IME=0 and cancelling any scheduled effects of the EI instruction if
+     * any.
+     */
+    void DI();
+
+    /**
+     * @brief Schedules interrupt handling to be enabled after the next machine cycle.
+     */
+    void EI();
+
+    /**
      * @brief Load from 8-bit register to 8-bit register.
      */
     void LD_R8_R8();
+
     /**
      * @brief Load from 8-bit immediate to 8-bit register.
      */
     void LD_R8_IMM8();
+
     /**
      * @brief Load from 16-bit immediate to 16-bit register.
      */
     void LD_R16_IMM16();
-    /**
-     * @brief Load from memory pointed by HL to 8-bit register.
-     */
 
     /**
      * @brief Store value in register A into the byte pointed to by register r16.
@@ -324,7 +380,11 @@ class CPU
      */
     void LD_A_MEM_R16();
 
+    /**
+     * @brief Load from memory pointed by HL to 8-bit register.
+     */
     void LD_R8_MEM_HL();
+
     /**
      * @brief Load from 8-bit register to memory pointed by HL.
      */
@@ -359,6 +419,11 @@ class CPU
      * @brief Load value in register A from the byte at address $FF00+c.
      */
     void LDH_A_MEM_C();
+
+    /**
+     * @brief Copy SP & $FF at address n16 and SP >> 8 at address n16 + 1.
+     */
+    void LD_MEM_16_SP();
 
     /**
      * @brief Push register r16 into the stack.
@@ -529,14 +594,24 @@ class CPU
     void RL_R8();
 
     /**
-    * @brief Rotate register A left, through the carry flag.
-    */
+     * @brief Rotate register A left, through the carry flag.
+     */
     void RLA();
 
     /**
-    * @brief Rotate register A left.
-    */
+     * @brief Rotate register A left.
+     */
     void RLCA();
+
+    /**
+     * @brief Rotate register A right.
+     */
+    void RRCA();
+
+    /**
+     * @brief Rotate register A right, through the carry flag.
+     */
+    void RRA();
 
     /**
      * @brief Rotate the byte pointed to by HL left, through the carry flag.

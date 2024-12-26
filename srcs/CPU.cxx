@@ -11,262 +11,262 @@
 #include <utility>
 
 const CPU::InstructionLookupTable CPU::inst_lookup{{
-    {},                            // 0x00
-    Instruction::LD_R16_IMM16(),   // 0x01
-    Instruction::LD_MEM_R16_A(),   // 0x02
-    Instruction::INC_R16(),        // 0x03
-    Instruction::INC_R8(),         // 0x04
-    Instruction::DEC_R8(),         // 0x05
-    Instruction::LD_R8_IMM8(),     // 0x06
-    Instruction::RLCA(),           // 0x07
-    {},                            // 0x08
-    Instruction::ADD_HL_R16(),     // 0x09
-    Instruction::LD_A_MEM_R16(),   // 0x0A
-    Instruction::DEC_R16(),        // 0x0B
-    Instruction::INC_R8(),         // 0x0C
-    Instruction::DEC_R8(),         // 0x0D
-    Instruction::LD_R8_IMM8(),     // 0x0E
-    {},                            // 0x0F
-    {},                            // 0x10
-    Instruction::LD_R16_IMM16(),   // 0x11
-    Instruction::LD_MEM_R16_A(),   // 0x12
-    Instruction::INC_R16(),        // 0x13
-    Instruction::INC_R8(),         // 0x14
-    Instruction::DEC_R8(),         // 0x15
-    Instruction::LD_R8_IMM8(),     // 0x16
-    Instruction::RLA(),            // 0x17
-    Instruction::JR_IMM8(),        // 0x18
-    Instruction::ADD_HL_R16(),     // 0x19
-    Instruction::LD_A_MEM_R16(),   // 0x1A
-    Instruction::DEC_R16(),        // 0x1B
-    Instruction::INC_R8(),         // 0x1C
-    Instruction::DEC_R8(),         // 0x1D
-    Instruction::LD_R8_IMM8(),     // 0x1E
-    {},                            // 0x1F
-    Instruction::JR_CC_IMM8(),     // 0x20
-    Instruction::LD_R16_IMM16(),   // 0x21
-    Instruction::LD_MEM_R16_A(),   // 0x22
-    Instruction::INC_R16(),        // 0x23
-    Instruction::INC_R8(),         // 0x24
-    Instruction::DEC_R8(),         // 0x25
-    Instruction::LD_R8_IMM8(),     // 0x26
-    {},                            // 0x27
-    Instruction::JR_CC_IMM8(),     // 0x28
-    Instruction::ADD_HL_R16(),     // 0x29
-    Instruction::LD_A_MEM_R16(),   // 0x2A
-    Instruction::DEC_R16(),        // 0x2B
-    Instruction::INC_R8(),         // 0x2C
-    Instruction::DEC_R8(),         // 0x2D
-    Instruction::LD_R8_IMM8(),     // 0x2E
-    {},                            // 0x2F
-    Instruction::JR_CC_IMM8(),     // 0x30
-    Instruction::LD_R16_IMM16(),   // 0x31
-    Instruction::LD_MEM_R16_A(),   // 0x32
-    Instruction::INC_R16(),        // 0x33
-    Instruction::INC_MEM_HL(),     // 0x34
-    Instruction::DEC_MEM_HL(),     // 0x35
-    {},                            // 0x36
-    {},                            // 0x37
-    Instruction::JR_CC_IMM8(),     // 0x38
-    Instruction::ADD_HL_R16(),     // 0x39
-    Instruction::LD_A_MEM_R16(),   // 0x3A
-    Instruction::DEC_R16(),        // 0x3B
-    Instruction::INC_R8(),         // 0x3C
-    Instruction::DEC_R8(),         // 0x3D
-    Instruction::LD_R8_IMM8(),     // 0x3E
-    {},                            // 0x3F
-    Instruction::LD_R8_R8(),       // 0x40
-    Instruction::LD_R8_R8(),       // 0x41
-    Instruction::LD_R8_R8(),       // 0x42
-    Instruction::LD_R8_R8(),       // 0x43
-    Instruction::LD_R8_R8(),       // 0x44
-    Instruction::LD_R8_R8(),       // 0x45
-    Instruction::LD_R8_MEM_HL(),   // 0x46
-    Instruction::LD_R8_R8(),       // 0x47
-    Instruction::LD_R8_R8(),       // 0x48
-    Instruction::LD_R8_R8(),       // 0x49
-    Instruction::LD_R8_R8(),       // 0x4A
-    Instruction::LD_R8_R8(),       // 0x4B
-    Instruction::LD_R8_R8(),       // 0x4C
-    Instruction::LD_R8_R8(),       // 0x4D
-    Instruction::LD_R8_MEM_HL(),   // 0x4E
-    Instruction::LD_R8_R8(),       // 0x4F
-    Instruction::LD_R8_R8(),       // 0x50
-    Instruction::LD_R8_R8(),       // 0x51
-    Instruction::LD_R8_R8(),       // 0x52
-    Instruction::LD_R8_R8(),       // 0x53
-    Instruction::LD_R8_R8(),       // 0x54
-    Instruction::LD_R8_R8(),       // 0x55
-    Instruction::LD_R8_MEM_HL(),   // 0x56
-    Instruction::LD_R8_R8(),       // 0x57
-    Instruction::LD_R8_R8(),       // 0x58
-    Instruction::LD_R8_R8(),       // 0x59
-    Instruction::LD_R8_R8(),       // 0x5A
-    Instruction::LD_R8_R8(),       // 0x5B
-    Instruction::LD_R8_R8(),       // 0x5C
-    Instruction::LD_R8_R8(),       // 0x5D
-    Instruction::LD_R8_MEM_HL(),   // 0x5E
-    Instruction::LD_R8_R8(),       // 0x5F
-    Instruction::LD_R8_R8(),       // 0x60
-    Instruction::LD_R8_R8(),       // 0x61
-    Instruction::LD_R8_R8(),       // 0x62
-    Instruction::LD_R8_R8(),       // 0x63
-    Instruction::LD_R8_R8(),       // 0x64
-    Instruction::LD_R8_R8(),       // 0x65
-    Instruction::LD_R8_MEM_HL(),   // 0x66
-    Instruction::LD_R8_R8(),       // 0x67
-    Instruction::LD_R8_R8(),       // 0x68
-    Instruction::LD_R8_R8(),       // 0x69
-    Instruction::LD_R8_R8(),       // 0x6A
-    Instruction::LD_R8_R8(),       // 0x6B
-    Instruction::LD_R8_R8(),       // 0x6C
-    Instruction::LD_R8_R8(),       // 0x6D
-    Instruction::LD_R8_MEM_HL(),   // 0x6E
-    Instruction::LD_R8_R8(),       // 0x6F
-    Instruction::LD_MEM_HL_R8(),   // 0x70
-    Instruction::LD_MEM_HL_R8(),   // 0x71
-    Instruction::LD_MEM_HL_R8(),   // 0x72
-    Instruction::LD_MEM_HL_R8(),   // 0x73
-    Instruction::LD_MEM_HL_R8(),   // 0x74
-    Instruction::LD_MEM_HL_R8(),   // 0x75
-    {},                            // 0x76
-    Instruction::LD_MEM_HL_R8(),   // 0x77
-    Instruction::LD_R8_R8(),       // 0x78
-    Instruction::LD_R8_R8(),       // 0x79
-    Instruction::LD_R8_R8(),       // 0x7A
-    Instruction::LD_R8_R8(),       // 0x7B
-    Instruction::LD_R8_R8(),       // 0x7C
-    Instruction::LD_R8_R8(),       // 0x7D
-    Instruction::LD_R8_MEM_HL(),   // 0x7E
-    Instruction::LD_R8_R8(),       // 0x7F
-    Instruction::ADD_A_R8(),       // 0x80
-    Instruction::ADD_A_R8(),       // 0x81
-    Instruction::ADD_A_R8(),       // 0x82
-    Instruction::ADD_A_R8(),       // 0x83
-    Instruction::ADD_A_R8(),       // 0x84
-    Instruction::ADD_A_R8(),       // 0x85
-    Instruction::ADD_A_MEM_HL(),   // 0x86
-    Instruction::ADD_A_R8(),       // 0x87
-    Instruction::ADC_A_R8(),       // 0x88
-    Instruction::ADC_A_R8(),       // 0x8b
-    Instruction::ADC_A_R8(),       // 0x8A
-    Instruction::ADC_A_R8(),       // 0x8B
-    Instruction::ADC_A_R8(),       // 0x8C
-    Instruction::ADC_A_R8(),       // 0x8D
-    Instruction::ADC_A_MEM_HL(),   // 0x8E
-    Instruction::ADC_A_R8(),       // 0x90
-    {},                            // 0x90
-    {},                            // 0x91
-    {},                            // 0x92
-    {},                            // 0x93
-    {},                            // 0x94
-    {},                            // 0x95
-    {},                            // 0x96
-    {},                            // 0x97
-    {},                            // 0x98
-    {},                            // 0x99
-    {},                            // 0x9A
-    {},                            // 0x9B
-    {},                            // 0x9C
-    {},                            // 0x9D
-    {},                            // 0x9E
-    {},                            // 0x9F
-    Instruction::AND_R8(),         // 0xA0
-    Instruction::AND_R8(),         // 0xA1
-    Instruction::AND_R8(),         // 0xA2
-    Instruction::AND_R8(),         // 0xA3
-    Instruction::AND_R8(),         // 0xA4
-    Instruction::AND_R8(),         // 0xA5
-    {},                            // 0xA6
-    Instruction::AND_R8(),         // 0xA7
-    Instruction::XOR_R8(),         // 0xA8
-    Instruction::XOR_R8(),         // 0xA9
-    Instruction::XOR_R8(),         // 0xAA
-    Instruction::XOR_R8(),         // 0xAB
-    Instruction::XOR_R8(),         // 0xAC
-    Instruction::XOR_R8(),         // 0xAD
-    {},                            // 0xAE
-    Instruction::XOR_R8(),         // 0xAF
-    Instruction::OR_R8(),          // 0xB0
-    Instruction::OR_R8(),          // 0xB1
-    Instruction::OR_R8(),          // 0xB2
-    Instruction::OR_R8(),          // 0xB3
-    Instruction::OR_R8(),          // 0xB4
-    Instruction::OR_R8(),          // 0xB5
-    {},                            // 0xB6
-    Instruction::OR_R8(),          // 0xB7
-    {},                            // 0xB8
-    {},                            // 0xB9
-    {},                            // 0xBA
-    {},                            // 0xBB
-    {},                            // 0xBC
-    {},                            // 0xBD
-    {},                            // 0xBE
-    {},                            // 0xBF
-    Instruction::RET_CC(),         // 0xC0
-    Instruction::POP_R16(),        // 0xC1
-    Instruction::JP_CC_IMM16(),    // 0xC2
-    Instruction::JP_IMM16(),       // 0xC3
-    Instruction::CALL_CC_IMM16(),  // 0xC4
-    Instruction::PUSH_R16(),       // 0xC5
-    Instruction::ADD_A_IMM8(),     // 0xC6
-    Instruction::RST_VEC(),        // 0xC7
-    Instruction::RET_CC(),         // 0xC8
-    Instruction::RET(),            // 0xC9
-    Instruction::JP_CC_IMM16(),    // 0xCA
-    Instruction::PREFIX(),         // 0xCB
-    Instruction::CALL_CC_IMM16(),  // 0xCC
-    Instruction::CALL_IMM16(),     // 0xCD
-    {},                            // 0xCE
-    Instruction::RST_VEC(),        // 0xCF
-    Instruction::RET_CC(),         // 0xD0
-    Instruction::POP_R16(),        // 0xD1
-    Instruction::JP_CC_IMM16(),    // 0xD2
-    {},                            // 0xD3
-    Instruction::CALL_CC_IMM16(),  // 0xD4
-    Instruction::PUSH_R16(),       // 0xD5
-    {},                            // 0xD6
-    Instruction::RST_VEC(),        // 0xD7
-    Instruction::RET_CC(),         // 0xD8
-    {},                            // 0xD9
-    Instruction::JP_CC_IMM16(),    // 0xDA
-    {},                            // 0xDB
-    Instruction::CALL_CC_IMM16(),  // 0xDC
-    {},                            // 0xDD
-    {},                            // 0xDE
-    Instruction::RST_VEC(),        // 0xDF
-    Instruction::LDH_MEM_16_A(),   // 0xE0
-    Instruction::POP_R16(),        // 0xE1
-    Instruction::LDH_MEM_C_A(),    // 0xE2
-    {},                            // 0xE3
-    {},                            // 0xE4
-    Instruction::PUSH_R16(),       // 0xE5
-    {},                            // 0xE6
-    Instruction::RST_VEC(),        // 0xE7
-    {},                            // 0xE8
-    Instruction::JP_HL(),          // 0xE9
-    {},                            // 0xEA
-    {},                            // 0xEB
-    {},                            // 0xEC
-    {},                            // 0xED
-    {},                            // 0xEE
-    Instruction::RST_VEC(),        // 0xEF
-    Instruction::LDH_A_MEM_16(),   // 0xF0
-    Instruction::POP_R16(),        // 0xF1
-    Instruction::LDH_A_MEM_C(),    // 0xF2
-    {},                            // 0xF3
-    {},                            // 0xF4
-    Instruction::PUSH_R16(),       // 0xF5
-    {},                            // 0xF6
-    Instruction::RST_VEC(),        // 0xF7
-    {},                            // 0xF8
-    {},                            // 0xF9
-    {},                            // 0xFA
-    {},                            // 0xFB
-    {},                            // 0xFC
-    {},                            // 0xFD
-    {},                            // 0xFE
-    Instruction::RST_VEC(),        // 0xFF
+    Instruction::NOP(),             // 0x00
+    Instruction::LD_R16_IMM16(),    // 0x01
+    Instruction::LD_MEM_R16_A(),    // 0x02
+    Instruction::INC_R16(),         // 0x03
+    Instruction::INC_R8(),          // 0x04
+    Instruction::DEC_R8(),          // 0x05
+    Instruction::LD_R8_IMM8(),      // 0x06
+    Instruction::RLCA(),            // 0x07
+    Instruction::LD_MEM_16_SP(),    // 0x08
+    Instruction::ADD_HL_R16(),      // 0x09
+    Instruction::LD_A_MEM_R16(),    // 0x0A
+    Instruction::DEC_R16(),         // 0x0B
+    Instruction::INC_R8(),          // 0x0C
+    Instruction::DEC_R8(),          // 0x0D
+    Instruction::LD_R8_IMM8(),      // 0x0E
+    Instruction::RRCA(),            // 0x0F
+    Instruction::STOP(),            // 0x10
+    Instruction::LD_R16_IMM16(),    // 0x11
+    Instruction::LD_MEM_R16_A(),    // 0x12
+    Instruction::INC_R16(),         // 0x13
+    Instruction::INC_R8(),          // 0x14
+    Instruction::DEC_R8(),          // 0x15
+    Instruction::LD_R8_IMM8(),      // 0x16
+    Instruction::RLA(),             // 0x17
+    Instruction::JR_IMM8(),         // 0x18
+    Instruction::ADD_HL_R16(),      // 0x19
+    Instruction::LD_A_MEM_R16(),    // 0x1A
+    Instruction::DEC_R16(),         // 0x1B
+    Instruction::INC_R8(),          // 0x1C
+    Instruction::DEC_R8(),          // 0x1D
+    Instruction::LD_R8_IMM8(),      // 0x1E
+    Instruction::RRA(),             // 0x1F
+    Instruction::JR_CC_IMM8(),      // 0x20
+    Instruction::LD_R16_IMM16(),    // 0x21
+    Instruction::LD_MEM_R16_A(),    // 0x22
+    Instruction::INC_R16(),         // 0x23
+    Instruction::INC_R8(),          // 0x24
+    Instruction::DEC_R8(),          // 0x25
+    Instruction::LD_R8_IMM8(),      // 0x26
+    Instruction::DAA(),             // 0x27
+    Instruction::JR_CC_IMM8(),      // 0x28
+    Instruction::ADD_HL_R16(),      // 0x29
+    Instruction::LD_A_MEM_R16(),    // 0x2A
+    Instruction::DEC_R16(),         // 0x2B
+    Instruction::INC_R8(),          // 0x2C
+    Instruction::DEC_R8(),          // 0x2D
+    Instruction::LD_R8_IMM8(),      // 0x2E
+    Instruction::CPL(),             // 0x2F
+    Instruction::JR_CC_IMM8(),      // 0x30
+    Instruction::LD_R16_IMM16(),    // 0x31
+    Instruction::LD_MEM_R16_A(),    // 0x32
+    Instruction::INC_R16(),         // 0x33
+    Instruction::INC_MEM_HL(),      // 0x34
+    Instruction::DEC_MEM_HL(),      // 0x35
+    Instruction::LD_MEM_HL_IMM8(),  // 0x36
+    Instruction::SCF(),             // 0x37
+    Instruction::JR_CC_IMM8(),      // 0x38
+    Instruction::ADD_HL_R16(),      // 0x39
+    Instruction::LD_A_MEM_R16(),    // 0x3A
+    Instruction::DEC_R16(),         // 0x3B
+    Instruction::INC_R8(),          // 0x3C
+    Instruction::DEC_R8(),          // 0x3D
+    Instruction::LD_R8_IMM8(),      // 0x3E
+    Instruction::CCF(),             // 0x3F
+    Instruction::LD_R8_R8(),        // 0x40
+    Instruction::LD_R8_R8(),        // 0x41
+    Instruction::LD_R8_R8(),        // 0x42
+    Instruction::LD_R8_R8(),        // 0x43
+    Instruction::LD_R8_R8(),        // 0x44
+    Instruction::LD_R8_R8(),        // 0x45
+    Instruction::LD_R8_MEM_HL(),    // 0x46
+    Instruction::LD_R8_R8(),        // 0x47
+    Instruction::LD_R8_R8(),        // 0x48
+    Instruction::LD_R8_R8(),        // 0x49
+    Instruction::LD_R8_R8(),        // 0x4A
+    Instruction::LD_R8_R8(),        // 0x4B
+    Instruction::LD_R8_R8(),        // 0x4C
+    Instruction::LD_R8_R8(),        // 0x4D
+    Instruction::LD_R8_MEM_HL(),    // 0x4E
+    Instruction::LD_R8_R8(),        // 0x4F
+    Instruction::LD_R8_R8(),        // 0x50
+    Instruction::LD_R8_R8(),        // 0x51
+    Instruction::LD_R8_R8(),        // 0x52
+    Instruction::LD_R8_R8(),        // 0x53
+    Instruction::LD_R8_R8(),        // 0x54
+    Instruction::LD_R8_R8(),        // 0x55
+    Instruction::LD_R8_MEM_HL(),    // 0x56
+    Instruction::LD_R8_R8(),        // 0x57
+    Instruction::LD_R8_R8(),        // 0x58
+    Instruction::LD_R8_R8(),        // 0x59
+    Instruction::LD_R8_R8(),        // 0x5A
+    Instruction::LD_R8_R8(),        // 0x5B
+    Instruction::LD_R8_R8(),        // 0x5C
+    Instruction::LD_R8_R8(),        // 0x5D
+    Instruction::LD_R8_MEM_HL(),    // 0x5E
+    Instruction::LD_R8_R8(),        // 0x5F
+    Instruction::LD_R8_R8(),        // 0x60
+    Instruction::LD_R8_R8(),        // 0x61
+    Instruction::LD_R8_R8(),        // 0x62
+    Instruction::LD_R8_R8(),        // 0x63
+    Instruction::LD_R8_R8(),        // 0x64
+    Instruction::LD_R8_R8(),        // 0x65
+    Instruction::LD_R8_MEM_HL(),    // 0x66
+    Instruction::LD_R8_R8(),        // 0x67
+    Instruction::LD_R8_R8(),        // 0x68
+    Instruction::LD_R8_R8(),        // 0x69
+    Instruction::LD_R8_R8(),        // 0x6A
+    Instruction::LD_R8_R8(),        // 0x6B
+    Instruction::LD_R8_R8(),        // 0x6C
+    Instruction::LD_R8_R8(),        // 0x6D
+    Instruction::LD_R8_MEM_HL(),    // 0x6E
+    Instruction::LD_R8_R8(),        // 0x6F
+    Instruction::LD_MEM_HL_R8(),    // 0x70
+    Instruction::LD_MEM_HL_R8(),    // 0x71
+    Instruction::LD_MEM_HL_R8(),    // 0x72
+    Instruction::LD_MEM_HL_R8(),    // 0x73
+    Instruction::LD_MEM_HL_R8(),    // 0x74
+    Instruction::LD_MEM_HL_R8(),    // 0x75
+    Instruction::HALT(),            // 0x76
+    Instruction::LD_MEM_HL_R8(),    // 0x77
+    Instruction::LD_R8_R8(),        // 0x78
+    Instruction::LD_R8_R8(),        // 0x79
+    Instruction::LD_R8_R8(),        // 0x7A
+    Instruction::LD_R8_R8(),        // 0x7B
+    Instruction::LD_R8_R8(),        // 0x7C
+    Instruction::LD_R8_R8(),        // 0x7D
+    Instruction::LD_R8_MEM_HL(),    // 0x7E
+    Instruction::LD_R8_R8(),        // 0x7F
+    Instruction::ADD_A_R8(),        // 0x80
+    Instruction::ADD_A_R8(),        // 0x81
+    Instruction::ADD_A_R8(),        // 0x82
+    Instruction::ADD_A_R8(),        // 0x83
+    Instruction::ADD_A_R8(),        // 0x84
+    Instruction::ADD_A_R8(),        // 0x85
+    Instruction::ADD_A_MEM_HL(),    // 0x86
+    Instruction::ADD_A_R8(),        // 0x87
+    Instruction::ADC_A_R8(),        // 0x88
+    Instruction::ADC_A_R8(),        // 0x8b
+    Instruction::ADC_A_R8(),        // 0x8A
+    Instruction::ADC_A_R8(),        // 0x8B
+    Instruction::ADC_A_R8(),        // 0x8C
+    Instruction::ADC_A_R8(),        // 0x8D
+    Instruction::ADC_A_MEM_HL(),    // 0x8E
+    Instruction::ADC_A_R8(),        // 0x90
+    {},                             // 0x90
+    {},                             // 0x91
+    {},                             // 0x92
+    {},                             // 0x93
+    {},                             // 0x94
+    {},                             // 0x95
+    {},                             // 0x96
+    {},                             // 0x97
+    {},                             // 0x98
+    {},                             // 0x99
+    {},                             // 0x9A
+    {},                             // 0x9B
+    {},                             // 0x9C
+    {},                             // 0x9D
+    {},                             // 0x9E
+    {},                             // 0x9F
+    Instruction::AND_R8(),          // 0xA0
+    Instruction::AND_R8(),          // 0xA1
+    Instruction::AND_R8(),          // 0xA2
+    Instruction::AND_R8(),          // 0xA3
+    Instruction::AND_R8(),          // 0xA4
+    Instruction::AND_R8(),          // 0xA5
+    {},                             // 0xA6
+    Instruction::AND_R8(),          // 0xA7
+    Instruction::XOR_R8(),          // 0xA8
+    Instruction::XOR_R8(),          // 0xA9
+    Instruction::XOR_R8(),          // 0xAA
+    Instruction::XOR_R8(),          // 0xAB
+    Instruction::XOR_R8(),          // 0xAC
+    Instruction::XOR_R8(),          // 0xAD
+    {},                             // 0xAE
+    Instruction::XOR_R8(),          // 0xAF
+    Instruction::OR_R8(),           // 0xB0
+    Instruction::OR_R8(),           // 0xB1
+    Instruction::OR_R8(),           // 0xB2
+    Instruction::OR_R8(),           // 0xB3
+    Instruction::OR_R8(),           // 0xB4
+    Instruction::OR_R8(),           // 0xB5
+    {},                             // 0xB6
+    Instruction::OR_R8(),           // 0xB7
+    {},                             // 0xB8
+    {},                             // 0xB9
+    {},                             // 0xBA
+    {},                             // 0xBB
+    {},                             // 0xBC
+    {},                             // 0xBD
+    {},                             // 0xBE
+    {},                             // 0xBF
+    Instruction::RET_CC(),          // 0xC0
+    Instruction::POP_R16(),         // 0xC1
+    Instruction::JP_CC_IMM16(),     // 0xC2
+    Instruction::JP_IMM16(),        // 0xC3
+    Instruction::CALL_CC_IMM16(),   // 0xC4
+    Instruction::PUSH_R16(),        // 0xC5
+    Instruction::ADD_A_IMM8(),      // 0xC6
+    Instruction::RST_VEC(),         // 0xC7
+    Instruction::RET_CC(),          // 0xC8
+    Instruction::RET(),             // 0xC9
+    Instruction::JP_CC_IMM16(),     // 0xCA
+    Instruction::PREFIX(),          // 0xCB
+    Instruction::CALL_CC_IMM16(),   // 0xCC
+    Instruction::CALL_IMM16(),      // 0xCD
+    {},                             // 0xCE
+    Instruction::RST_VEC(),         // 0xCF
+    Instruction::RET_CC(),          // 0xD0
+    Instruction::POP_R16(),         // 0xD1
+    Instruction::JP_CC_IMM16(),     // 0xD2
+    {},                             // 0xD3
+    Instruction::CALL_CC_IMM16(),   // 0xD4
+    Instruction::PUSH_R16(),        // 0xD5
+    {},                             // 0xD6
+    Instruction::RST_VEC(),         // 0xD7
+    Instruction::RET_CC(),          // 0xD8
+    {},                             // 0xD9
+    Instruction::JP_CC_IMM16(),     // 0xDA
+    {},                             // 0xDB
+    Instruction::CALL_CC_IMM16(),   // 0xDC
+    {},                             // 0xDD
+    {},                             // 0xDE
+    Instruction::RST_VEC(),         // 0xDF
+    Instruction::LDH_MEM_16_A(),    // 0xE0
+    Instruction::POP_R16(),         // 0xE1
+    Instruction::LDH_MEM_C_A(),     // 0xE2
+    {},                             // 0xE3
+    {},                             // 0xE4
+    Instruction::PUSH_R16(),        // 0xE5
+    {},                             // 0xE6
+    Instruction::RST_VEC(),         // 0xE7
+    {},                             // 0xE8
+    Instruction::JP_HL(),           // 0xE9
+    {},                             // 0xEA
+    {},                             // 0xEB
+    {},                             // 0xEC
+    {},                             // 0xED
+    {},                             // 0xEE
+    Instruction::RST_VEC(),         // 0xEF
+    Instruction::LDH_A_MEM_16(),    // 0xF0
+    Instruction::POP_R16(),         // 0xF1
+    Instruction::LDH_A_MEM_C(),     // 0xF2
+    {},                             // 0xF3
+    {},                             // 0xF4
+    Instruction::PUSH_R16(),        // 0xF5
+    {},                             // 0xF6
+    Instruction::RST_VEC(),         // 0xF7
+    {},                             // 0xF8
+    {},                             // 0xF9
+    {},                             // 0xFA
+    {},                             // 0xFB
+    {},                             // 0xFC
+    {},                             // 0xFD
+    {},                             // 0xFE
+    Instruction::RST_VEC(),         // 0xFF
 }};
 
 const CPU::InstructionLookupTable CPU::cb_prefixed_inst_lookup{{
@@ -532,6 +532,41 @@ constexpr CPU::Instruction::Instruction() : format("ILL"), op(&CPU::ILL) {}
 
 constexpr CPU::Instruction::Instruction(const std::string_view format, void (CPU::*op)()) : format(format), op(op) {}
 
+constexpr CPU::Instruction CPU::Instruction::NOP()
+{
+    return Instruction{"NOP", &CPU::NOP};
+}
+
+constexpr CPU::Instruction CPU::Instruction::STOP()
+{
+    return Instruction{"STOP", &CPU::STOP};
+}
+
+constexpr CPU::Instruction CPU::Instruction::HALT()
+{
+    return Instruction{"HALT", &CPU::HALT};
+}
+
+constexpr CPU::Instruction CPU::Instruction::CPL()
+{
+    return Instruction{"CPL", &CPU::CPL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::CCF()
+{
+    return Instruction{"CCF", &CPU::CCF};
+}
+
+constexpr CPU::Instruction CPU::Instruction::DAA()
+{
+    return Instruction{"DAA", &CPU::DAA};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SCF()
+{
+    return Instruction{"SCF", &CPU::SCF};
+}
+
 constexpr CPU::Instruction CPU::Instruction::LD_R8_R8()
 {
     return Instruction{"LD {:s}, {:s}", &CPU::LD_R8_R8};
@@ -559,12 +594,17 @@ constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_R8()
 
 constexpr CPU::Instruction CPU::Instruction::LD_MEM_HL_IMM8()
 {
-    return Instruction{"LD [HL], {:X}h", &CPU::LD_MEM_HL_IMM8};
+    return Instruction{"LD [HL], {:02X}h", &CPU::LD_MEM_HL_IMM8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::LD_MEM_R16_A()
 {
     return Instruction{"LD [{:s}], A", &CPU::LD_MEM_R16_A};
+}
+
+constexpr CPU::Instruction CPU::Instruction::LD_MEM_16_SP()
+{
+    return Instruction{"LD [{:04X}h], SP", &CPU::LD_MEM_16_SP};
 }
 
 constexpr CPU::Instruction CPU::Instruction::LD_A_MEM_R16()
@@ -782,6 +822,16 @@ constexpr CPU::Instruction CPU::Instruction::RLCA()
     return Instruction{"RLCA", &CPU::RLCA};
 }
 
+constexpr CPU::Instruction CPU::Instruction::RRA()
+{
+    return Instruction{"RRA", &CPU::RRA};
+}
+
+constexpr CPU::Instruction CPU::Instruction::RRCA()
+{
+    return Instruction{"RRCA", &CPU::RRCA};
+}
+
 constexpr CPU::Instruction CPU::Instruction::RL_MEM_HL()
 {
     return Instruction{"RL [HL]", &CPU::RL_MEM_HL};
@@ -868,6 +918,64 @@ void CPU::NOP()
 {
     (void) this->opcode;
 }
+
+void CPU::STOP()
+{
+    throw std::runtime_error("Not implemented");
+}
+
+void CPU::HALT()
+{
+    throw std::runtime_error("Not implemented");
+}
+
+void CPU::CPL()
+{
+    this->reg.u8.A = ~this->reg.u8.A;
+    this->set_subtract(true);
+    this->set_half_carry(true);
+}
+
+void CPU::CCF()
+{
+    this->set_carry(!this->carry());
+    this->set_subtract(false);
+    this->set_half_carry(false);
+}
+
+void CPU::DAA()
+{
+    uint8_t adj{};
+
+    if ((!this->subtract() && this->reg.u8.A & 0x0F > 0x09) || this->half_carry())
+    {
+        adj |= 0x06;
+    }
+    if ((!this->subtract() && this->reg.u8.A > 0x99) || this->carry())
+    {
+        adj |= 0x60;
+        this->set_carry(true);
+    }
+    if (!this->subtract())
+    {
+        this->reg.u8.A += adj;
+    }
+    else
+    {
+        this->reg.u8.A -= adj;
+    }
+    this->set_half_carry(false);
+    this->set_zero(this->reg.u8.A == 0);
+}
+
+void CPU::SCF()
+{
+    this->set_carry(true);
+    this->set_subtract(false);
+    this->set_half_carry(false);
+}
+
+void CPU::EI() {}
 
 void CPU::LD_R8_R8()
 {
@@ -995,6 +1103,14 @@ void CPU::LDH_A_MEM_C()
             this->tmp.Z    = this->reg.u8.C;
             this->reg.u8.A = this->bus.read(this->tmp.WZ);
         });
+}
+
+void CPU::LD_MEM_16_SP()
+{
+    this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.PC++); });
+    this->micro_ops.emplace([this] { this->tmp.W = this->bus.read(this->reg.u16.PC++); });
+    this->micro_ops.emplace([this] { this->bus.write(this->tmp.WZ, u16_lsb(this->reg.u16.SP)); });
+    this->micro_ops.emplace([this] { this->bus.write(this->tmp.WZ + 1, u16_msb(this->reg.u16.SP)); });
 }
 
 void CPU::PUSH_R16()
@@ -1227,6 +1343,8 @@ void CPU::ILL()
     throw IllegalInstruction(this->opcode, this->reg.u16.PC);
 }
 
+void CPU::DI() {}
+
 void CPU::PREFIX()
 {
     this->cb_prefixed = true;
@@ -1421,6 +1539,18 @@ void CPU::RLA()
 void CPU::RLCA()
 {
     this->reg.u8.A = this->ROTATE(this->reg.u8.A, RotateDirection::LEFT, false);
+    this->set_zero(false);
+}
+
+void CPU::RRCA()
+{
+    this->reg.u8.A = this->ROTATE(this->reg.u8.A, RotateDirection::RIGHT, false);
+    this->set_zero(false);
+}
+
+void CPU::RRA()
+{
+    this->reg.u8.A = this->ROTATE(this->reg.u8.A, RotateDirection::RIGHT, true);
     this->set_zero(false);
 }
 
