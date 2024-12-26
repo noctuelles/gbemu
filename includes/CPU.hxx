@@ -90,6 +90,8 @@ class CPU
         constexpr static Instruction RR_R8();
         constexpr static Instruction RR_MEM_HL();
         constexpr static Instruction RL_R8();
+        constexpr static Instruction RLA();
+        constexpr static Instruction RLCA();
         constexpr static Instruction RL_MEM_HL();
 
         constexpr static Instruction SLA_R8();
@@ -525,6 +527,17 @@ class CPU
      * @brief Rotate bits in register r8 left, through the carry flag.
      */
     void RL_R8();
+
+    /**
+    * @brief Rotate register A left, through the carry flag.
+    */
+    void RLA();
+
+    /**
+    * @brief Rotate register A left.
+    */
+    void RLCA();
+
     /**
      * @brief Rotate the byte pointed to by HL left, through the carry flag.
      */

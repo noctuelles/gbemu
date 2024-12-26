@@ -18,7 +18,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::INC_R8(),         // 0x04
     Instruction::DEC_R8(),         // 0x05
     Instruction::LD_R8_IMM8(),     // 0x06
-    {},                            // 0x07
+    Instruction::RLCA(),           // 0x07
     {},                            // 0x08
     Instruction::ADD_HL_R16(),     // 0x09
     Instruction::LD_A_MEM_R16(),   // 0x0A
@@ -34,7 +34,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::INC_R8(),         // 0x14
     Instruction::DEC_R8(),         // 0x15
     Instruction::LD_R8_IMM8(),     // 0x16
-    {},                            // 0x17
+    Instruction::RLA(),            // 0x17
     Instruction::JR_IMM8(),        // 0x18
     Instruction::ADD_HL_R16(),     // 0x19
     Instruction::LD_A_MEM_R16(),   // 0x1A
@@ -772,6 +772,16 @@ constexpr CPU::Instruction CPU::Instruction::RL_R8()
     return Instruction{"RL {:s}", &CPU::RL_R8};
 }
 
+constexpr CPU::Instruction CPU::Instruction::RLA()
+{
+    return Instruction{"RLA", &CPU::RLA};
+}
+
+constexpr CPU::Instruction CPU::Instruction::RLCA()
+{
+    return Instruction{"RLCA", &CPU::RLCA};
+}
+
 constexpr CPU::Instruction CPU::Instruction::RL_MEM_HL()
 {
     return Instruction{"RL [HL]", &CPU::RL_MEM_HL};
@@ -1178,13 +1188,13 @@ uint8_t CPU::STEP_IMM8(uint8_t value, const StepType type)
 
 void CPU::INC_R8()
 {
-    const auto operand = this->get_register8(Register8Position::LEFTMOST);
+    const auto operand    = this->get_register8(Register8Position::LEFTMOST);
     this->reg.u8.*operand = this->STEP_IMM8(this->reg.u8.*operand, StepType::INCREMENT);
 }
 
 void CPU::DEC_R8()
 {
-    const auto operand = this->get_register8(Register8Position::LEFTMOST);
+    const auto operand    = this->get_register8(Register8Position::LEFTMOST);
     this->reg.u8.*operand = this->STEP_IMM8(this->reg.u8.*operand, StepType::DECREMENT);
 }
 
@@ -1304,8 +1314,8 @@ void CPU::JR_CC_IMM8()
 
 void CPU::RET()
 {
-    this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(++this->reg.u16.PC); });
-    this->micro_ops.emplace([this] { this->tmp.W = this->bus.read(++this->reg.u16.PC); });
+    this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.SP++); });
+    this->micro_ops.emplace([this] { this->tmp.W = this->bus.read(this->reg.u16.SP++); });
     this->micro_ops.emplace([this] { this->reg.u16.PC = this->tmp.WZ; });
 }
 
@@ -1401,6 +1411,19 @@ void CPU::RL_R8()
     const auto operand    = this->get_register8(Register8Position::RIGHTMOST);
     this->reg.u8.*operand = this->ROTATE(this->reg.u8.*operand, RotateDirection::LEFT, true);
 }
+
+void CPU::RLA()
+{
+    this->reg.u8.A = this->ROTATE(this->reg.u8.A, RotateDirection::LEFT, true);
+    this->set_zero(false);
+}
+
+void CPU::RLCA()
+{
+    this->reg.u8.A = this->ROTATE(this->reg.u8.A, RotateDirection::LEFT, false);
+    this->set_zero(false);
+}
+
 void CPU::RL_MEM_HL()
 {
     this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.HL); });
