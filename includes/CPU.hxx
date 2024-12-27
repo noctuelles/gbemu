@@ -70,11 +70,13 @@ class CPU
 
         constexpr static Instruction ADC_R8();
         constexpr static Instruction ADC_MEM_HL();
+        constexpr static Instruction ADC_IMM8();
 
         constexpr static Instruction ADD_R8();
         constexpr static Instruction ADD_IMM8();
         constexpr static Instruction ADD_MEM_HL();
         constexpr static Instruction ADD_HL_R16();
+        constexpr static Instruction ADD_SP_IMM8();
 
         constexpr static Instruction SUB_R8();
         constexpr static Instruction SUB_MEM_HL();
@@ -516,21 +518,22 @@ class CPU
     void XOR_IMM8();
 
     uint16_t ADD_16(uint16_t a, uint16_t b);
+    uint16_t ADD_16(uint16_t a, int8_t b);
     uint8_t  ADD_8(uint8_t a, uint8_t b, bool add_carry);
     /**
      * @brief Add the value in r8 to A.
      */
-    void ADD_A_R8();
+    void ADD_R8();
 
     /**
      * @brief Add the byte pointed to by HL to A.
      */
-    void ADD_A_MEM_HL();
+    void ADD_MEM_HL();
 
     /**
      * @brief Add the value imm8 to A.
      */
-    void ADD_A_IMM8();
+    void ADD_IMM8();
 
     /**
      * @brief Add the value in r16 to HL.
@@ -538,14 +541,24 @@ class CPU
     void ADD_HL_R16();
 
     /**
+     * @brief Add the signed value e8 to SP.
+     */
+    void ADD_SP_IMM8();
+
+    /**
      * @brief Add the value in r8 plus the carry flag to A.
      */
-    void ADC_A_R8();
+    void ADC_R8();
 
     /**
      * @brief Add the byte pointed to by HL plus the carry flag to A.
      */
-    void ADC_A_MEM_HL();
+    void ADC_MEM_HL();
+
+    /**
+     * @brief Add the value n8 plus the carry flag to A.
+     */
+    void ADC_IMM8();
 
     uint8_t SUB_8(uint8_t a, uint8_t b, bool sub_carry);
     /**
