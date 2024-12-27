@@ -2,37 +2,37 @@
 // Created by plouvel on 12/14/24.
 //
 
-#define TEST_FRIENDS                           \
-    friend class CPUTesting;                   \
-    friend class CPUTesting_SET_R8_Test;       \
-    friend class CPUTesting_SET_MEM_HL_Test;   \
-    friend class CPUTesting_RES_R8_Test;       \
-    friend class CPUTesting_RES_MEM_HL_Test;   \
-    friend class CPUTesting_BIT_Test;          \
-    friend class CPUTesting_SWAP_R8_Test;      \
-    friend class CPUTesting_SWAP_MEM_HL_Test;  \
-    friend class CPUTesting_SRL_R8_Test;       \
-    friend class CPUTesting_SRL_MEM_HL_Test;   \
-    friend class CPUTesting_SRA_R8_Test;       \
-    friend class CPUTesting_SRA_MEM_HL_Test;   \
-    friend class CPUTesting_SLA_R8_Test;       \
-    friend class CPUTesting_SLA_MEM_HL_Test;   \
-    friend class CPUTesting_RL_R8_Test;        \
-    friend class CPUTesting_RL_MEM_HL_Test;    \
-    friend class CPUTesting_RR_R8_Test;        \
-    friend class CPUTesting_RR_MEM_HL_Test;    \
-    friend class CPUTesting_LD_R8_R8_Test;     \
-    friend class CPUTesting_LD_R8_IMM8_Test;   \
-    friend class CPUTesting_LD_R8_MEM_HL_Test; \
-    friend class CPUTesting_LD_MEM_HL_R8_Test; \
-    friend class CPUTesting_LD_R16_IMM16_Test; \
-    friend class CPUTesting_JP_Test;           \
-    friend class CPUTesting_CALL_Test;
+#include <format>
 
-#include "CPU.hxx"
+#define TEST_FRIENDS                      \
+    friend class CPUTesting;              \
+    friend class LD_R8_R8_Value_Test;     \
+    friend class LD_MEM_HL_R8_Value_Test; \
+    //     friend class CPUTesting_SET_MEM_HL_Test;   \
+//     friend class CPUTesting_RES_R8_Test;       \
+//     friend class CPUTesting_RES_MEM_HL_Test;   \
+//     friend class CPUTesting_BIT_Test;          \
+//     friend class CPUTesting_SWAP_R8_Test;      \
+//     friend class CPUTesting_SWAP_MEM_HL_Test;  \
+//     friend class CPUTesting_SRL_R8_Test;       \
+//     friend class CPUTesting_SRL_MEM_HL_Test;   \
+//     friend class CPUTesting_SRA_R8_Test;       \
+//     friend class CPUTesting_SRA_MEM_HL_Test;   \
+//     friend class CPUTesting_SLA_R8_Test;       \
+//     friend class CPUTesting_SLA_MEM_HL_Test;   \
+//     friend class CPUTesting_RL_R8_Test;        \
+//     friend class CPUTesting_RL_MEM_HL_Test;    \
+//     friend class CPUTesting_RR_R8_Test;        \
+//     friend class CPUTesting_RR_MEM_HL_Test;    \
+//     friend class CPUTesting_LD_R8_R8_Test;     \
+//     friend class CPUTesting_LD_R8_IMM8_Test;   \
+//     friend class CPUTesting_LD_R8_MEM_HL_Test; \
+//     friend class CPUTesting_LD_MEM_HL_R8_Test; \
+//     friend class CPUTesting_LD_R16_IMM16_Test; \
+//     friend class CPUTesting_JP_Test;           \
+//     friend class CPUTesting_CALL_Test;
 
 #include <gtest/gtest.h>
-#include "Utils.hxx"
 
 #include <Utils.hxx>
 #include <algorithm>
@@ -40,6 +40,8 @@
 #include <random>
 
 #include "Bus.hxx"
+#include "CPU.hxx"
+#include "Utils.hxx"
 
 /**
  * @brief Unit Tests for the CPU. This is one of the most important part to test in an emulator !
@@ -69,13 +71,17 @@ class CPUTesting : public ::testing::Test
 
   public:
     /**
-     * @brief Execute on the fly instructions on the CPU.
-     * @param instruction Instructions to be executed by the CPU.
+     * @brief Execute an instruction
+     * @param instruction Instruction to be executed by the CPU.
+     * @param ticks Number of ticks (T-cycle).
      */
-    void execute_instruction(const std::initializer_list<uint8_t> instruction) const
+    void execute_instruction(const std::initializer_list<uint8_t> instruction, ssize_t ticks) const
     {
         this->bus->write(this->cpu->reg.u16.PC, instruction);
-        while (cpu->tick() != 0);
+        while (ticks-- >= 0)
+        {
+            this->cpu->tick();
+        };
     }
 
     static auto generate_address(std::pair<uint16_t, uint16_t>&& range = std::make_pair(0, Bus::RAM_SIZE - 1))
@@ -97,870 +103,114 @@ class CPUTesting : public ::testing::Test
     }
 };
 
-static void repeat(size_t nbr, const std::function<void()>& func)
+struct LD_R8_R8_Params
 {
-    while (nbr--)
-    {
-        func();
-    }
+    uint8_t        opcode;
+    CPU::Register8 dst;
+    CPU::Register8 src;
+};
+
+class LD_R8_R8 : public CPUTesting, public ::testing::WithParamInterface<LD_R8_R8_Params>
+{
+};
+
+struct LD_MEM_HL_R8_Params
+{
+    uint8_t        opcode;
+    CPU::Register8 src;
+};
+
+class LD_MEM_HL_R8 : public CPUTesting, public ::testing::WithParamInterface<LD_MEM_HL_R8_Params>
+{
+};
+
+TEST_P(LD_R8_R8, Value)
+{
+    const auto& param              = GetParam();
+    this->cpu->reg.u16.PC          = 0;
+    this->cpu->reg.u8.*(param.src) = generate_byte();
+    this->cpu->reg.u8.*(param.dst) = 0x42;
+    this->execute_instruction({param.opcode}, 4);
+    ASSERT_EQ(this->cpu->reg.u8.*param.dst, this->cpu->reg.u8.*param.src);
 }
 
-/**
- * @brief CB-prefixed opcodes.
- */
-
-TEST_F(CPUTesting, SET_R8)
+TEST_P(LD_MEM_HL_R8, Value)
 {
-    auto test_set_register = [this](uint8_t opcode)
-    {
-        uint8_t bit_nbr = 0;
-
-        while (bit_nbr < 8)
-        {
-            const auto src         = CPU::get_register8_src_from_opcode(opcode);
-            this->cpu->reg.u8.*src = 0b00000000;
-
-            this->execute_instruction({0xCB, opcode});
-
-            ASSERT_EQ(this->cpu->reg.u8.*src, (1U << bit_nbr));
-
-            opcode += 0x08;
-            bit_nbr++;
-        }
-    };
-
-    test_set_register(0xC7);
-    test_set_register(0xC0);
-    test_set_register(0xC1);
-    test_set_register(0xC2);
-    test_set_register(0xC3);
-    test_set_register(0xC4);
-    test_set_register(0xC5);
+    const auto& param     = GetParam();
+    this->cpu->reg.u16.PC = 0;
+    this->cpu->reg.u16.HL = generate_address({0x1000, 0x2000});
+    this->bus->write(this->cpu->reg.u16.HL, 0x42);
+    this->cpu->reg.u8.*(param.src) = generate_byte();
+    this->execute_instruction({param.opcode}, 8);
+    ASSERT_EQ(this->bus->read(this->cpu->reg.u16.HL), this->cpu->reg.u8.*param.src);
 }
 
-TEST_F(CPUTesting, SET_MEM_HL)
-{
-    auto test_set_mem_hl = [this](uint8_t opcode)
-    {
-        uint8_t bit_nbr = 0;
-
-        while (bit_nbr < 8)
-        {
-            constexpr uint16_t addr = 0x0CB8U;
-            this->cpu->reg.u16.HL   = addr;
-            this->bus->write(addr, 0b00000000U);
-
-            this->execute_instruction({0xCB, opcode});
-
-            ASSERT_EQ(this->bus->read(addr), (1U << bit_nbr));
-
-            opcode += 0x08;
-            bit_nbr++;
-        }
-    };
-
-    SCOPED_TRACE("SET U3, [HL]");
-    test_set_mem_hl(0xC6);
-}
-
-TEST_F(CPUTesting, RES_R8)
-{
-    auto test_res_register = [this](uint8_t opcode)
-    {
-        uint8_t bit_nbr = 0;
-
-        while (bit_nbr < 8)
-        {
-            const auto src         = CPU::get_register8_src_from_opcode(opcode);
-            this->cpu->reg.u8.*src = 0b11111111;
-
-            this->execute_instruction({0xCB, opcode});
-
-            ASSERT_EQ(this->cpu->reg.u8.*src, 0b11111111 & ~(1U << bit_nbr));
-
-            opcode += 0x08;
-            bit_nbr++;
-        }
-    };
-
-    test_res_register(0x87); /* RES U3, A */
-    test_res_register(0x80); /* RES U3, B */
-    test_res_register(0x81); /* RES U3, C */
-    test_res_register(0x82); /* RES U3, D */
-    test_res_register(0x83); /* RES U3, E */
-    test_res_register(0x84); /* RES U3, F */
-    test_res_register(0x85); /* RES U3, G */
-}
-
-TEST_F(CPUTesting, RES_MEM_HL)
-{
-    auto test_res_mem_hl = [this](uint8_t opcode)
-    {
-        uint8_t bit_nbr = 0;
-
-        while (bit_nbr < 8)
-        {
-            constexpr uint16_t addr = 0x1012U;
-
-            this->cpu->reg.u16.HL = addr;
-            this->bus->write(addr, 0b11111111U);
-
-            this->execute_instruction({0xCB, opcode});
-
-            ASSERT_EQ(this->bus->read(addr), 0b11111111U & ~(1U << bit_nbr));
-
-            opcode += 0x08;
-            bit_nbr++;
-        }
-    };
-
-    test_res_mem_hl(0x86); /* RES U3, [HL] */
-}
-
-TEST_F(CPUTesting, BIT)
-{
-    auto test_bit = [this](uint8_t opcode, const bool mem_hl = false)
-    {
-        uint8_t bit_nbr = 0;
-
-        while (bit_nbr < 8)
-        {
-            const uint8_t      val  = (1U << bit_nbr);
-            constexpr uint16_t addr = 0x1012U;
-            const auto         src  = !mem_hl ? CPU::get_register8_src_from_opcode(opcode) : nullptr;
-
-            if (mem_hl)
-            {
-                this->cpu->reg.u16.HL = addr;
-                this->bus->write(addr, val);
-            }
-            else
-            {
-                this->cpu->reg.u8.*src = val;
-            }
-
-            this->cpu->reg.u8.F |= CPU::Flags::SUBTRACT; /* This flag should be reset. */
-            this->cpu->reg.u8.F |= CPU::Flags::CARRY;    /* This flag should not be modified. */
-
-            this->execute_instruction({0xCB, opcode});
-
-            ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::HALF_CARRY | CPU::Flags::CARRY);
-
-            if (mem_hl)
-            {
-                this->bus->write(addr, this->bus->read(addr) ^ val);
-            }
-            else
-            {
-                this->cpu->reg.u8.*src ^= val;
-            }
-
-            this->execute_instruction({0xCB, opcode});
-
-            ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::HALF_CARRY | CPU::Flags::CARRY | CPU::Flags::ZERO);
-
-            opcode += 0x08;
-            bit_nbr++;
-        }
-    };
-
-    SCOPED_TRACE("BIT U3, A");
-    test_bit(0x47);
-    SCOPED_TRACE("BIT U3, B");
-    test_bit(0x40);
-    SCOPED_TRACE("BIT U3, C");
-    test_bit(0x41);
-    SCOPED_TRACE("BIT U3, D");
-    test_bit(0x42);
-    SCOPED_TRACE("BIT U3, E");
-    test_bit(0x43);
-    SCOPED_TRACE("BIT U3, H");
-    test_bit(0x44);
-    SCOPED_TRACE("BIT U3, L");
-    test_bit(0x45);
-    SCOPED_TRACE("BIT U3, [HL]");
-    test_bit(0x46, true);
-}
-
-TEST_F(CPUTesting, SWAP_R8)
-{
-    auto test_swap = [this](uint8_t opcode)
-    {
-        const auto        src         = CPU::get_register8_src_from_opcode(opcode);
-        constexpr uint8_t val         = 0b10100101U;
-        constexpr uint8_t swapped_val = 0b01011010U;
-
-        this->cpu->reg.u8.*src = val;
-        this->cpu->reg.u8.F |=
-            CPU::Flags::SUBTRACT | CPU::Flags::CARRY | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
-
-        this->execute_instruction({0xCB, opcode});
-
-        ASSERT_EQ(this->cpu->reg.u8.*src, swapped_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, 0);
-
-        this->cpu->reg.u8.*src = 0;
-
-        this->execute_instruction({0xCB, opcode});
-
-        ASSERT_EQ(this->cpu->reg.u8.*src, 0);
-        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::ZERO);
-    };
-
-    SCOPED_TRACE("SWAP A");
-    test_swap(0x37);
-    SCOPED_TRACE("SWAP B");
-    test_swap(0x30);
-    SCOPED_TRACE("SWAP C");
-    test_swap(0x31);
-    SCOPED_TRACE("SWAP D");
-    test_swap(0x32);
-    SCOPED_TRACE("SWAP E");
-    test_swap(0x33);
-    SCOPED_TRACE("SWAP H");
-    test_swap(0x34);
-    SCOPED_TRACE("SWAP L");
-    test_swap(0x35);
-}
-
-TEST_F(CPUTesting, SWAP_MEM_HL)
-{
-    auto test_swap = [this](uint8_t opcode)
-    {
-        constexpr uint16_t addr        = 0x0B8;
-        constexpr uint8_t  val         = 0b10100101U;
-        constexpr uint8_t  swapped_val = 0b01011010U;
-
-        this->cpu->reg.u16.HL = addr;
-        this->bus->write(addr, val);
-        this->cpu->reg.u8.F |=
-            CPU::Flags::SUBTRACT | CPU::Flags::CARRY | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
-
-        this->execute_instruction({0xCB, opcode});
-
-        ASSERT_EQ(this->bus->read(addr), swapped_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, 0);
-
-        this->bus->write(addr, 0);
-
-        this->execute_instruction({0xCB, opcode});
-
-        ASSERT_EQ(this->bus->read(addr), 0);
-        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::ZERO);
-    };
-
-    SCOPED_TRACE("SWAP [HL]");
-    test_swap(0x36);
-}
-
-TEST_F(CPUTesting, SRL_R8)
-{
-    auto test_srl = [this](uint8_t opcode)
-    {
-        const auto src       = CPU::get_register8_src_from_opcode(opcode);
-        uint8_t    val       = 0b10100101U;
-        uint8_t    shift_val = 0b01010010U;
-
-        this->cpu->reg.u8.F |= CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
-
-        val       = 0b00000001U;
-        shift_val = 0b00000000U;
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
-
-        val       = 0b00010000U;
-        shift_val = 0b00001000U;
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, 0);
-    };
-
-    SCOPED_TRACE("SRL A");
-    test_srl(0x3F);
-    SCOPED_TRACE("SRL B");
-    test_srl(0x38);
-    SCOPED_TRACE("SRL C");
-    test_srl(0x39);
-    SCOPED_TRACE("SRL D");
-    test_srl(0x3A);
-    SCOPED_TRACE("SRL E");
-    test_srl(0x3B);
-    SCOPED_TRACE("SRL H");
-    test_srl(0x3C);
-    SCOPED_TRACE("SRL L");
-    test_srl(0x3D);
-}
-
-TEST_F(CPUTesting, SRA_R8)
-{
-    auto test_srl = [this](uint8_t opcode)
-    {
-        const auto src       = CPU::get_register8_src_from_opcode(opcode);
-        uint8_t    val       = 0b10100101U;
-        uint8_t    shift_val = 0b11010010U; /* Sign bit is preserved : 1 */
-
-        this->cpu->reg.u8.F |= CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
-
-        val       = 0b00000001U;
-        shift_val = 0b00000000U; /* Sign bit is preserved : 0 */
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
-
-        val       = 0b00100101U;
-        shift_val = 0b00010010U; /* Sign bit is preserved : 0 */
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
-    };
-
-    SCOPED_TRACE("SRA A");
-    test_srl(0x2F);
-    SCOPED_TRACE("SRA B");
-    test_srl(0x28);
-    SCOPED_TRACE("SRA C");
-    test_srl(0x29);
-    SCOPED_TRACE("SRA D");
-    test_srl(0x2A);
-    SCOPED_TRACE("SRA E");
-    test_srl(0x2B);
-    SCOPED_TRACE("SRA H");
-    test_srl(0x2C);
-    SCOPED_TRACE("SRA L");
-    test_srl(0x2D);
-}
-
-TEST_F(CPUTesting, SLA_R8)
-{
-    auto test_sla = [this](uint8_t opcode)
-    {
-        const auto src       = CPU::get_register8_src_from_opcode(opcode);
-        uint8_t    val       = 0b00100101U;
-        uint8_t    shift_val = 0b01001010U;
-
-        this->cpu->reg.u8.F |= CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, 0);
-
-        val       = 0b10000000U;
-        shift_val = 0b00000000U;
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
-
-        val       = 0b00100101U;
-        shift_val = 0b01001010U;
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, shift_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, 0);
-    };
-
-    SCOPED_TRACE("SLA A");
-    test_sla(0x27);
-    SCOPED_TRACE("SLA B");
-    test_sla(0x20);
-    SCOPED_TRACE("SLA C");
-    test_sla(0x21);
-    SCOPED_TRACE("SLA D");
-    test_sla(0x22);
-    SCOPED_TRACE("SLA E");
-    test_sla(0x23);
-    SCOPED_TRACE("SLA H");
-    test_sla(0x24);
-    SCOPED_TRACE("SLA L");
-    test_sla(0x25);
-}
-
-TEST_F(CPUTesting, RL_R8)
-{
-    auto test_rl = [this](uint8_t opcode)
-    {
-        const auto src     = CPU::get_register8_src_from_opcode(opcode);
-        uint8_t    val     = 0b00100100U;
-        uint8_t    rot_val = 0b01001000U;
-
-        this->cpu->reg.u8.*src = val;
-        this->cpu->reg.u8.F    = CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
-
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, 0);
-
-        val     = 0b10000000U;
-        rot_val = 0b00000000U;
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY | CPU::Flags::ZERO);
-
-        val     = 0b00000000U;
-        rot_val = 0b00000001U;
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, 0);
-    };
-
-    SCOPED_TRACE("RL A");
-    test_rl(0x17);
-
-    SCOPED_TRACE("RL B");
-    test_rl(0x10);
-
-    SCOPED_TRACE("RL C");
-    test_rl(0x11);
-
-    SCOPED_TRACE("RL D");
-    test_rl(0x12);
-
-    SCOPED_TRACE("RL E");
-    test_rl(0x13);
-
-    SCOPED_TRACE("RL H");
-    test_rl(0x14);
-
-    SCOPED_TRACE("RL L");
-    test_rl(0x15);
-}
-
-TEST_F(CPUTesting, RR_R8)
-{
-    auto test_rl = [this](uint8_t opcode)
-    {
-        const auto src     = CPU::get_register8_src_from_opcode(opcode);
-        uint8_t    val     = 0b00100100U;
-        uint8_t    rot_val = 0b00010010U;
-
-        this->cpu->reg.u8.*src = val;
-        this->cpu->reg.u8.F    = CPU::Flags::SUBTRACT | CPU::Flags::HALF_CARRY; /* These flags should be cleared. */
-
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, 0);
-
-        val     = 0b00110001U;
-        rot_val = 0b00011000U;
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, CPU::Flags::CARRY);
-
-        val     = 0b00000100U;
-        rot_val = 0b10000010U;
-
-        this->cpu->reg.u8.*src = val;
-        this->execute_instruction({0xCB, opcode});
-        ASSERT_EQ(this->cpu->reg.u8.*src, rot_val);
-        ASSERT_EQ(this->cpu->reg.u8.F, 0);
-    };
-
-    SCOPED_TRACE("RR A");
-    test_rl(0x1F);
-
-    SCOPED_TRACE("RR B");
-    test_rl(0x18);
-
-    SCOPED_TRACE("RR C");
-    test_rl(0x19);
-
-    SCOPED_TRACE("RR D");
-    test_rl(0x1A);
-
-    SCOPED_TRACE("RR E");
-    test_rl(0x1B);
-
-    SCOPED_TRACE("RR H");
-    test_rl(0x1C);
-
-    SCOPED_TRACE("RR L");
-    test_rl(0x1D);
-}
-
-TEST_F(CPUTesting, LD_R8_R8)
-{
-    auto test_ld_r8_r8 = [this](uint8_t opcode)
-    {
-        uint8_t                                i{};
-        std::random_device                     rd{};
-        std::mt19937                           gen{rd()};
-        std::uniform_int_distribution<uint8_t> dist{0, 255};
-
-        while (i < 8)
-        {
-            if (i != 6) /* Skip the MEM_HL */
-            {
-                auto [dest, src]       = CPU::get_register8_pair_from_opcode(opcode);
-                this->cpu->reg.u8.*src = dist(gen);
-                this->execute_instruction({opcode});
-                ASSERT_EQ(this->cpu->reg.u8.*dest, this->cpu->reg.u8.*src);
-            }
-            opcode++;
-            i++;
-        }
-    };
-
-    test_ld_r8_r8(0x78); /* LD A, R8 */
-    test_ld_r8_r8(0x40); /* LD B, R8 */
-    test_ld_r8_r8(0x48); /* LD C, R8 */
-    test_ld_r8_r8(0x50); /* LD D, R8 */
-    test_ld_r8_r8(0x58); /* LD E, R8 */
-    test_ld_r8_r8(0x60); /* LD H, R8 */
-    test_ld_r8_r8(0x68); /* LD L, R8 */
-}
-
-TEST_F(CPUTesting, LD_R8_IMM8)
-{
-    auto test_ld_r8_imm8 = [this](const uint8_t opcode)
-    {
-        std::random_device                     rd{};
-        std::mt19937                           gen{rd()};
-        std::uniform_int_distribution<uint8_t> dist{0, 255};
-        const auto                             val{dist(gen)};
-        const auto                             dest{CPU::get_register8_dest_from_opcode(opcode)};
-
-        this->execute_instruction({opcode, val});
-
-        ASSERT_EQ(this->cpu->reg.u8.*dest, val);
-    };
-
-    repeat(TEST_REPEAT,
-           [test_ld_r8_imm8]()
-           {
-               SCOPED_TRACE("LD A, n8");
-               test_ld_r8_imm8(0x3E);
-               SCOPED_TRACE("LD B, n8");
-               test_ld_r8_imm8(0x06);
-               SCOPED_TRACE("LD C, n8");
-               test_ld_r8_imm8(0x0E);
-               SCOPED_TRACE("LD D, n8");
-               test_ld_r8_imm8(0x16);
-               SCOPED_TRACE("LD E, n8");
-               test_ld_r8_imm8(0x1E);
-               SCOPED_TRACE("LD H, n8");
-               test_ld_r8_imm8(0x26);
-               SCOPED_TRACE("LD L, n8");
-               test_ld_r8_imm8(0x2E);
-           });
-}
-
-TEST_F(CPUTesting, LD_R8_MEM_HL)
-{
-    auto test_ld_r8_mem_hl = [this](const uint8_t opcode)
-    {
-        std::random_device                      rd{};
-        std::mt19937                            gen{rd()};
-        std::uniform_int_distribution<uint8_t>  dist_u8{0, UINT8_MAX};
-        std::uniform_int_distribution<uint16_t> dist_u16{1, Bus::RAM_SIZE - 1};
-        const auto                              val{dist_u8(gen)};
-        const auto                              addr{dist_u16(gen)};
-        const auto                              dest{CPU::get_register8_dest_from_opcode(opcode)};
-
-        this->bus->write(addr, val);
-        this->cpu->reg.u16.HL = addr;
-
-        this->execute_instruction({opcode});
-
-        ASSERT_EQ(this->cpu->reg.u8.*dest, val);
-    };
-
-    repeat(TEST_REPEAT,
-           [test_ld_r8_mem_hl]()
-           {
-               SCOPED_TRACE("LD A, [HL]");
-               test_ld_r8_mem_hl(0x7E);
-               SCOPED_TRACE("LD B, [HL]");
-               test_ld_r8_mem_hl(0x46);
-               SCOPED_TRACE("LD C, [HL]");
-               test_ld_r8_mem_hl(0x4E);
-               SCOPED_TRACE("LD D, [HL]");
-               test_ld_r8_mem_hl(0x56);
-               SCOPED_TRACE("LD E, [HL]");
-               test_ld_r8_mem_hl(0x5E);
-               SCOPED_TRACE("LD H, [HL]");
-               test_ld_r8_mem_hl(0x66);
-               SCOPED_TRACE("LD L, [HL]");
-               test_ld_r8_mem_hl(0x6E);
-           });
-}
-
-TEST_F(CPUTesting, LD_MEM_HL_R8)
-{
-    auto test_ld_mem_hl_r8 = [this](const uint8_t opcode)
-    {
-        std::random_device                      rd{};
-        std::mt19937                            gen{rd()};
-        std::uniform_int_distribution<uint8_t>  dist_u8{0, UINT8_MAX};
-        std::uniform_int_distribution<uint16_t> dist_u16{1, Bus::RAM_SIZE - 1};
-
-        const auto val  = dist_u8(gen);
-        const auto addr = dist_u16(gen);
-        const auto src  = CPU::get_register8_src_from_opcode(opcode);
-
-        this->cpu->reg.u16.HL = addr;
-
-        if (src != &CPU::Register::U8::H && src != &CPU::Register::U8::L)
-        {
-            this->cpu->reg.u8.*src = val;
-        }
-
-        this->execute_instruction({opcode});
-
-        if (src != &CPU::Register::U8::H && src != &CPU::Register::U8::L)
-        {
-            ASSERT_EQ(this->bus->read(addr), val);
-        }
-        else
-        {
-            ASSERT_EQ(this->bus->read(addr), this->cpu->reg.u8.*src);
-        }
-    };
-
-    repeat(TEST_REPEAT,
-           [test_ld_mem_hl_r8]()
-           {
-               SCOPED_TRACE("LD [HL], A");
-               test_ld_mem_hl_r8(0x77);
-               SCOPED_TRACE("LD [HL], B");
-               test_ld_mem_hl_r8(0x70);
-               SCOPED_TRACE("LD [HL], C");
-               test_ld_mem_hl_r8(0x71);
-               SCOPED_TRACE("LD [HL], D");
-               test_ld_mem_hl_r8(0x72);
-               SCOPED_TRACE("LD [HL], E");
-               test_ld_mem_hl_r8(0x73);
-               SCOPED_TRACE("LD [HL], H");
-               test_ld_mem_hl_r8(0x74);
-               SCOPED_TRACE("LD [HL], L");
-               test_ld_mem_hl_r8(0x75);
-           });
-}
-
-TEST_F(CPUTesting, LD_R16_IMM16)
-{
-    auto test_ld_r16_imm16 = [this](const uint8_t opcode)
-    {
-        std::random_device                      rd{};
-        std::mt19937                            gen{rd()};
-        std::uniform_int_distribution<uint16_t> dist{0, UINT16_MAX};
-        const auto                              val{dist(gen)};
-        const auto                              dest{CPU::get_register16_from_opcode(opcode)};
-
-        this->execute_instruction(
-            {opcode, static_cast<uint8_t>(val & 0xFFU), static_cast<uint8_t>((val >> 8) & 0xFFU)});
-
-        ASSERT_EQ(this->cpu->reg.u16.*dest, val);
-    };
-
-    repeat(TEST_REPEAT,
-           [test_ld_r16_imm16]()
-           {
-               {
-                   SCOPED_TRACE("LD BC, imm16");
-                   test_ld_r16_imm16(0x01);
-               }
-               {
-                   SCOPED_TRACE("LD DE, imm16");
-                   test_ld_r16_imm16(0x11);
-               }
-               {
-                   SCOPED_TRACE("LD HL, imm16");
-                   test_ld_r16_imm16(0x21);
-               }
-               {
-                   SCOPED_TRACE("LD SP, imm16");
-                   test_ld_r16_imm16(0x31);
-               }
-           });
-}
-
-TEST_F(CPUTesting, JP)
-{
-    constexpr size_t INSTRUCTION_SIZE = 3;
-
-    const auto test_jp{[this](const uint8_t opcode, const bool should_perform_jmp)
-                       {
-                           const auto to   = generate_address({0x400, 0x1FFF});
-                           const auto from = generate_address({0x100, 0x200});
-
-                           this->cpu->reg.u16.PC = from;
-                           this->execute_instruction({opcode, u16_lsb(to), u16_msb(to)});
-                           if (should_perform_jmp)
-                           {
-                               ASSERT_EQ(this->cpu->reg.u16.PC, to);
-                           }
-                           else
-                           {
-                               ASSERT_EQ(this->cpu->reg.u16.PC, from + INSTRUCTION_SIZE);
-                           }
-                       }};
-
-    repeat(TEST_REPEAT,
-           [this, test_jp]
-           {
-               {
-                   SCOPED_TRACE("JP A16");
-
-                   test_jp(0xC3, true);
-               }
-               {
-                   SCOPED_TRACE("JP HL");
-
-                   const auto to   = generate_address({0x400, 0x1FFF});
-                   const auto from = generate_address({0x100, 0x200});
-
-                   this->cpu->reg.u16.PC = from;
-                   this->cpu->reg.u16.HL = to;
-
-                   this->execute_instruction({0xE9});
-
-                   ASSERT_EQ(this->cpu->reg.u16.PC, to);
-               }
-               {
-                   /* Jump if flag ZERO is not set. */
-                   SCOPED_TRACE("JP NZ, A16");
-
-                   this->cpu->reg.u8.F &= ~CPU::Flags::ZERO;
-                   test_jp(0xC2, true);
-                   this->cpu->reg.u8.F |= CPU::Flags::ZERO;
-                   test_jp(0xC2, false);
-               }
-               {
-                   /* Jump if flag ZERO is set. */
-                   SCOPED_TRACE("JP Z, A16");
-
-                   this->cpu->reg.u8.F &= ~CPU::Flags::ZERO;
-                   test_jp(0xCA, false);
-                   this->cpu->reg.u8.F |= CPU::Flags::ZERO;
-                   test_jp(0xCA, true);
-               }
-               {
-                   /* Jump if flag CARRY is not set. */
-                   SCOPED_TRACE("JP NC, A16");
-
-                   this->cpu->reg.u8.F &= ~CPU::Flags::CARRY;
-                   test_jp(0xD2, true);
-                   this->cpu->reg.u8.F |= CPU::Flags::CARRY;
-                   test_jp(0xD2, false);
-               }
-
-               {
-                   /* Jump if flag CARRY is set. */
-                   SCOPED_TRACE("JP C, A16");
-
-                   this->cpu->reg.u8.F &= ~CPU::Flags::CARRY;
-                   test_jp(0xDA, false);
-                   this->cpu->reg.u8.F |= CPU::Flags::CARRY;
-                   test_jp(0xDA, true);
-               }
-           });
-}
-
-TEST_F(CPUTesting, CALL)
-{
-    constexpr size_t INSTRUCTION_SIZE{3};
-    const auto       test_call{
-        [this](const uint8_t opcode, const bool call_should_be_performed)
-        {
-            constexpr auto bp{0x1FFF};
-            const auto     from{generate_address({0x200, 0x500})};
-            const auto     to{generate_address({0x600, 0x700})};
-
-            this->cpu->reg.u16.SP = bp;
-            this->cpu->reg.u16.PC = from;
-
-            this->execute_instruction({opcode, u16_lsb(to), u16_msb(to)});
-
-            if (call_should_be_performed)
-            {
-                /* Have we jumped to the correct location ? */
-                ASSERT_EQ(this->cpu->reg.u16.PC, to);
-                /* Is the SP correctly decremented ? */
-                ASSERT_EQ(this->cpu->reg.u16.SP, bp - 2);
-                /* Is the return address correctly set on the stack ? */
-                ASSERT_EQ(this->bus->read(this->cpu->reg.u16.SP + 1), u16_lsb(from + INSTRUCTION_SIZE));
-                ASSERT_EQ(this->bus->read(this->cpu->reg.u16.SP + 2), u16_msb(from + INSTRUCTION_SIZE));
-            }
-            else
-            {
-                /* Is the PC intact ? */
-                ASSERT_EQ(this->cpu->reg.u16.PC, from + INSTRUCTION_SIZE);
-                /* Is the SP intact ? */
-                ASSERT_EQ(this->cpu->reg.u16.SP, bp);
-            }
-        }};
-
-    repeat(TEST_REPEAT,
-           [this, test_call]()
-           {
-               {
-                   SCOPED_TRACE("CALL A16");
-
-                   test_call(0xCD, true);
-               }
-               {
-                   /* CALL if flag ZERO is not set. */
-                   SCOPED_TRACE("CALL NZ, A16");
-
-                   this->cpu->reg.u8.F &= ~CPU::Flags::ZERO;
-                   test_call(0xC4, true);
-                   this->cpu->reg.u8.F |= CPU::Flags::ZERO;
-                   test_call(0xC4, false);
-               }
-               {
-                   /* CALL if flag ZERO is set. */
-                   SCOPED_TRACE("CALL Z, A16");
-
-                   this->cpu->reg.u8.F &= ~CPU::Flags::ZERO;
-                   test_call(0xCC, false);
-                   this->cpu->reg.u8.F |= CPU::Flags::ZERO;
-                   test_call(0xCC, true);
-               }
-               {
-                   /* CALL if flag CARRY is not set. */
-                   SCOPED_TRACE("CALL NC, A16");
-
-                   this->cpu->reg.u8.F &= ~CPU::Flags::CARRY;
-                   test_call(0xD4, true);
-                   this->cpu->reg.u8.F |= CPU::Flags::CARRY;
-                   test_call(0xD4, false);
-               }
-               {
-                   /* CALL if flag CARRY is set. */
-                   SCOPED_TRACE("CALL C, A16");
-
-                   this->cpu->reg.u8.F &= ~CPU::Flags::CARRY;
-                   test_call(0xDC, false);
-                   this->cpu->reg.u8.F |= CPU::Flags::CARRY;
-                   test_call(0xDC, true);
-               }
-           });
-}
+INSTANTIATE_TEST_SUITE_P(, LD_R8_R8,
+                         ::testing::Values(
+
+                             LD_R8_R8_Params{0x78, &CPU::Register::U8::A, &CPU::Register::U8::B},
+                             LD_R8_R8_Params{0x79, &CPU::Register::U8::A, &CPU::Register::U8::C},
+                             LD_R8_R8_Params{0x7A, &CPU::Register::U8::A, &CPU::Register::U8::D},
+                             LD_R8_R8_Params{0x7B, &CPU::Register::U8::A, &CPU::Register::U8::E},
+                             LD_R8_R8_Params{0x7C, &CPU::Register::U8::A, &CPU::Register::U8::H},
+                             LD_R8_R8_Params{0x7D, &CPU::Register::U8::A, &CPU::Register::U8::L},
+                             LD_R8_R8_Params{0x7F, &CPU::Register::U8::A, &CPU::Register::U8::A},
+
+                             LD_R8_R8_Params{0x40, &CPU::Register::U8::B, &CPU::Register::U8::B},
+                             LD_R8_R8_Params{0x41, &CPU::Register::U8::B, &CPU::Register::U8::C},
+                             LD_R8_R8_Params{0x42, &CPU::Register::U8::B, &CPU::Register::U8::D},
+                             LD_R8_R8_Params{0x43, &CPU::Register::U8::B, &CPU::Register::U8::E},
+                             LD_R8_R8_Params{0x44, &CPU::Register::U8::B, &CPU::Register::U8::H},
+                             LD_R8_R8_Params{0x45, &CPU::Register::U8::B, &CPU::Register::U8::L},
+                             LD_R8_R8_Params{0x47, &CPU::Register::U8::B, &CPU::Register::U8::A},
+
+                             LD_R8_R8_Params{0x48, &CPU::Register::U8::C, &CPU::Register::U8::B},
+                             LD_R8_R8_Params{0x49, &CPU::Register::U8::C, &CPU::Register::U8::C},
+                             LD_R8_R8_Params{0x4A, &CPU::Register::U8::C, &CPU::Register::U8::D},
+                             LD_R8_R8_Params{0x4B, &CPU::Register::U8::C, &CPU::Register::U8::E},
+                             LD_R8_R8_Params{0x4C, &CPU::Register::U8::C, &CPU::Register::U8::H},
+                             LD_R8_R8_Params{0x4D, &CPU::Register::U8::C, &CPU::Register::U8::L},
+                             LD_R8_R8_Params{0x4F, &CPU::Register::U8::C, &CPU::Register::U8::A},
+
+                             LD_R8_R8_Params{0x50, &CPU::Register::U8::D, &CPU::Register::U8::B},
+                             LD_R8_R8_Params{0x51, &CPU::Register::U8::D, &CPU::Register::U8::C},
+                             LD_R8_R8_Params{0x52, &CPU::Register::U8::D, &CPU::Register::U8::D},
+                             LD_R8_R8_Params{0x53, &CPU::Register::U8::D, &CPU::Register::U8::E},
+                             LD_R8_R8_Params{0x54, &CPU::Register::U8::D, &CPU::Register::U8::H},
+                             LD_R8_R8_Params{0x55, &CPU::Register::U8::D, &CPU::Register::U8::L},
+                             LD_R8_R8_Params{0x57, &CPU::Register::U8::D, &CPU::Register::U8::A},
+
+                             LD_R8_R8_Params{0x58, &CPU::Register::U8::E, &CPU::Register::U8::B},
+                             LD_R8_R8_Params{0x59, &CPU::Register::U8::E, &CPU::Register::U8::C},
+                             LD_R8_R8_Params{0x5A, &CPU::Register::U8::E, &CPU::Register::U8::D},
+                             LD_R8_R8_Params{0x5B, &CPU::Register::U8::E, &CPU::Register::U8::E},
+                             LD_R8_R8_Params{0x5C, &CPU::Register::U8::E, &CPU::Register::U8::H},
+                             LD_R8_R8_Params{0x5D, &CPU::Register::U8::E, &CPU::Register::U8::L},
+                             LD_R8_R8_Params{0x5F, &CPU::Register::U8::E, &CPU::Register::U8::A},
+
+                             LD_R8_R8_Params{0x60, &CPU::Register::U8::H, &CPU::Register::U8::B},
+                             LD_R8_R8_Params{0x61, &CPU::Register::U8::H, &CPU::Register::U8::C},
+                             LD_R8_R8_Params{0x62, &CPU::Register::U8::H, &CPU::Register::U8::D},
+                             LD_R8_R8_Params{0x63, &CPU::Register::U8::H, &CPU::Register::U8::E},
+                             LD_R8_R8_Params{0x64, &CPU::Register::U8::H, &CPU::Register::U8::H},
+                             LD_R8_R8_Params{0x65, &CPU::Register::U8::H, &CPU::Register::U8::L},
+                             LD_R8_R8_Params{0x67, &CPU::Register::U8::H, &CPU::Register::U8::A},
+
+                             LD_R8_R8_Params{0x68, &CPU::Register::U8::L, &CPU::Register::U8::B},
+                             LD_R8_R8_Params{0x69, &CPU::Register::U8::L, &CPU::Register::U8::C},
+                             LD_R8_R8_Params{0x6A, &CPU::Register::U8::L, &CPU::Register::U8::D},
+                             LD_R8_R8_Params{0x6B, &CPU::Register::U8::L, &CPU::Register::U8::E},
+                             LD_R8_R8_Params{0x6C, &CPU::Register::U8::L, &CPU::Register::U8::H},
+                             LD_R8_R8_Params{0x6D, &CPU::Register::U8::L, &CPU::Register::U8::L},
+                             LD_R8_R8_Params{0x6F, &CPU::Register::U8::L, &CPU::Register::U8::A}
+
+                             ));
+
+INSTANTIATE_TEST_SUITE_P(, LD_MEM_HL_R8,
+                         ::testing::Values(LD_MEM_HL_R8_Params{0x70, &CPU::Register::U8::B},
+                                           LD_MEM_HL_R8_Params{0x71, &CPU::Register::U8::C},
+                                           LD_MEM_HL_R8_Params{0x72, &CPU::Register::U8::D},
+                                           LD_MEM_HL_R8_Params{0x73, &CPU::Register::U8::E},
+                                           LD_MEM_HL_R8_Params{0x74, &CPU::Register::U8::H},
+                                           LD_MEM_HL_R8_Params{0x75, &CPU::Register::U8::L},
+                                           LD_MEM_HL_R8_Params{0x77, &CPU::Register::U8::A}));

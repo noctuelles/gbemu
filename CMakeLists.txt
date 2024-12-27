@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(includes)
-
+include_directories(/usr/include/c++/14)
 include(FetchContent)
 
 FetchContent_Declare(
@@ -36,6 +36,7 @@ target_link_libraries(
 add_executable(gbemu_test
         srcs/CPU.cxx
         srcs/Bus.cxx
+        srcs/tests/CPU.cxx
         srcs/tests/Integration.cxx)
 
 target_link_libraries(

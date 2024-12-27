@@ -11,6 +11,7 @@
 #ifndef TEST_FRIENDS
 #define TEST_FRIENDS
 #endif
+
 class CPU
 {
   public:
