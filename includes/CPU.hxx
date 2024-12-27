@@ -38,6 +38,7 @@ class CPU
 
         constexpr static Instruction LD_R8_R8();
         constexpr static Instruction LD_R16_IMM16();
+        constexpr static Instruction LD_SP_HL();
         constexpr static Instruction LD_R8_IMM8();
         constexpr static Instruction LD_R8_MEM_HL();
         constexpr static Instruction LD_MEM_HL_R8();
@@ -51,6 +52,11 @@ class CPU
         constexpr static Instruction LDH_A_MEM_16();
         constexpr static Instruction LDH_MEM_C_A();
         constexpr static Instruction LDH_A_MEM_C();
+
+        constexpr static Instruction LD_A_MEM_16();
+        constexpr static Instruction LD_MEM_16_A();
+
+        constexpr static Instruction LD_HL_SP_PLUS_IMM8();
 
         /* Bitwise */
 
@@ -407,6 +413,11 @@ class CPU
     void LD_R16_IMM16();
 
     /**
+     * @brief Copy register HL into register SP.
+     */
+    void LD_SP_HL();
+
+    /**
      * @brief Store value in register A into the byte pointed to by register r16.
      */
     void LD_MEM_R16_A();
@@ -425,11 +436,6 @@ class CPU
      * @brief Load from 8-bit register to memory pointed by HL.
      */
     void LD_MEM_HL_R8();
-
-    /**
-     * @brief Load from 16-bit address to 8-bit register A.
-     */
-    void LD_A_MEM_16();
 
     /**
      * @brief Load from 8-bit immediate to memory pointed by HL.
@@ -460,6 +466,21 @@ class CPU
      * @brief Copy SP & $FF at address n16 and SP >> 8 at address n16 + 1.
      */
     void LD_MEM_16_SP();
+
+    /**
+     * @brief Copy the value in register A into the byte at address n16.
+     */
+    void LD_MEM_16_A();
+
+    /**
+     * @brief Copy the byte at address n16 into register A.
+     */
+    void LD_A_MEM_16();
+
+    /**
+     * @brief Add the signed value e8 to SP and copy the result in HL.
+     */
+    void LD_HL_SP_PLUS_IMM8();
 
     /**
      * @brief Push register r16 into the stack.
