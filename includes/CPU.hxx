@@ -31,6 +31,11 @@ class CPU
         constexpr static Instruction DAA();
         constexpr static Instruction SCF();
 
+        constexpr static Instruction ILL();
+        constexpr static Instruction PREFIX();
+
+        /* Loads */
+
         constexpr static Instruction LD_R8_R8();
         constexpr static Instruction LD_R16_IMM16();
         constexpr static Instruction LD_R8_IMM8();
@@ -47,13 +52,19 @@ class CPU
         constexpr static Instruction LDH_MEM_C_A();
         constexpr static Instruction LDH_A_MEM_C();
 
+        /* Bitwise */
+
         constexpr static Instruction AND_R8();
         constexpr static Instruction AND_MEM_HL();
         constexpr static Instruction AND_IMM8();
+
         constexpr static Instruction XOR_R8();
+        constexpr static Instruction XOR_MEM_HL();
+        constexpr static Instruction XOR_IMM8();
+
         constexpr static Instruction OR_R8();
-        constexpr static Instruction ILL();
-        constexpr static Instruction PREFIX();
+        constexpr static Instruction OR_MEM_HL();
+        constexpr static Instruction OR_IMM8();
 
         /* Arithmetic */
 
@@ -280,6 +291,13 @@ class CPU
         RIGHTMOST = 0U,
     };
 
+    enum class BitwiseOperator : uint8_t
+    {
+        AND,
+        OR,
+        XOR
+    };
+
     enum class CPUState : bool
     {
         FETCH_DECODE,
@@ -438,7 +456,7 @@ class CPU
      */
     void POP_R16();
 
-    void AND(uint8_t operand);
+    void BITWISE(BitwiseOperator op, uint8_t operand);
     /**
      * @brief Set A to the bitwise AND between the value in r8 and A.
      */
@@ -455,14 +473,34 @@ class CPU
     void AND_IMM8();
 
     /**
-     * @brief AND from 8-bit register to register A.
+     * @brief Set A to the bitwise OR between the value in r8 and A.
      */
     void OR_R8();
 
     /**
-     * @brief AND from 8-bit register to register A.
+     * @brief Set A to the bitwise OR between the byte pointed to by HL and A.
+     */
+    void OR_MEM_HL();
+
+    /**
+     * @brief Set A to the bitwise OR between the value n8 and A.
+     */
+    void OR_IMM8();
+
+    /**
+     * @brief Set A to the bitwise XOR between the value in r8 and A.
      */
     void XOR_R8();
+
+    /**
+     * @brief Set A to the bitwise XOR between the byte pointed to by HL and A.
+     */
+    void XOR_MEM_HL();
+
+    /**
+     * @brief Set A to the bitwise XOR between the value n8 and A.
+     */
+    void XOR_IMM8();
 
     uint16_t ADD_16(uint16_t a, uint16_t b);
     uint8_t  ADD_8(uint8_t a, uint8_t b, bool add_carry);

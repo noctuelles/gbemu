@@ -185,7 +185,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::XOR_R8(),          // 0xAB
     Instruction::XOR_R8(),          // 0xAC
     Instruction::XOR_R8(),          // 0xAD
-    {},                             // 0xAE
+    Instruction::XOR_MEM_HL(),      // 0xAE
     Instruction::XOR_R8(),          // 0xAF
     Instruction::OR_R8(),           // 0xB0
     Instruction::OR_R8(),           // 0xB1
@@ -193,7 +193,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::OR_R8(),           // 0xB3
     Instruction::OR_R8(),           // 0xB4
     Instruction::OR_R8(),           // 0xB5
-    {},                             // 0xB6
+    Instruction::OR_MEM_HL(),       // 0xB6
     Instruction::OR_R8(),           // 0xB7
     {},                             // 0xB8
     {},                             // 0xB9
@@ -249,7 +249,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                             // 0xEB
     {},                             // 0xEC
     {},                             // 0xED
-    {},                             // 0xEE
+    Instruction::XOR_IMM8(),        // 0xEE
     Instruction::RST_VEC(),         // 0xEF
     Instruction::LDH_A_MEM_16(),    // 0xF0
     Instruction::POP_R16(),         // 0xF1
@@ -257,7 +257,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                             // 0xF3
     {},                             // 0xF4
     Instruction::PUSH_R16(),        // 0xF5
-    {},                             // 0xF6
+    Instruction::OR_IMM8(),         // 0xF6
     Instruction::RST_VEC(),         // 0xF7
     {},                             // 0xF8
     {},                             // 0xF9
@@ -652,9 +652,29 @@ constexpr CPU::Instruction CPU::Instruction::XOR_R8()
     return Instruction{"XOR {:s}", &CPU::XOR_R8};
 }
 
+constexpr CPU::Instruction CPU::Instruction::XOR_MEM_HL()
+{
+    return Instruction{"XOR [HL]", &CPU::XOR_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::XOR_IMM8()
+{
+    return Instruction{"XOR {:02X}h", &CPU::XOR_IMM8};
+}
+
 constexpr CPU::Instruction CPU::Instruction::OR_R8()
 {
     return Instruction{"OR {:s}", &CPU::OR_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::OR_MEM_HL()
+{
+    return Instruction{"OR [HL]", &CPU::OR_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::OR_IMM8()
+{
+    return Instruction{"OR {:02X}h", &CPU::OR_IMM8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::ILL()
@@ -1176,65 +1196,72 @@ void CPU::SET_MEM_HL()
         });
 }
 
-void CPU::AND(const uint8_t operand)
+void CPU::BITWISE(const BitwiseOperator op, const uint8_t operand)
 {
-    this->reg.u8.A &= operand;
+    switch (op)
+    {
+        case BitwiseOperator::OR:
+            this->reg.u8.A |= operand;
+            this->set_half_carry(false);
+            break;
+        case BitwiseOperator::AND:
+            this->reg.u8.A &= operand;
+            this->set_half_carry(true);
+            break;
+        case BitwiseOperator::XOR:
+            this->reg.u8.A ^= operand;
+            this->set_half_carry(false);
+            break;
+    }
 
     this->set_zero(this->reg.u8.A == 0);
-    this->set_half_carry(true);
     this->set_subtract(false);
     this->set_carry(false);
 }
 
 void CPU::AND_R8()
 {
-    this->AND(this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST));
+    this->BITWISE(BitwiseOperator::AND, this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST));
 }
 
 void CPU::AND_MEM_HL()
 {
-    this->micro_ops.emplace([this] { this->AND(this->bus.read(this->reg.u16.HL)); });
+    this->micro_ops.emplace([this] { this->BITWISE(BitwiseOperator::AND, this->bus.read(this->reg.u16.HL)); });
 }
 
 void CPU::AND_IMM8()
 {
-    this->micro_ops.emplace([this] { this->AND(this->bus.read(this->reg.u16.PC++)); });
+    this->micro_ops.emplace([this] { this->BITWISE(BitwiseOperator::AND, this->bus.read(this->reg.u16.PC++)); });
 }
 
 void CPU::OR_R8()
 {
-    const auto src = get_register8(Register8Position::RIGHTMOST);
+    this->BITWISE(BitwiseOperator::OR, this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST));
+}
 
-    this->reg.u8.A |= this->reg.u8.*src;
-    if (this->reg.u8.A == 0)
-    {
-        this->reg.u8.F |= Flags::ZERO;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::ZERO;
-    }
-    this->reg.u8.F &= ~Flags::HALF_CARRY;
-    this->reg.u8.F &= ~Flags::SUBTRACT;
-    this->reg.u8.F &= ~Flags::CARRY;
+void CPU::OR_MEM_HL()
+{
+    this->micro_ops.emplace([this] { this->BITWISE(BitwiseOperator::OR, this->bus.read(this->reg.u16.HL)); });
+}
+
+void CPU::OR_IMM8()
+{
+    this->micro_ops.emplace([this] { this->BITWISE(BitwiseOperator::OR, this->bus.read(this->reg.u16.PC++)); });
 }
 
 void CPU::XOR_R8()
 {
-    const auto r_src{get_register8(Register8Position::RIGHTMOST)};
+    this->BITWISE(BitwiseOperator::XOR, this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST));
+}
 
-    this->reg.u8.A ^= this->reg.u8.*r_src;
-    if (this->reg.u8.A == 0)
-    {
-        this->reg.u8.F |= Flags::ZERO;
-    }
-    else
-    {
-        this->reg.u8.F &= ~Flags::ZERO;
-    }
-    this->reg.u8.F &= ~Flags::HALF_CARRY;
-    this->reg.u8.F &= ~Flags::SUBTRACT;
-    this->reg.u8.F &= ~Flags::CARRY;
+void CPU::XOR_MEM_HL()
+{
+    this->micro_ops.emplace([this] { this->BITWISE(BitwiseOperator::XOR, this->bus.read(this->reg.u16.HL)); });
+}
+
+void CPU::XOR_IMM8()
+{
+    this->micro_ops.emplace([this] { this->BITWISE(BitwiseOperator::XOR, this->bus.read(this->reg.u16.PC++)); });
 }
 
 uint16_t CPU::ADD_16(const uint16_t a, const uint16_t b)
