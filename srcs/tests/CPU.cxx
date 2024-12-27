@@ -75,10 +75,10 @@ class CPUTesting : public ::testing::Test
      * @param instruction Instruction to be executed by the CPU.
      * @param ticks Number of ticks (T-cycle).
      */
-    void execute_instruction(const std::initializer_list<uint8_t> instruction, ssize_t ticks) const
+    void execute_instruction(const std::initializer_list<uint8_t> instruction, size_t ticks) const
     {
         this->bus->write(this->cpu->reg.u16.PC, instruction);
-        while (ticks-- >= 0)
+        while (ticks--)
         {
             this->cpu->tick();
         };

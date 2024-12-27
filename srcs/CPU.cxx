@@ -1966,7 +1966,7 @@ void CPU::BIT_R8()
 
 void CPU::tick()
 {
-    if (this->ticks++ < 4)
+    if (++this->ticks < 4)
     {
         return;
     }
