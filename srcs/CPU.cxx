@@ -139,38 +139,38 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::LD_R8_R8(),        // 0x7D
     Instruction::LD_R8_MEM_HL(),    // 0x7E
     Instruction::LD_R8_R8(),        // 0x7F
-    Instruction::ADD_A_R8(),        // 0x80
-    Instruction::ADD_A_R8(),        // 0x81
-    Instruction::ADD_A_R8(),        // 0x82
-    Instruction::ADD_A_R8(),        // 0x83
-    Instruction::ADD_A_R8(),        // 0x84
-    Instruction::ADD_A_R8(),        // 0x85
-    Instruction::ADD_A_MEM_HL(),    // 0x86
-    Instruction::ADD_A_R8(),        // 0x87
-    Instruction::ADC_A_R8(),        // 0x88
-    Instruction::ADC_A_R8(),        // 0x8b
-    Instruction::ADC_A_R8(),        // 0x8A
-    Instruction::ADC_A_R8(),        // 0x8B
-    Instruction::ADC_A_R8(),        // 0x8C
-    Instruction::ADC_A_R8(),        // 0x8D
-    Instruction::ADC_A_MEM_HL(),    // 0x8E
-    Instruction::ADC_A_R8(),        // 0x90
-    {},                             // 0x90
-    {},                             // 0x91
-    {},                             // 0x92
-    {},                             // 0x93
-    {},                             // 0x94
-    {},                             // 0x95
-    {},                             // 0x96
-    {},                             // 0x97
-    {},                             // 0x98
-    {},                             // 0x99
-    {},                             // 0x9A
-    {},                             // 0x9B
-    {},                             // 0x9C
-    {},                             // 0x9D
-    {},                             // 0x9E
-    {},                             // 0x9F
+    Instruction::ADD_R8(),          // 0x80
+    Instruction::ADD_R8(),          // 0x81
+    Instruction::ADD_R8(),          // 0x82
+    Instruction::ADD_R8(),          // 0x83
+    Instruction::ADD_R8(),          // 0x84
+    Instruction::ADD_R8(),          // 0x85
+    Instruction::ADD_MEM_HL(),      // 0x86
+    Instruction::ADD_R8(),          // 0x87
+    Instruction::ADC_R8(),          // 0x88
+    Instruction::ADC_R8(),          // 0x8b
+    Instruction::ADC_R8(),          // 0x8A
+    Instruction::ADC_R8(),          // 0x8B
+    Instruction::ADC_R8(),          // 0x8C
+    Instruction::ADC_R8(),          // 0x8D
+    Instruction::ADC_MEM_HL(),      // 0x8E
+    Instruction::ADC_R8(),          // 0x90
+    Instruction::SUB_R8(),          // 0x90
+    Instruction::SUB_R8(),          // 0x91
+    Instruction::SUB_R8(),          // 0x92
+    Instruction::SUB_R8(),          // 0x93
+    Instruction::SUB_R8(),          // 0x94
+    Instruction::SUB_R8(),          // 0x95
+    Instruction::SUB_MEM_HL(),      // 0x96
+    Instruction::SUB_R8(),          // 0x97
+    Instruction::SBC_R8(),          // 0x98
+    Instruction::SBC_R8(),          // 0x99
+    Instruction::SBC_R8(),          // 0x9A
+    Instruction::SBC_R8(),          // 0x9B
+    Instruction::SBC_R8(),          // 0x9C
+    Instruction::SBC_R8(),          // 0x9D
+    Instruction::SBC_MEM_HL(),      // 0x9E
+    Instruction::SBC_R8(),          // 0x9F
     Instruction::AND_R8(),          // 0xA0
     Instruction::AND_R8(),          // 0xA1
     Instruction::AND_R8(),          // 0xA2
@@ -195,21 +195,21 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     Instruction::OR_R8(),           // 0xB5
     Instruction::OR_MEM_HL(),       // 0xB6
     Instruction::OR_R8(),           // 0xB7
-    {},                             // 0xB8
-    {},                             // 0xB9
-    {},                             // 0xBA
-    {},                             // 0xBB
-    {},                             // 0xBC
-    {},                             // 0xBD
-    {},                             // 0xBE
-    {},                             // 0xBF
+    Instruction::CP_R8(),           // 0xB8
+    Instruction::CP_R8(),           // 0xB9
+    Instruction::CP_R8(),           // 0xBA
+    Instruction::CP_R8(),           // 0xBB
+    Instruction::CP_R8(),           // 0xBC
+    Instruction::CP_R8(),           // 0xBD
+    Instruction::CP_MEM_HL(),       // 0xBE
+    Instruction::CP_R8(),           // 0xBF
     Instruction::RET_CC(),          // 0xC0
     Instruction::POP_R16(),         // 0xC1
     Instruction::JP_CC_IMM16(),     // 0xC2
     Instruction::JP_IMM16(),        // 0xC3
     Instruction::CALL_CC_IMM16(),   // 0xC4
     Instruction::PUSH_R16(),        // 0xC5
-    Instruction::ADD_A_IMM8(),      // 0xC6
+    Instruction::ADD_IMM8(),        // 0xC6
     Instruction::RST_VEC(),         // 0xC7
     Instruction::RET_CC(),          // 0xC8
     Instruction::RET(),             // 0xC9
@@ -225,7 +225,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                             // 0xD3
     Instruction::CALL_CC_IMM16(),   // 0xD4
     Instruction::PUSH_R16(),        // 0xD5
-    {},                             // 0xD6
+    Instruction::SUB_IMM8(),        // 0xD6
     Instruction::RST_VEC(),         // 0xD7
     Instruction::RET_CC(),          // 0xD8
     {},                             // 0xD9
@@ -233,7 +233,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                             // 0xDB
     Instruction::CALL_CC_IMM16(),   // 0xDC
     {},                             // 0xDD
-    {},                             // 0xDE
+    Instruction::SBC_IMM8(),        // 0xDE
     Instruction::RST_VEC(),         // 0xDF
     Instruction::LDH_MEM_16_A(),    // 0xE0
     Instruction::POP_R16(),         // 0xE1
@@ -265,7 +265,7 @@ const CPU::InstructionLookupTable CPU::inst_lookup{{
     {},                             // 0xFB
     {},                             // 0xFC
     {},                             // 0xFD
-    {},                             // 0xFE
+    Instruction::CP_IMM8(),         // 0xFE
     Instruction::RST_VEC(),         // 0xFF
 }};
 
@@ -687,27 +687,27 @@ constexpr CPU::Instruction CPU::Instruction::PREFIX()
     return Instruction{"", &CPU::PREFIX};
 }
 
-constexpr CPU::Instruction CPU::Instruction::ADC_A_R8()
+constexpr CPU::Instruction CPU::Instruction::ADC_R8()
 {
     return Instruction{"ADC A, {:s}", &CPU::ADC_A_R8};
 }
 
-constexpr CPU::Instruction CPU::Instruction::ADC_A_MEM_HL()
+constexpr CPU::Instruction CPU::Instruction::ADC_MEM_HL()
 {
     return Instruction{"ADC A, [HL]", &CPU::ADC_A_MEM_HL};
 }
 
-constexpr CPU::Instruction CPU::Instruction::ADD_A_R8()
+constexpr CPU::Instruction CPU::Instruction::ADD_R8()
 {
     return Instruction{"ADD A, {:s}", &CPU::ADD_A_R8};
 }
 
-constexpr CPU::Instruction CPU::Instruction::ADD_A_IMM8()
+constexpr CPU::Instruction CPU::Instruction::ADD_IMM8()
 {
     return Instruction{"ADD A, {:X}h", &CPU::ADD_A_IMM8};
 }
 
-constexpr CPU::Instruction CPU::Instruction::ADD_A_MEM_HL()
+constexpr CPU::Instruction CPU::Instruction::ADD_MEM_HL()
 {
     return Instruction{"ADD A, [HL]", &CPU::ADD_A_MEM_HL};
 }
@@ -715,6 +715,51 @@ constexpr CPU::Instruction CPU::Instruction::ADD_A_MEM_HL()
 constexpr CPU::Instruction CPU::Instruction::ADD_HL_R16()
 {
     return Instruction{"ADD HL, {:s}", &CPU::ADD_HL_R16};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SUB_R8()
+{
+    return Instruction{"SUB {:s}", &CPU::SUB_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SUB_MEM_HL()
+{
+    return Instruction{"SUB [HL]", &CPU::SUB_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SUB_IMM8()
+{
+    return Instruction{"SUB {:02X}h", &CPU::SUB_IMM8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SBC_R8()
+{
+    return Instruction{"SBC {:s}", &CPU::SBC_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SBC_MEM_HL()
+{
+    return Instruction{"SBC [HL]", &CPU::SBC_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::SBC_IMM8()
+{
+    return Instruction{"SBC {:02X}h", &CPU::SBC_IMM8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::CP_R8()
+{
+    return Instruction{"CP {:s}", &CPU::CP_R8};
+}
+
+constexpr CPU::Instruction CPU::Instruction::CP_MEM_HL()
+{
+    return Instruction{"CP [HL]", &CPU::CP_MEM_HL};
+}
+
+constexpr CPU::Instruction CPU::Instruction::CP_IMM8()
+{
+    return Instruction{"CP {:02X}h", &CPU::CP_IMM8};
 }
 
 constexpr CPU::Instruction CPU::Instruction::INC_R8()
@@ -1296,20 +1341,21 @@ uint8_t CPU::ADD_8(const uint8_t a, const uint8_t b, bool add_carry)
 
 void CPU::ADD_A_R8()
 {
-    const auto operand{this->get_register8(Register8Position::RIGHTMOST)};
-    this->reg.u8.A = this->ADD_8(this->reg.u8.A, this->reg.u8.*operand, false);
+    this->reg.u8.A =
+        this->ADD_8(this->reg.u8.A, this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST), false);
 }
 
 void CPU::ADD_A_MEM_HL()
 {
-    const auto operand{this->bus.read(this->reg.u16.HL)};
-    this->bus.write(this->reg.u16.HL, this->ADD_8(this->reg.u8.A, operand, false));
+    this->micro_ops.emplace(
+        [this]
+        { this->bus.write(this->reg.u16.HL, this->ADD_8(this->reg.u8.A, this->bus.read(this->reg.u16.HL), false)); });
 }
 
 void CPU::ADD_A_IMM8()
 {
-    const auto operand{this->bus.read(this->reg.u16.PC++)};
-    this->reg.u8.A = this->ADD_8(this->reg.u8.A, operand, false);
+    this->micro_ops.emplace(
+        [this] { this->reg.u8.A = this->ADD_8(this->reg.u8.A, this->bus.read(this->reg.u16.PC++), false); });
 }
 
 void CPU::ADD_HL_R16()
@@ -1328,6 +1374,73 @@ void CPU::ADC_A_MEM_HL()
 {
     const auto operand{this->bus.read(this->reg.u16.HL)};
     this->bus.write(this->reg.u16.HL, this->ADD_8(this->reg.u8.A, operand, true));
+}
+
+uint8_t CPU::SUB_8(const uint8_t a, const uint8_t b, bool sub_carry)
+{
+    uint8_t result{};
+
+    if (sub_carry)
+    {
+        sub_carry = this->carry();
+    }
+    this->set_subtract(true);
+    this->set_half_carry((a & 0xF) < (b & 0xF) + sub_carry);
+    this->set_carry(a < b + sub_carry);
+
+    result = a - b - sub_carry;
+
+    return result;
+}
+
+void CPU::SUB_R8()
+{
+    this->reg.u8.A =
+        this->SUB_8(this->reg.u8.A, this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST), false);
+}
+
+void CPU::SUB_MEM_HL()
+{
+    this->micro_ops.emplace([this]
+                            { this->reg.u8.A = this->SUB_8(this->reg.u8.A, this->bus.read(this->reg.u16.HL), false); });
+}
+
+void CPU::SUB_IMM8()
+{
+    this->micro_ops.emplace(
+        [this] { this->reg.u8.A = this->SUB_8(this->reg.u8.A, this->bus.read(this->reg.u16.PC++), false); });
+}
+
+void CPU::SBC_R8()
+{
+    this->reg.u8.A = this->SUB_8(this->reg.u8.A, this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST), true);
+}
+
+void CPU::SBC_MEM_HL()
+{
+    this->micro_ops.emplace([this]
+                            { this->reg.u8.A = this->SUB_8(this->reg.u8.A, this->bus.read(this->reg.u16.HL), true); });
+}
+
+void CPU::SBC_IMM8()
+{
+    this->micro_ops.emplace(
+        [this] { this->reg.u8.A = this->SUB_8(this->reg.u8.A, this->bus.read(this->reg.u16.PC++), true); });
+}
+
+void CPU::CP_R8()
+{
+    (void) this->SUB_8(this->reg.u8.A, this->reg.u8.*this->get_register8(Register8Position::RIGHTMOST), false);
+}
+
+void CPU::CP_MEM_HL()
+{
+    this->micro_ops.emplace([this] { (void) this->SUB_8(this->reg.u8.A, this->bus.read(this->reg.u16.HL), false); });
+}
+
+void CPU::CP_IMM8()
+{
+    this->micro_ops.emplace([this] { (void) this->SUB_8(this->reg.u8.A, this->bus.read(this->reg.u16.PC++), false); });
 }
 
 uint8_t CPU::STEP_IMM8(uint8_t value, const StepType type)

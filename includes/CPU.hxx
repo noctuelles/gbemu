@@ -68,12 +68,25 @@ class CPU
 
         /* Arithmetic */
 
-        constexpr static Instruction ADC_A_R8();
-        constexpr static Instruction ADC_A_MEM_HL();
-        constexpr static Instruction ADD_A_R8();
-        constexpr static Instruction ADD_A_IMM8();
-        constexpr static Instruction ADD_A_MEM_HL();
+        constexpr static Instruction ADC_R8();
+        constexpr static Instruction ADC_MEM_HL();
+
+        constexpr static Instruction ADD_R8();
+        constexpr static Instruction ADD_IMM8();
+        constexpr static Instruction ADD_MEM_HL();
         constexpr static Instruction ADD_HL_R16();
+
+        constexpr static Instruction SUB_R8();
+        constexpr static Instruction SUB_MEM_HL();
+        constexpr static Instruction SUB_IMM8();
+
+        constexpr static Instruction SBC_R8();
+        constexpr static Instruction SBC_MEM_HL();
+        constexpr static Instruction SBC_IMM8();
+
+        constexpr static Instruction CP_R8();
+        constexpr static Instruction CP_MEM_HL();
+        constexpr static Instruction CP_IMM8();
 
         constexpr static Instruction INC_R8();
         constexpr static Instruction DEC_R8();
@@ -533,6 +546,55 @@ class CPU
      * @brief Add the byte pointed to by HL plus the carry flag to A.
      */
     void ADC_A_MEM_HL();
+
+    uint8_t SUB_8(uint8_t a, uint8_t b, bool sub_carry);
+    /**
+     * @brief Subtract the value in r8 from A.
+     */
+    void SUB_R8();
+
+    /**
+     * @brief Subtract the byte pointed to by HL from A.
+     */
+    void SUB_MEM_HL();
+
+    /**
+     * @brief Subtract the value n8 from A.
+     */
+    void SUB_IMM8();
+
+    /**
+     * @brief Subtract the value in r8 and the carry flag from A.
+     */
+    void SBC_R8();
+
+    /**
+     * @brief Subtract the byte pointed to by HL and the carry flag from A.
+     */
+    void SBC_MEM_HL();
+
+    /**
+     * @brief Subtract the value n8 and the carry flag from A.
+     */
+    void SBC_IMM8();
+
+    /**
+     * @brief ComPare the value in A with the value in r8. This subtracts the value in r8 from A and sets flags
+     * accordingly, but discards the result.
+     */
+    void CP_R8();
+
+    /**
+     * @brief ComPare the value in A with the byte pointed to by HL. This subtracts the byte pointed to by HL from A and
+     * sets flags accordingly, but discards the result.
+     */
+    void CP_MEM_HL();
+
+    /**
+     * @brief ComPare the value in A with the value n8. This subtracts the value n8 from A and sets flags accordingly,
+     * but discards the result.
+     */
+    void CP_IMM8();
 
     uint8_t STEP_IMM8(uint8_t value, StepType type);
     /**
