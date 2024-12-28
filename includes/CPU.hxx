@@ -3,6 +3,8 @@
 
 #include <array>
 #include <functional>
+#include <map>
+#include <optional>
 #include <queue>
 #include <stdexcept>
 
@@ -15,151 +17,20 @@
 class CPU
 {
   public:
+    using DisassembledInstruction = std::map<uint16_t, std::string>;
+
+    enum class AddressingMode
+    {
+        IMMEDIATE,
+        IMMEDIATE_EXTENDED,
+        RELATIVE,
+    };
+
     struct Instruction
     {
-        std::string_view format;
-        void (CPU::*op)();
-
-        constexpr Instruction();
-        constexpr Instruction(std::string_view format, void (CPU::*op)());
-
-        constexpr static Instruction NOP();
-        constexpr static Instruction STOP();
-        constexpr static Instruction HALT();
-        constexpr static Instruction CPL();
-        constexpr static Instruction CCF();
-        constexpr static Instruction DAA();
-        constexpr static Instruction SCF();
-
-        constexpr static Instruction ILL();
-        constexpr static Instruction PREFIX();
-
-        /* Loads */
-
-        constexpr static Instruction LD_R8_R8();
-        constexpr static Instruction LD_R16_IMM16();
-        constexpr static Instruction LD_SP_HL();
-        constexpr static Instruction LD_R8_IMM8();
-        constexpr static Instruction LD_R8_MEM_HL();
-        constexpr static Instruction LD_MEM_HL_R8();
-        constexpr static Instruction LD_MEM_HL_IMM8();
-
-        constexpr static Instruction LD_MEM_R16_A();
-        constexpr static Instruction LD_MEM_16_SP();
-        constexpr static Instruction LD_A_MEM_R16();
-
-        constexpr static Instruction LDH_MEM_16_A();
-        constexpr static Instruction LDH_A_MEM_16();
-        constexpr static Instruction LDH_MEM_C_A();
-        constexpr static Instruction LDH_A_MEM_C();
-
-        constexpr static Instruction LD_A_MEM_16();
-        constexpr static Instruction LD_MEM_16_A();
-
-        constexpr static Instruction LD_HL_SP_PLUS_IMM8();
-
-        /* Bitwise */
-
-        constexpr static Instruction AND_R8();
-        constexpr static Instruction AND_MEM_HL();
-        constexpr static Instruction AND_IMM8();
-
-        constexpr static Instruction XOR_R8();
-        constexpr static Instruction XOR_MEM_HL();
-        constexpr static Instruction XOR_IMM8();
-
-        constexpr static Instruction OR_R8();
-        constexpr static Instruction OR_MEM_HL();
-        constexpr static Instruction OR_IMM8();
-
-        /* Arithmetic */
-
-        constexpr static Instruction ADC_R8();
-        constexpr static Instruction ADC_MEM_HL();
-        constexpr static Instruction ADC_IMM8();
-
-        constexpr static Instruction ADD_R8();
-        constexpr static Instruction ADD_IMM8();
-        constexpr static Instruction ADD_MEM_HL();
-        constexpr static Instruction ADD_HL_R16();
-        constexpr static Instruction ADD_SP_IMM8();
-
-        constexpr static Instruction SUB_R8();
-        constexpr static Instruction SUB_MEM_HL();
-        constexpr static Instruction SUB_IMM8();
-
-        constexpr static Instruction SBC_R8();
-        constexpr static Instruction SBC_MEM_HL();
-        constexpr static Instruction SBC_IMM8();
-
-        constexpr static Instruction CP_R8();
-        constexpr static Instruction CP_MEM_HL();
-        constexpr static Instruction CP_IMM8();
-
-        constexpr static Instruction INC_R8();
-        constexpr static Instruction DEC_R8();
-        constexpr static Instruction INC_R16();
-        constexpr static Instruction DEC_R16();
-        constexpr static Instruction INC_MEM_HL();
-        constexpr static Instruction DEC_MEM_HL();
-
-        /* Control flow */
-
-        constexpr static Instruction JP_IMM16();
-        constexpr static Instruction JP_HL();
-        constexpr static Instruction JP_CC_IMM16();
-
-        constexpr static Instruction CALL_IMM16();
-        constexpr static Instruction CALL_CC_IMM16();
-
-        constexpr static Instruction RET();
-        constexpr static Instruction RET_CC();
-
-        constexpr static Instruction JR_IMM8();
-        constexpr static Instruction JR_CC_IMM8();
-
-        constexpr static Instruction RST_VEC();
-
-        /* Stack manipulation */
-
-        constexpr static Instruction PUSH_R16();
-        constexpr static Instruction POP_R16();
-
-        /* Bit manipulation */
-
-        constexpr static Instruction RRC_R8();
-        constexpr static Instruction RRC_MEM_HL();
-        constexpr static Instruction RLC_R8();
-        constexpr static Instruction RLC_MEM_HL();
-        constexpr static Instruction RR_R8();
-        constexpr static Instruction RR_MEM_HL();
-        constexpr static Instruction RL_R8();
-        constexpr static Instruction RLA();
-        constexpr static Instruction RLCA();
-        constexpr static Instruction RRA();
-        constexpr static Instruction RRCA();
-        constexpr static Instruction RL_MEM_HL();
-
-        constexpr static Instruction SLA_R8();
-        constexpr static Instruction SLA_MEM_HL();
-        constexpr static Instruction SRL_R8();
-        constexpr static Instruction SRL_MEM_HL();
-        constexpr static Instruction SRA_R8();
-        constexpr static Instruction SRA_MEM_HL();
-
-        constexpr static Instruction SWAP_R8();
-        constexpr static Instruction SWAP_MEM_HL();
-
-        constexpr static Instruction BIT_R8();
-        constexpr static Instruction BIT_MEM_HL();
-
-        constexpr static Instruction RES_R8();
-        constexpr static Instruction RES_MEM_HL();
-
-        constexpr static Instruction SET_R8();
-        constexpr static Instruction SET_MEM_HL();
-
-        bool operator==(const Instruction& prefix) const = default;
+        std::string_view              name{"ILL"};
+        std::function<void(CPU*)>     executor{&CPU::ILL};
+        std::optional<AddressingMode> addressing_mode{std::nullopt};
     };
 
     using InstructionLookupTable = std::array<Instruction, 0x100>;
@@ -167,8 +38,8 @@ class CPU
     /**
      * @brief Instruction lookup table.
      */
-    const static InstructionLookupTable inst_lookup;
-    const static InstructionLookupTable cb_prefixed_inst_lookup;
+    const static InstructionLookupTable instruction_lookup;
+    const static InstructionLookupTable prefixed_instruction_lookup;
 
     union Register
     {
@@ -212,6 +83,8 @@ class CPU
     void fetch_data();
     void write_data();
     void tick();
+
+    [[nodiscard]] auto disassemble(uint16_t start, std::optional<uint16_t> stop = std::nullopt) const -> DisassembledInstruction;
 
     [[nodiscard]] Register get_register() const noexcept;
 
@@ -401,6 +274,8 @@ class CPU
      * @brief Load from 8-bit register to 8-bit register.
      */
     void LD_R8_R8();
+
+    void LD();
 
     /**
      * @brief Load from 8-bit immediate to 8-bit register.
@@ -850,8 +725,11 @@ class CPU
     /**
      * @brief Registers
      */
-    Register reg;
+    Register reg{};
 
+    /**
+     * @brief Temporary register.
+     */
     union
     {
         uint16_t WZ;
@@ -872,19 +750,28 @@ class CPU
      */
     CPUState state{CPUState::FETCH_DECODE};
 
-    uint8_t ticks;
+    /**
+     * @brief Keep track of the ticks in the current M-cycle.
+     */
+    uint8_t ticks{};
+
     /**
      * @brief Represents the current operation code being executed.
      */
-    uint8_t opcode;
+    uint8_t opcode{};
+
     /**
      * @brief If current instruction is cb_prefixed.
      */
-    bool cb_prefixed;
+    bool prefixed{false};
+
     /**
      * @brief Current instruction.
      */
-    Instruction inst;
+    Instruction instruction{instruction_lookup[0]};
+
+    std::pair<uint16_t, std::string> disassembled_instruction{};
+
     /**
      * @brief Interupt Master Enable flag.
      */

@@ -22,7 +22,9 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest sdl2)
 
-add_executable(gbemu srcs/CPU.cxx
+add_executable(gbemu
+        srcs/cpu/CPU.cxx
+        srcs/cpu/Opcode.cxx
         srcs/main.cxx
         srcs/Bus.cxx
         srcs/Cartridge.cxx
@@ -34,7 +36,8 @@ target_link_libraries(
 )
 
 add_executable(gbemu_test
-        srcs/CPU.cxx
+        srcs/cpu/CPU.cxx
+        srcs/cpu/Opcode.cxx
         srcs/Bus.cxx
         srcs/tests/CPU.cxx
         srcs/tests/Integration.cxx)
