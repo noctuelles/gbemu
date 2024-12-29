@@ -209,7 +209,7 @@ const CPU::InstructionLookupTable CPU::instruction_lookup{{
     {"RET Z", &CPU::RET_CC},                                                          // 0xC8
     {"RET", &CPU::RET},                                                               // 0xC9
     {"JP Z, (${:04X})", &CPU::JP_CC_IMM16, AddressingMode::IMMEDIATE_EXTENDED},       // 0xCA
-    {"PREFIX", &CPU::PREFIX},                                                               // 0xCB
+    {"PREFIX", &CPU::PREFIX},                                                         // 0xCB
     {"CALL Z, (${:04X})", &CPU::CALL_CC_IMM16, AddressingMode::IMMEDIATE_EXTENDED},   // 0xCC
     {"CALL (${:04X})", &CPU::CALL_IMM16, AddressingMode::IMMEDIATE_EXTENDED},         // 0xCD
     {"ADC A, ${:02X}", &CPU::ADC_IMM8, AddressingMode::IMMEDIATE},                    // 0xCE
@@ -676,7 +676,7 @@ void CPU::LDH_MEM_16_A()
         [this]
         {
             this->tmp.W = 0xFF;
-            this->bus.write(this->tmp.WZ, this->tmp.Z);
+            this->bus.write(this->tmp.WZ, this->reg.u8.A);
         });
 }
 
@@ -867,9 +867,9 @@ uint16_t CPU::ADD_16(const uint16_t a, const uint16_t b)
 {
     uint32_t result32{};
 
-    this->set_half_carry(((a & 0x7FF) + (b & 0x7FF)) > 0x800);
     result32 = a + b;
-    this->set_carry(result32 > 0xFFFF);
+    this->set_carry((result32 & 0x10000) == 0x10000);
+    this->set_half_carry(((a & 0xFFF) + (b & 0xFFF) & 0x1000) == 0x1000);
     this->set_subtract(false);
 
     return static_cast<uint16_t>(result32);
@@ -879,9 +879,9 @@ uint16_t CPU::ADD_16(const uint16_t a, const int8_t b)
 {
     uint32_t result32{};
 
-    this->set_half_carry(((a & 0x7FF) + (b & 0x7FF)) > 0x800);
     result32 = a + b;
-    this->set_carry(result32 > 0xFFFF);
+    this->set_carry((result32 & 0x10000) == 0x10000);
+    this->set_half_carry(((a & 0xFFF) + (b & 0xFFF) & 0x1000) == 0x1000);
     this->set_zero(false);
     this->set_subtract(false);
 
@@ -897,10 +897,10 @@ uint8_t CPU::ADD_8(const uint8_t a, const uint8_t b, bool add_carry)
     {
         add_carry = this->carry();
     }
-    this->set_half_carry((a & 0xF) + (b & 0XF) + add_carry > 0xF);
     result16 = a + b + add_carry;
-    this->set_carry(result16 > 0xFF);
     result8 = static_cast<uint8_t>(result16);
+    this->set_half_carry(((a & 0xF) + (b & 0XF) + add_carry & 0x10) == 0x10);
+    this->set_carry((result16 & 0x100) == 0x100);
     this->set_zero(result8 == 0);
     this->set_subtract(false);
 
@@ -979,11 +979,11 @@ uint8_t CPU::SUB_8(const uint8_t a, const uint8_t b, bool sub_carry)
     {
         sub_carry = this->carry();
     }
-    result = a - (b + sub_carry);
+    result = a - b - sub_carry;
 
     this->set_zero(result == 0);
     this->set_subtract(true);
-    this->set_half_carry((a & 0xF) < (b & 0xF) + sub_carry);
+    this->set_half_carry((a & 0x0F) < (b & 0x0F) + sub_carry);
     this->set_carry(a < b + sub_carry);
 
     return result;
@@ -1044,14 +1044,15 @@ uint8_t CPU::STEP_IMM8(uint8_t value, const StepType type)
     if (type == StepType::INCREMENT)
     {
         value += 1;
+        this->set_half_carry((value & 0x0F) == 0);
     }
     else
     {
         value -= 1;
+        this->set_half_carry((value & 0x0F) == 0x0F);
     }
     this->set_subtract(type == StepType::DECREMENT);
     this->set_zero(value == 0);
-    this->set_half_carry(value & 0b00010000 != 0);
     return value;
 }
 
