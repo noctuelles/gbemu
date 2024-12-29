@@ -898,7 +898,7 @@ uint8_t CPU::ADD_8(const uint8_t a, const uint8_t b, bool add_carry)
         add_carry = this->carry();
     }
     result16 = a + b + add_carry;
-    result8 = static_cast<uint8_t>(result16);
+    result8  = static_cast<uint8_t>(result16);
     this->set_half_carry(((a & 0xF) + (b & 0XF) + add_carry & 0x10) == 0x10);
     this->set_carry((result16 & 0x100) == 0x100);
     this->set_zero(result8 == 0);
@@ -1217,24 +1217,45 @@ void CPU::RST_VEC()
 
 auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool rotate_through_carry) noexcept
 {
-    auto has_new_carry = false;
+    auto          has_new_carry = false;
+    const uint8_t msb           = val & 0x80;
+    const uint8_t lsb           = val & 0x01;
 
     if (rotate_direction == RotateDirection::LEFT)
     {
-        has_new_carry = (val & 0x80) != 0;
+        has_new_carry = msb == 0x80;
         val <<= 1;
         if (rotate_through_carry)
         {
-            val |= (this->carry() ? 0x01 : 0x00);
+            if (this->carry())
+            {
+                val |= 0x01;
+            }
+        }
+        else
+        {
+            if (has_new_carry)
+            {
+                val |= 0x01;
+            }
         }
     }
-    else
+    else if (rotate_direction == RotateDirection::RIGHT)
     {
-        has_new_carry = (val & 0x01) != 0;
+        has_new_carry = lsb == 0x01;
         val >>= 1;
         if (rotate_through_carry)
         {
-            val |= (this->carry() ? 0x80 : 0x00);
+            if (this->carry())
+            {
+                val |= 0x80;
+            }
+        } else
+        {
+            if (has_new_carry)
+            {
+                val |= 0x80;
+            }
         }
     }
     this->set_zero(val == 0);
@@ -1336,27 +1357,31 @@ void CPU::RR_MEM_HL()
         });
 }
 
-auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection shift_direction) noexcept
+auto CPU::SHIFT(uint8_t val, const ShiftDirection shift_direction, const ShiftType shift_type) noexcept
 {
-    auto sign_bit = false;
+    const uint8_t msb = val & 0x80;
+    const uint8_t lsb = val & 0x01;
 
-    this->set_carry((val & (shift_direction == ShiftDirection::RIGHT ? 0x01 : 0x80)) != 0);
-    sign_bit = (val & 0x80) != 0;
-    if (shift_direction == ShiftDirection::RIGHT)
+    if (shift_direction == ShiftDirection::LEFT)
     {
-        val >>= 1;
-    }
-    else
-    {
+        /* Logical and arithmetic left shift are equivalent. */
+        (void) shift_type;
+
+        this->set_carry(msb == 0x80);
         val <<= 1;
     }
-    if (sign_bit && shift_type == ShiftType::ARITHMETIC && shift_direction == ShiftDirection::RIGHT)
+    else if (shift_direction == ShiftDirection::RIGHT)
     {
-        val |= 0x80;
+        this->set_carry(lsb == 0x01);
+        val >>= 1;
+        if (shift_type == ShiftType::ARITHMETIC)
+        {
+            val |= msb;
+        }
     }
     this->set_zero(val == 0);
-    this->set_half_carry(false);
     this->set_subtract(false);
+    this->set_half_carry(false);
 
     return val;
 }
@@ -1364,7 +1389,7 @@ auto CPU::SHIFT(uint8_t val, const ShiftType shift_type, const ShiftDirection sh
 void CPU::SRA_R8()
 {
     const auto src{this->get_register8(Register8Position::RIGHTMOST)};
-    this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftType::ARITHMETIC, ShiftDirection::RIGHT);
+    this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftDirection::RIGHT, ShiftType::ARITHMETIC);
 }
 
 void CPU::SRA_MEM_HL()
@@ -1373,7 +1398,7 @@ void CPU::SRA_MEM_HL()
     this->micro_ops.emplace(
         [this]
         {
-            this->tmp.Z = this->SHIFT(this->tmp.Z, ShiftType::ARITHMETIC, ShiftDirection::RIGHT);
+            this->tmp.Z = this->SHIFT(this->tmp.Z, ShiftDirection::RIGHT, ShiftType::ARITHMETIC);
             this->bus.write(this->reg.u16.HL, this->tmp.Z);
         });
 }
@@ -1381,7 +1406,7 @@ void CPU::SRA_MEM_HL()
 void CPU::SLA_R8()
 {
     const auto src{this->get_register8(Register8Position::RIGHTMOST)};
-    this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftType::ARITHMETIC, ShiftDirection::LEFT);
+    this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftDirection::LEFT, ShiftType::ARITHMETIC);
 }
 
 void CPU::SLA_MEM_HL()
@@ -1390,7 +1415,7 @@ void CPU::SLA_MEM_HL()
     this->micro_ops.emplace(
         [this]
         {
-            this->tmp.Z = this->SHIFT(this->tmp.Z, ShiftType::ARITHMETIC, ShiftDirection::LEFT);
+            this->tmp.Z = this->SHIFT(this->tmp.Z, ShiftDirection::LEFT, ShiftType::ARITHMETIC);
             this->bus.write(this->reg.u16.HL, this->tmp.Z);
         });
 }
@@ -1398,7 +1423,7 @@ void CPU::SLA_MEM_HL()
 void CPU::SRL_R8()
 {
     const auto src{this->get_register8(Register8Position::RIGHTMOST)};
-    this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftType::LOGICAL, ShiftDirection::RIGHT);
+    this->reg.u8.*src = this->SHIFT(this->reg.u8.*src, ShiftDirection::RIGHT, ShiftType::LOGICAL);
 }
 
 void CPU::SRL_MEM_HL()
@@ -1407,7 +1432,7 @@ void CPU::SRL_MEM_HL()
     this->micro_ops.emplace(
         [this]
         {
-            this->tmp.Z = this->SHIFT(this->tmp.Z, ShiftType::LOGICAL, ShiftDirection::RIGHT);
+            this->tmp.Z = this->SHIFT(this->tmp.Z, ShiftDirection::RIGHT, ShiftType::LOGICAL);
             this->bus.write(this->reg.u16.HL, this->tmp.Z);
         });
 }
