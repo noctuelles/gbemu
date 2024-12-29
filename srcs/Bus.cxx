@@ -11,6 +11,11 @@ Bus::~Bus() = default;
 
 uint8_t Bus::read(const uint16_t addr) const
 {
+    if (addr == 0xFF44)
+    {
+        return 0x90;
+    }
+
     return this->ram[addr];
 }
 

@@ -78,15 +78,15 @@ class CPU
     };
 
     explicit CPU(Bus& bus);
-    ~CPU();
 
     void fetch_data();
     void write_data();
     void tick();
 
     [[nodiscard]] auto disassemble(uint16_t start, std::optional<uint16_t> stop = std::nullopt) const -> DisassembledInstruction;
-
     [[nodiscard]] Register get_register() const noexcept;
+
+    static std::string_view get_register8_name(Register8 reg);
 
   private:
     enum class Register16Placeholder : uint8_t
@@ -653,7 +653,7 @@ class CPU
      * @brief Perform an 8 bit shift.
      * @return Operation result.
      */
-    auto SHIFT(uint8_t val, ShiftType shift_type, ShiftDirection shift_direction) noexcept;
+    auto SHIFT(uint8_t val, ShiftDirection shift_direction, ShiftType shift_type) noexcept;
     /**
      * @brief Shift Right Arithmetically register r8.
      */

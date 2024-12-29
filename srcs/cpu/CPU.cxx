@@ -16,9 +16,19 @@ const char* CPU::BadRegister::what() const noexcept
     return "Bad Register";
 }
 
-CPU::CPU(Bus& bus) : bus(bus) {}
-
-CPU::~CPU() = default;
+CPU::CPU(Bus& bus) : bus(bus)
+{
+    this->reg.u8.A   = 0x01;
+    this->reg.u8.F   = 0xB0;
+    this->reg.u8.B   = 0x00;
+    this->reg.u8.C   = 0x13;
+    this->reg.u8.D   = 0x00;
+    this->reg.u8.E   = 0xD8;
+    this->reg.u8.H   = 0x01;
+    this->reg.u8.L   = 0x4D;
+    this->reg.u16.SP = 0xFFFE;
+    this->reg.u16.PC = 0x0100;
+}
 
 void CPU::tick()
 {
@@ -35,13 +45,19 @@ void CPU::tick()
             {
                 this->instruction = prefixed_instruction_lookup[opcode];
                 this->prefixed    = false;
+
             }
             else
             {
-                this->instruction = instruction_lookup[opcode];
+                this->instruction              = instruction_lookup[opcode];
                 this->disassembled_instruction = *this->disassemble(this->reg.u16.PC).begin();
-                std::cout << this->disassembled_instruction.second << std::endl;
+
+                if (opcode != 0xCB)
+                {
+
+                }
             }
+
             this->reg.u16.PC++;
             this->instruction.executor(this);
             if (!this->micro_ops.empty())
@@ -125,6 +141,25 @@ auto CPU::disassemble(const uint16_t start, const std::optional<uint16_t> stop) 
 CPU::Register CPU::get_register() const noexcept
 {
     return this->reg;
+}
+
+std::string_view CPU::get_register8_name(const Register8 reg)
+{
+    if (reg == &Register::U8::A) return "A";
+    else if (reg == &Register::U8::B)
+        return "B";
+    else if (reg == &Register::U8::C)
+        return "C";
+    else if (reg == &Register::U8::D)
+        return "D";
+    else if (reg == &Register::U8::E)
+        return "E";
+    else if (reg == &Register::U8::H)
+        return "H";
+    else if (reg == &Register::U8::L)
+        return "L";
+    else
+        throw BadRegister();
 }
 
 uint8_t CPU::get_b3() const
