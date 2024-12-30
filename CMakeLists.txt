@@ -41,7 +41,8 @@ add_executable(gbemu_test
         srcs/cpu/Opcode.cxx
         srcs/Bus.cxx
         srcs/tests/cpu/Load.cxx
-        srcs/tests/cpu/Rotate.cxx)
+        srcs/tests/cpu/Rotate.cxx
+        srcs/tests/cpu/BlarggInstructions.cxx)
 
 target_link_libraries(
         gbemu_test

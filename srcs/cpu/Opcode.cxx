@@ -223,7 +223,7 @@ const CPU::InstructionLookupTable CPU::instruction_lookup{{
     {"SUB A, ${:02X}", &CPU::SUB_IMM8, AddressingMode::IMMEDIATE},                    // 0xD6
     {"RST $10", &CPU::RST_VEC},                                                       // 0xD7
     {"RET C", &CPU::RET_CC},                                                          // 0xD8
-    {/* RETI */},                                                                     // 0xD9
+    {"RETI", &CPU::RETI},                                                             // 0xD9
     {"JP C, (${:04X})", &CPU::JP_CC_IMM16, AddressingMode::IMMEDIATE_EXTENDED},       // 0xDA
     {},                                                                               // 0xDB
     {"CALL C, (${:04X})", &CPU::CALL_CC_IMM16, AddressingMode::IMMEDIATE_EXTENDED},   // 0xDC
@@ -899,7 +899,7 @@ uint8_t CPU::ADD_8(const uint8_t a, const uint8_t b, bool add_carry)
     }
     result16 = a + b + add_carry;
     result8  = static_cast<uint8_t>(result16);
-    this->set_half_carry(((a & 0xF) + (b & 0XF) + add_carry & 0x10) == 0x10);
+    this->set_half_carry(((a & 0x0F) + (b & 0x0F) + add_carry & 0x10) == 0x10);
     this->set_carry((result16 & 0x100) == 0x100);
     this->set_zero(result8 == 0);
     this->set_subtract(false);
@@ -1190,6 +1190,14 @@ void CPU::RET()
     this->micro_ops.emplace([this] { this->reg.u16.PC = this->tmp.WZ; });
 }
 
+void CPU::RETI()
+{
+    /* TODO: Int. */
+    this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.SP++); });
+    this->micro_ops.emplace([this] { this->tmp.W = this->bus.read(this->reg.u16.SP++); });
+    this->micro_ops.emplace([this] { this->reg.u16.PC = this->tmp.WZ; });
+}
+
 void CPU::RET_CC()
 {
     this->micro_ops.emplace(
@@ -1231,6 +1239,13 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
                 val |= 0x01;
             }
         }
+        else
+        {
+            if (has_new_carry)
+            {
+                val |= 0x01;
+            }
+        }
     }
     else if (rotate_direction == RotateDirection::RIGHT)
     {
@@ -1239,6 +1254,13 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
         if (rotate_through_carry)
         {
             if (this->carry())
+            {
+                val |= 0x80;
+            }
+        }
+        else
+        {
+            if (has_new_carry)
             {
                 val |= 0x80;
             }

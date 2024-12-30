@@ -37,25 +37,23 @@ void CPU::tick()
         return;
     }
     this->ticks = 0;
+
     switch (this->state)
     {
         case CPUState::FETCH_DECODE:
+
             this->opcode = this->bus.read(this->reg.u16.PC);
             if (this->prefixed)
             {
                 this->instruction = prefixed_instruction_lookup[opcode];
                 this->prefixed    = false;
-
             }
             else
             {
                 this->instruction              = instruction_lookup[opcode];
                 this->disassembled_instruction = *this->disassemble(this->reg.u16.PC).begin();
 
-                if (opcode != 0xCB)
-                {
-
-                }
+                this->print_state();
             }
 
             this->reg.u16.PC++;
@@ -145,7 +143,8 @@ CPU::Register CPU::get_register() const noexcept
 
 std::string_view CPU::get_register8_name(const Register8 reg)
 {
-    if (reg == &Register::U8::A) return "A";
+    if (reg == &Register::U8::A)
+        return "A";
     else if (reg == &Register::U8::B)
         return "B";
     else if (reg == &Register::U8::C)
@@ -268,6 +267,16 @@ bool CPU::check_condition_is_met() const
         default:
             throw BadRegister();
     }
+}
+void CPU::print_state() const
+{
+    std::print(
+        std::cout,
+        "A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} PCMEM:{:02X},{:02X},{:02X},{:02X}\n",
+        this->reg.u8.A, this->reg.u8.F, this->reg.u8.B, this->reg.u8.C, this->reg.u8.D, this->reg.u8.E, this->reg.u8.H,
+        this->reg.u8.L, static_cast<uint16_t>(this->reg.u16.SP), static_cast<uint16_t>(this->reg.u16.PC),
+        this->bus.read(this->reg.u16.PC), this->bus.read(this->reg.u16.PC + 1), this->bus.read(this->reg.u16.PC + 2),
+        this->bus.read(this->reg.u16.PC + 3));
 }
 
 void CPU::set_carry(const bool carry)

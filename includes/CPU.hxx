@@ -207,6 +207,8 @@ class CPU
     [[nodiscard]] Register16                                         get_register16_stack() const;
     [[nodiscard]] bool                                               check_condition_is_met() const;
 
+    void print_state() const;
+
     void               set_carry(bool carry);
     [[nodiscard]] bool carry() const;
 
@@ -580,6 +582,8 @@ class CPU
      * @brief Return from subroutine. This is basically a POP PC (if such an instruction existed).
      */
     void RET();
+
+    void RETI();
 
     /**
      * @brief Return from subroutine if condition cc is met.
