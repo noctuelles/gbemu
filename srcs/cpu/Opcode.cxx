@@ -744,18 +744,18 @@ void CPU::LD_HL_SP_PLUS_IMM8()
 
 void CPU::PUSH_R16()
 {
-    this->micro_ops.emplace([this]() { this->reg.u16.SP--; });
+    this->micro_ops.emplace([this] { this->reg.u16.SP--; });
     this->micro_ops.emplace(
-        [this]() { this->bus.write(this->reg.u16.SP--, u16_msb(this->reg.u16.*this->get_register16_stack())); });
+        [this] { this->bus.write(this->reg.u16.SP--, u16_msb(this->reg.u16.*this->get_register16_stack())); });
     this->micro_ops.emplace(
-        [this]() { this->bus.write(this->reg.u16.SP, u16_lsb(this->reg.u16.*this->get_register16_stack())); });
+        [this] { this->bus.write(this->reg.u16.SP, u16_lsb(this->reg.u16.*this->get_register16_stack())); });
 }
 
 void CPU::POP_R16()
 {
-    this->micro_ops.emplace([this]() { this->tmp.Z = this->bus.read(this->reg.u16.SP++); });
+    this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.SP++); });
     this->micro_ops.emplace(
-        [this]()
+        [this]
         {
             this->tmp.W                                 = this->bus.read(this->reg.u16.SP++);
             this->reg.u16.*this->get_register16_stack() = this->tmp.WZ;
