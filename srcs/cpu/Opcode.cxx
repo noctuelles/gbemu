@@ -1232,13 +1232,6 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
                 val |= 0x01;
             }
         }
-        else
-        {
-            if (has_new_carry)
-            {
-                val |= 0x01;
-            }
-        }
     }
     else if (rotate_direction == RotateDirection::RIGHT)
     {
@@ -1247,12 +1240,6 @@ auto CPU::ROTATE(uint8_t val, const RotateDirection rotate_direction, const bool
         if (rotate_through_carry)
         {
             if (this->carry())
-            {
-                val |= 0x80;
-            }
-        } else
-        {
-            if (has_new_carry)
             {
                 val |= 0x80;
             }

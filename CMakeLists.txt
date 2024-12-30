@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(gbemu VERSION 1.0)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 include_directories(includes)
 include_directories(/usr/include/c++/14)
@@ -28,7 +28,8 @@ add_executable(gbemu
         srcs/main.cxx
         srcs/Bus.cxx
         srcs/Cartridge.cxx
-        includes/Cartridge.hxx)
+        includes/Cartridge.hxx
+        includes/tests/CPU.hxx)
 
 target_link_libraries(
         gbemu
@@ -39,8 +40,8 @@ add_executable(gbemu_test
         srcs/cpu/CPU.cxx
         srcs/cpu/Opcode.cxx
         srcs/Bus.cxx
-        srcs/tests/CPU.cxx
-        srcs/tests/Integration.cxx)
+        srcs/tests/cpu/Load.cxx
+        srcs/tests/cpu/Rotate.cxx)
 
 target_link_libraries(
         gbemu_test

@@ -83,7 +83,8 @@ class CPU
     void write_data();
     void tick();
 
-    [[nodiscard]] auto disassemble(uint16_t start, std::optional<uint16_t> stop = std::nullopt) const -> DisassembledInstruction;
+    [[nodiscard]] auto disassemble(uint16_t start, std::optional<uint16_t> stop = std::nullopt) const
+        -> DisassembledInstruction;
     [[nodiscard]] Register get_register() const noexcept;
 
     static std::string_view get_register8_name(Register8 reg);
@@ -779,7 +780,22 @@ class CPU
 
     Bus& bus;
 
-    TEST_FRIENDS;
+    friend class CPUTesting;
+
+    friend class LD_R8_R8_Value_Test;
+    friend class LD_R8_R8_Flags_Test;
+    friend class LD_MEM_HL_R8_Value_Test;
+    friend class LD_R8_MEM_HL_Value_Test;
+    friend class LD_R8_IMM8_Value_Test;
+    friend class LD_MEM_HL_IMM8_Value_Test;
+    friend class LD_MEM_16_SP_Value_Test;
+    friend class LD_MEM_16_A_Value_Test;
+    friend class LD_A_MEM_16_Value_Test;
+
+    friend class RR_R8_Value_Test;
+    friend class RRC_R8_Value_Test;
+    friend class RL_R8_Value_Test;
+    friend class RLC_R8_Value_Test;
 };
 
 #endif
