@@ -791,6 +791,11 @@ class CPU
     friend class LD_MEM_16_SP_Value_Test;
     friend class LD_MEM_16_A_Value_Test;
     friend class LD_A_MEM_16_Value_Test;
+    friend class LD_R16_IMM16_Value_Test;
+    friend class LDH_IMM8_A_Value_Test;
+    friend class LDH_A_IMM8_Value_Test;
+    friend class LDH_MEM_C_A_Value_Test;
+    friend class LDH_A_MEM_C_Value_Test;
 
     friend class RR_R8_Value_Test;
     friend class RRC_R8_Value_Test;
