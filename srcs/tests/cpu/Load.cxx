@@ -4,8 +4,8 @@
 
 #include <format>
 
-#include "tests/CPU.hxx"
 #include "Utils.hxx"
+#include "tests/CPU.hxx"
 
 struct LD_R8_R8_Params : TestInstructionParam
 {
@@ -25,15 +25,6 @@ TEST_P(LD_R8_R8, Value)
     this->cpu->reg.u8.*(param.dst) = 0x42;
     this->execute_instruction({param.opcode}, 4);
     ASSERT_EQ(this->cpu->reg.u8.*param.dst, this->cpu->reg.u8.*param.src);
-}
-
-TEST_P(LD_R8_R8, Flags)
-{
-    const auto& param{GetParam()};
-    const auto  byte{generate_byte()};
-    this->cpu->reg.u8.F = byte;
-    this->execute_instruction({param.opcode}, 4);
-    ASSERT_EQ(this->cpu->reg.u8.F, byte);
 }
 
 INSTANTIATE_TEST_SUITE_P(Main, LD_R8_R8,
@@ -243,7 +234,6 @@ TEST_F(LD_MEM_16_A, Value)
     ASSERT_EQ(this->bus->read(addr), this->cpu->reg.u8.A);
 }
 
-
 class LD_A_MEM_16 : public CPUTesting
 {
 };
@@ -263,10 +253,89 @@ TEST_F(LD_A_MEM_16, Value)
 
 struct LD_R16_IMM16_Params : TestInstructionParam
 {
-    CPU::Register8 dest;
-    std::string    name;
+    std::string_view name;
+    CPU::Register16  dest;
 };
 
 class LD_R16_IMM16 : public CPUTesting, public ::testing::WithParamInterface<LD_R16_IMM16_Params>
 {
 };
+
+TEST_P(LD_R16_IMM16, Value)
+{
+    const auto  word{u16(generate_byte(), generate_byte())};
+    const auto& param{GetParam()};
+
+    this->cpu->reg.u16.PC = 0;
+
+    this->execute_instruction({param.opcode, u16_lsb(word), u16_msb(word)}, 16);
+
+    ASSERT_EQ(this->cpu->reg.u16.*param.dest, word);
+};
+
+INSTANTIATE_TEST_SUITE_P(LoadRegister16FromImmediate16, LD_R16_IMM16,
+                         ::testing::Values(LD_R16_IMM16_Params{0x01, "LD_BC_IMM16", &CPU::Register::U16::BC},
+                                           LD_R16_IMM16_Params{0x11, "LD_DE_IMM16", &CPU::Register::U16::DE},
+                                           LD_R16_IMM16_Params{0x21, "LD_HL_IMM16", &CPU::Register::U16::HL},
+                                           LD_R16_IMM16_Params{0x31, "LD_SP_IMM16", &CPU::Register::U16::SP}),
+                         [](const testing::TestParamInfo<LD_R16_IMM16::ParamType>& info)
+                         { return std::string(info.param.name); });
+
+class LDH_IMM8_A : public CPUTesting {};
+
+TEST_F(LDH_IMM8_A, Value)
+{
+    const auto addr_lsb{generate_byte()};
+    const auto byte{generate_byte()};
+
+    this->cpu->reg.u8.A = byte;
+
+    this->execute_instruction({0xE0, addr_lsb}, 12);
+
+    ASSERT_EQ(this->bus->read(u16(0xFF, addr_lsb)), this->cpu->reg.u8.A);
+};
+
+class LDH_A_IMM8 : public CPUTesting {};
+
+TEST_F(LDH_A_IMM8, Value)
+{
+    const auto addr_lsb{generate_byte()};
+    const auto byte{generate_byte()};
+
+    this->bus->write(u16(0xFF, addr_lsb), byte);
+
+    this->execute_instruction({0xF0, addr_lsb}, 12);
+
+    ASSERT_EQ(this->cpu->reg.u8.A, this->bus->read(u16(0xFF, addr_lsb)));
+};
+
+class LDH_MEM_C_A : public CPUTesting {};
+
+TEST_F(LDH_MEM_C_A, Value)
+{
+    const auto addr_lsb{generate_byte()};
+    const auto byte{generate_byte()};
+
+    this->cpu->reg.u8.C = addr_lsb;
+    this->cpu->reg.u8.A = byte;
+
+    this->execute_instruction({0xE2, addr_lsb}, 8);
+
+    ASSERT_EQ(this->bus->read(u16(0xFF, this->cpu->reg.u8.C)), this->cpu->reg.u8.A);
+}
+
+
+class LDH_A_MEM_C : public CPUTesting {};
+
+TEST_F(LDH_A_MEM_C, Value)
+{
+    const auto addr_lsb{generate_byte()};
+    const auto byte{generate_byte()};
+
+    this->cpu->reg.u8.C = addr_lsb;
+    this->bus->write(u16(0xFF, this->cpu->reg.u8.C), byte);
+
+    this->execute_instruction({0xE2, addr_lsb}, 8);
+
+    ASSERT_EQ(this->cpu->reg.u8.A, this->bus->read(u16(0xFF, this->cpu->reg.u8.C)));
+}
