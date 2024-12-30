@@ -967,8 +967,7 @@ void CPU::ADC_MEM_HL()
 void CPU::ADC_IMM8()
 {
     this->micro_ops.emplace(
-        [this]
-        { this->bus.write(this->reg.u16.HL, this->ADD_8(this->reg.u8.A, this->bus.read(this->reg.u16.PC++), true)); });
+        [this] { this->reg.u8.A = this->ADD_8(this->reg.u8.A, this->bus.read(this->reg.u16.PC++), true); });
 }
 
 uint8_t CPU::SUB_8(const uint8_t a, const uint8_t b, bool sub_carry)
@@ -1132,10 +1131,10 @@ void CPU::JP_CC_IMM16()
 
 void CPU::CALL_IMM16()
 {
-    this->micro_ops.emplace([this]() { this->tmp.Z = this->bus.read(this->reg.u16.PC++); });
-    this->micro_ops.emplace([this]() { this->tmp.W = this->bus.read(this->reg.u16.PC++); });
-    this->micro_ops.emplace([this]() { this->reg.u16.SP--; });
-    this->micro_ops.emplace([this]() { this->bus.write(this->reg.u16.SP--, u16_msb(this->reg.u16.PC)); });
+    this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.PC++); });
+    this->micro_ops.emplace([this] { this->tmp.W = this->bus.read(this->reg.u16.PC++); });
+    this->micro_ops.emplace([this] { this->reg.u16.SP--; });
+    this->micro_ops.emplace([this] { this->bus.write(this->reg.u16.SP--, u16_msb(this->reg.u16.PC)); });
     this->micro_ops.emplace(
         [this]()
         {
