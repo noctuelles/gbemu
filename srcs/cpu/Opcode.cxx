@@ -17,7 +17,7 @@ const CPU::InstructionLookupTable CPU::instruction_lookup{{
     {"LD [${:04X}], SP", &CPU::LD_MEM_16_SP, AddressingMode::IMMEDIATE_EXTENDED},     // 0x08
     {"ADD HL, BC", &CPU::ADD_HL_R16},                                                 // 0x09
     {"LD A, [BC]", &CPU::LD_A_MEM_R16},                                               // 0x0A
-    {"DEC BC"},                                                                       // 0x0B
+    {"DEC BC", &CPU::DEC_R16},                                                        // 0x0B
     {"INC C", &CPU::INC_R8},                                                          // 0x0C
     {"DEC C", &CPU::DEC_R8},                                                          // 0x0D
     {"LD C, ${:02X}", &CPU::LD_R8_IMM8, AddressingMode::IMMEDIATE},                   // 0x0E
@@ -550,7 +550,7 @@ void CPU::DAA()
 {
     uint8_t adj{};
 
-    if ((!this->subtract() && this->reg.u8.A & 0x0F > 0x09) || this->half_carry())
+    if ((!this->subtract() && (this->reg.u8.A & 0x0F) > 0x09) || this->half_carry())
     {
         adj |= 0x06;
     }
@@ -738,8 +738,7 @@ void CPU::LD_A_MEM_16()
 void CPU::LD_HL_SP_PLUS_IMM8()
 {
     this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.PC++); });
-    this->micro_ops.emplace([this]
-                            { this->reg.u16.HL = this->ADD_16(this->reg.u16.HL, static_cast<int8_t>(this->tmp.Z)); });
+    this->micro_ops.emplace([this] { this->reg.u16.HL = this->ADD_16(this->reg.u16.SP, this->tmp.Z); });
 }
 
 void CPU::PUSH_R16()
@@ -875,17 +874,30 @@ uint16_t CPU::ADD_16(const uint16_t a, const uint16_t b)
     return static_cast<uint16_t>(result32);
 }
 
-uint16_t CPU::ADD_16(const uint16_t a, const int8_t b)
+uint16_t CPU::ADD_16(const uint16_t a, const uint8_t b)
 {
-    uint32_t result32{};
+    const auto    sign{(b & 0x80) == 0x80};
+    const uint8_t a_lsb{u16_lsb(a)};
+    uint8_t       a_msb{u16_msb(a)};
+    uint16_t      tmp{};
 
-    result32 = a + b;
-    this->set_carry((result32 & 0x10000) == 0x10000);
-    this->set_half_carry(((a & 0xFFF) + (b & 0xFFF) & 0x1000) == 0x1000);
+    tmp = a_lsb + b;
+
+    this->set_carry((tmp & 0x100) == 0x100);
+    this->set_half_carry(((a & 0x0F) + (b & 0x0F) & 0x10) == 0x10);
     this->set_zero(false);
     this->set_subtract(false);
 
-    return static_cast<uint16_t>(result32);
+    if (this->carry() && !sign)
+    {
+        a_msb += 1;
+    }
+    else if (!this->carry() && sign)
+    {
+        a_msb -= 1;
+    }
+
+    return u16(a_msb, static_cast<uint8_t>(tmp));
 }
 
 uint8_t CPU::ADD_8(const uint8_t a, const uint8_t b, bool add_carry)
@@ -915,9 +927,8 @@ void CPU::ADD_R8()
 
 void CPU::ADD_MEM_HL()
 {
-    this->micro_ops.emplace(
-        [this]
-        { this->bus.write(this->reg.u16.HL, this->ADD_8(this->reg.u8.A, this->bus.read(this->reg.u16.HL), false)); });
+    this->micro_ops.emplace([this]
+                            { this->reg.u8.A = this->ADD_8(this->reg.u8.A, this->bus.read(this->reg.u16.HL), false); });
 }
 
 void CPU::ADD_IMM8()
@@ -935,21 +946,9 @@ void CPU::ADD_HL_R16()
 
 void CPU::ADD_SP_IMM8()
 {
-    uint16_t result{};
-
     this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.PC++); });
-    this->micro_ops.emplace(
-        [this, &result]
-        {
-            result      = this->ADD_16(this->reg.u16.SP, static_cast<int8_t>(this->tmp.Z));
-            this->tmp.Z = u16_lsb(result);
-        });
-    this->micro_ops.emplace(
-        [this, result]
-        {
-            this->tmp.W      = u16_msb(result);
-            this->reg.u16.SP = this->tmp.WZ;
-        });
+    this->micro_ops.emplace([this] { this->tmp.WZ = this->ADD_16(this->reg.u16.SP, this->tmp.Z); });
+    this->micro_ops.emplace([this] { this->reg.u16.SP = this->tmp.WZ; });
 }
 
 void CPU::ADC_R8()
@@ -959,9 +958,8 @@ void CPU::ADC_R8()
 
 void CPU::ADC_MEM_HL()
 {
-    this->micro_ops.emplace(
-        [this]
-        { this->bus.write(this->reg.u16.HL, this->ADD_8(this->reg.u8.A, this->bus.read(this->reg.u16.HL), true)); });
+    this->micro_ops.emplace([this]
+                            { this->reg.u8.A = this->ADD_8(this->reg.u8.A, this->bus.read(this->reg.u16.HL), true); });
 }
 
 void CPU::ADC_IMM8()

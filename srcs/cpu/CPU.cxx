@@ -37,6 +37,7 @@ void CPU::tick()
         return;
     }
     this->ticks = 0;
+    this->reg.u8.F &= 0xF0;
 
     switch (this->state)
     {
@@ -53,7 +54,7 @@ void CPU::tick()
                 this->instruction              = instruction_lookup[opcode];
                 this->disassembled_instruction = *this->disassemble(this->reg.u16.PC).begin();
 
-                this->print_state();
+                // this->print_state();
             }
 
             this->reg.u16.PC++;

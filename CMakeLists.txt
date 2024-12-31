@@ -4,6 +4,8 @@ project(gbemu VERSION 1.0)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD 23)
 
+add_compile_options(-gdwarf-4)
+
 include_directories(includes)
 include_directories(/usr/include/c++/14)
 include(FetchContent)
@@ -29,7 +31,8 @@ add_executable(gbemu
         srcs/Bus.cxx
         srcs/Cartridge.cxx
         includes/Cartridge.hxx
-        includes/tests/CPU.hxx)
+        includes/tests/CPU.hxx
+        srcs/Utils.cxx)
 
 target_link_libraries(
         gbemu
@@ -42,7 +45,9 @@ add_executable(gbemu_test
         srcs/Bus.cxx
         srcs/tests/cpu/Load.cxx
         srcs/tests/cpu/Rotate.cxx
-        srcs/tests/cpu/BlarggInstructions.cxx)
+        srcs/tests/cpu/BlarggInstructions.cxx
+        srcs/tests/cpu/BlarggROM.cxx
+        srcs/Utils.cxx)
 
 target_link_libraries(
         gbemu_test

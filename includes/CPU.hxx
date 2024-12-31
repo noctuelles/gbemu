@@ -417,7 +417,7 @@ class CPU
     void XOR_IMM8();
 
     uint16_t ADD_16(uint16_t a, uint16_t b);
-    uint16_t ADD_16(uint16_t a, int8_t b);
+    uint16_t ADD_16(uint16_t a, uint8_t b);
     uint8_t  ADD_8(uint8_t a, uint8_t b, bool add_carry);
     /**
      * @brief Add the value in r8 to A.
@@ -740,8 +740,13 @@ class CPU
         uint16_t WZ;
         struct
         {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             uint8_t Z;
             uint8_t W;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+            uint8_t W;
+            uint8_t Z;
+#endif
         };
     } __attribute__((packed)) tmp{};
 
