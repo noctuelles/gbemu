@@ -12,6 +12,10 @@
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
 
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_opengl3.h"
+
 template <typename T, auto Init, auto Release, typename... InitArgs>
 class SDLObjWrapper final
 {

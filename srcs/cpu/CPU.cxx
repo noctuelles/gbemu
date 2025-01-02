@@ -18,6 +18,8 @@ const char* CPU::BadRegister::what() const noexcept
 
 CPU::CPU(Bus& bus) : bus(bus)
 {
+    this->micro_ops.emplace([] { /* NOP */ });
+
     this->reg.u8.A   = 0x01;
     this->reg.u8.F   = 0xB0;
     this->reg.u8.B   = 0x00;
@@ -41,7 +43,9 @@ void CPU::tick()
 
     switch (this->state)
     {
-        case CPUState::FETCH_DECODE:
+        case CPUState::FETCH_EXECUTE_OVERLAP:
+            this->micro_ops.front()();
+            this->micro_ops.pop();
 
             this->opcode = this->bus.read(this->reg.u16.PC);
             if (this->prefixed)
@@ -53,13 +57,12 @@ void CPU::tick()
             {
                 this->instruction              = instruction_lookup[opcode];
                 this->disassembled_instruction = *this->disassemble(this->reg.u16.PC).begin();
-
-                // this->print_state();
+                this->print_state();
             }
-
             this->reg.u16.PC++;
             this->instruction.executor(this);
-            if (!this->micro_ops.empty())
+
+            if (this->micro_ops.size() > 1)
             {
                 this->state = CPUState::EXECUTE;
             }
@@ -67,9 +70,10 @@ void CPU::tick()
         case CPUState::EXECUTE:
             this->micro_ops.front()();
             this->micro_ops.pop();
-            if (this->micro_ops.empty())
+
+            if (this->micro_ops.size() == 1)
             {
-                this->state = CPUState::FETCH_DECODE;
+                this->state = CPUState::FETCH_EXECUTE_OVERLAP;
             }
             break;
     };

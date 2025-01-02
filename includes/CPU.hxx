@@ -195,7 +195,7 @@ class CPU
 
     enum class CPUState : bool
     {
-        FETCH_DECODE,
+        FETCH_EXECUTE_OVERLAP,
         EXECUTE
     };
 
@@ -418,7 +418,7 @@ class CPU
 
     uint16_t ADD_16(uint16_t a, uint16_t b);
     uint16_t ADD_16(uint16_t a, uint8_t b);
-    uint8_t  ADD_8(uint8_t a, uint8_t b, bool add_carry);
+    uint8_t  ADD_8(uint8_t a, uint8_t b, bool add_carry = false, bool set_carry = true);
     /**
      * @brief Add the value in r8 to A.
      */
@@ -758,7 +758,7 @@ class CPU
     /**
      * @brief State of the CPU.
      */
-    CPUState state{CPUState::FETCH_DECODE};
+    CPUState state{CPUState::FETCH_EXECUTE_OVERLAP};
 
     /**
      * @brief Keep track of the ticks in the current M-cycle.
@@ -785,7 +785,9 @@ class CPU
     /**
      * @brief Interupt Master Enable flag.
      */
-    bool ime{};
+    bool ime{false};
+
+    bool sign{false};
 
     Bus& bus;
 

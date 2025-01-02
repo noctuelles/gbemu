@@ -22,6 +22,4 @@ constexpr uint16_t u16(const uint8_t msb, const uint8_t lsb)
     return static_cast<uint16_t>(msb << 8 | lsb);
 }
 
-std::vector<std::byte> load_binary_file();
-
 #endif  // UTILS_HXX
