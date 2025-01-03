@@ -26,6 +26,15 @@ class CPU
         RELATIVE,
     };
 
+    enum class InterruptType : uint8_t
+    {
+        VBLANK = 1,
+        LCD = 1 << 1,
+        TIMER = 1 << 2,
+        SERIAL = 1 << 3,
+        JOYPAD = 1 << 4,
+    };
+
     struct Instruction
     {
         std::string_view              name{"ILL"};
@@ -220,6 +229,8 @@ class CPU
 
     void               set_zero(bool zero);
     [[nodiscard]] bool zero() const;
+
+    bool handle_interrupt();
 
     /**
      * @brief No OPeration.

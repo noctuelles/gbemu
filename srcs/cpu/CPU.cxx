@@ -42,23 +42,26 @@ void CPU::tick()
     switch (this->state)
     {
         case CPUState::FETCH_DECODE:
-
-            this->opcode = this->bus.read(this->reg.u16.PC);
-            if (this->prefixed)
+            if (!this->handle_interrupt())
             {
-                this->instruction = prefixed_instruction_lookup[opcode];
-                this->prefixed    = false;
-            }
-            else
-            {
-                this->instruction              = instruction_lookup[opcode];
-                this->disassembled_instruction = *this->disassemble(this->reg.u16.PC).begin();
+                this->opcode = this->bus.read(this->reg.u16.PC);
+                if (this->prefixed)
+                {
+                    this->instruction = prefixed_instruction_lookup[opcode];
+                    this->prefixed    = false;
+                }
+                else
+                {
+                    this->instruction              = instruction_lookup[opcode];
+                    this->disassembled_instruction = *this->disassemble(this->reg.u16.PC).begin();
 
-                // this->print_state();
+                    // this->print_state();
+                }
+
+                this->reg.u16.PC++;
+                this->instruction.executor(this);
             }
 
-            this->reg.u16.PC++;
-            this->instruction.executor(this);
             if (!this->micro_ops.empty())
             {
                 this->state = CPUState::EXECUTE;
@@ -318,4 +321,48 @@ void CPU::set_zero(const bool zero)
 bool CPU::zero() const
 {
     return (this->reg.u8.F & Flags::ZERO) != 0;
+}
+bool CPU::handle_interrupt()
+{
+    if (!this->ime)
+    {
+        return (false);
+    }
+
+    const auto              interrupt_enable{this->bus.read(0xFFFF)};
+    auto                    interrupt_flag{this->bus.read(0xFF0F)};
+    auto                    interrupt_request{static_cast<uint8_t>(interrupt_enable & interrupt_flag & 0x10)};
+    std::optional<uint16_t> interrupt_address{std::nullopt};
+    uint8_t                 interrupt_no{};
+
+    while (interrupt_request)
+    {
+        if ((interrupt_request & 0x01) == 0x01)
+        {
+            interrupt_address.emplace(0x40 + interrupt_no * 8);
+            break;
+        }
+        interrupt_request >>= 1;
+        interrupt_no++;
+    }
+
+    if (!interrupt_address.has_value())
+    {
+        return (false);
+    }
+
+    this->ime = false;
+    interrupt_flag &= ~(1 << interrupt_no);
+    this->bus.write(0xFF0F, interrupt_flag);
+
+    this->micro_ops.emplace([this] { this->reg.u16.SP--; });
+    this->micro_ops.emplace([this] { this->bus.write(this->reg.u16.SP--, u16_msb(this->reg.u16.PC)); });
+    this->micro_ops.emplace(
+        [this, interrupt_address]
+        {
+            this->bus.write(this->reg.u16.SP, u16_lsb(this->reg.u16.PC));
+            this->reg.u16.PC = *interrupt_address;
+        });
+
+    return (true);
 }

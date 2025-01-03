@@ -4,8 +4,6 @@ project(gbemu VERSION 1.0)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD 23)
 
-add_compile_options(-gdwarf-4)
-
 include_directories(includes)
 include_directories(/usr/include/c++/14)
 include(FetchContent)
@@ -21,8 +19,31 @@ FetchContent_Declare(
         GIT_TAG 9c821dc21ccbd69b2bda421fdb35cb4ae2da8f5e
 )
 
+FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui
+        GIT_TAG 993fa347495860ed44b83574254ef2a317d0c14f
+)
+
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest sdl2)
+FetchContent_MakeAvailable(googletest sdl2 imgui)
+
+set(IMGUI_FILES
+        ${imgui_SOURCE_DIR}/imgui.cpp
+        ${imgui_SOURCE_DIR}/imgui_demo.cpp
+        ${imgui_SOURCE_DIR}/imgui_draw.cpp
+        ${imgui_SOURCE_DIR}/imgui_tables.cpp
+        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+)
+
+add_library(imgui STATIC ${IMGUI_FILES})
+target_include_directories(imgui PRIVATE ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
+target_link_libraries(imgui SDL2)
+
+include_directories(${imgui_SOURCE_DIR})
+include_directories(${imgui_SOURCE_DIR}/backends)
 
 add_executable(gbemu
         srcs/cpu/CPU.cxx
@@ -36,7 +57,8 @@ add_executable(gbemu
 
 target_link_libraries(
         gbemu
-        SDL2::SDL2
+        imgui
+        SDL2
 )
 
 add_executable(gbemu_test
