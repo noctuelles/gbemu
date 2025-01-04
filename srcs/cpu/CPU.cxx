@@ -7,6 +7,8 @@
  */
 
 #include <Utils.hxx>
+#include <bitset>
+#include <cassert>
 #include <format>
 #include <iostream>
 #include <utility>
@@ -41,7 +43,7 @@ void CPU::tick()
 
     switch (this->state)
     {
-        case CPUState::FETCH_DECODE:
+        case State::FETCH_DECODE:
             if (!this->handle_interrupt())
             {
                 this->opcode = this->bus.read(this->reg.u16.PC);
@@ -54,26 +56,47 @@ void CPU::tick()
                 {
                     this->instruction              = instruction_lookup[opcode];
                     this->disassembled_instruction = *this->disassemble(this->reg.u16.PC).begin();
-
-                    // this->print_state();
                 }
-
-                this->reg.u16.PC++;
+                if (this->should_trigger_halt_bug)
+                {
+                    this->should_trigger_halt_bug = false;
+                }
+                else
+                {
+                    this->reg.u16.PC++;
+                }
                 this->instruction.executor(this);
+                this->is_instruction = true;
             }
 
             if (!this->micro_ops.empty())
             {
-                this->state = CPUState::EXECUTE;
+                this->state = State::EXECUTE;
+            }
+            else
+            {
+                if (this->opcode == 0xCB)
+                {
+                    break;
+                }
+                this->instruction_done();
             }
             break;
-        case CPUState::EXECUTE:
+        case State::EXECUTE:
             this->micro_ops.front()();
             this->micro_ops.pop();
             if (this->micro_ops.empty())
             {
-                this->state = CPUState::FETCH_DECODE;
+                if (this->is_instruction)
+                {
+                    this->instruction_done();
+                }
+                this->state = State::FETCH_DECODE;
             }
+            break;
+        case State::STOPPED:
+        [[fallthrough]]
+        case State::HALTED:
             break;
     };
 }
@@ -283,6 +306,54 @@ void CPU::print_state() const
         this->bus.read(this->reg.u16.PC + 3));
 }
 
+void CPU::instruction_done()
+{
+    this->handle_interrupt();
+
+    if (this->ei_counter != 0)
+    {
+        this->ei_counter--;
+        if (this->ei_counter == 0)
+        {
+            this->ime = true;
+        }
+    }
+}
+
+void CPU::handle_interrupt()
+{
+    if (!this->ime)
+    {
+        return;
+    }
+
+    const auto interrupt_enable{this->bus.read(0xFFFF)};
+    auto       interrupt_flag(this->bus.read(0xFF0F));
+    const auto interrupt_request{static_cast<uint8_t>(interrupt_enable & interrupt_flag)};
+    const auto zero_count{std::countr_zero(interrupt_request)};
+    uint16_t   interrupt_vector{};
+
+    if (zero_count == 8)
+    {
+        return;
+    }
+
+    interrupt_vector = 0x40 + zero_count * 8;
+
+    this->ime = false;
+    interrupt_flag &= ~(1 << zero_count);
+    this->bus.write(0xFF0F, interrupt_flag);
+
+    this->micro_ops.emplace([] {});
+    this->micro_ops.emplace([this] { this->reg.u16.SP--; });
+    this->micro_ops.emplace([this] { this->bus.write(this->reg.u16.SP--, u16_msb(this->reg.u16.PC)); });
+    this->micro_ops.emplace([this] { this->bus.write(this->reg.u16.SP, u16_lsb(this->reg.u16.PC)); });
+    this->micro_ops.emplace([this, interrupt_vector] { this->reg.u16.PC = interrupt_vector; });
+
+    this->state          = State::EXECUTE;
+    this->is_instruction = false;
+}
+
 void CPU::set_carry(const bool carry)
 {
     this->reg.u8.F = this->reg.u8.F & ~Flags::CARRY | (carry ? Flags::CARRY : 0);
@@ -321,48 +392,4 @@ void CPU::set_zero(const bool zero)
 bool CPU::zero() const
 {
     return (this->reg.u8.F & Flags::ZERO) != 0;
-}
-bool CPU::handle_interrupt()
-{
-    if (!this->ime)
-    {
-        return (false);
-    }
-
-    const auto              interrupt_enable{this->bus.read(0xFFFF)};
-    auto                    interrupt_flag{this->bus.read(0xFF0F)};
-    auto                    interrupt_request{static_cast<uint8_t>(interrupt_enable & interrupt_flag & 0x10)};
-    std::optional<uint16_t> interrupt_address{std::nullopt};
-    uint8_t                 interrupt_no{};
-
-    while (interrupt_request)
-    {
-        if ((interrupt_request & 0x01) == 0x01)
-        {
-            interrupt_address.emplace(0x40 + interrupt_no * 8);
-            break;
-        }
-        interrupt_request >>= 1;
-        interrupt_no++;
-    }
-
-    if (!interrupt_address.has_value())
-    {
-        return (false);
-    }
-
-    this->ime = false;
-    interrupt_flag &= ~(1 << interrupt_no);
-    this->bus.write(0xFF0F, interrupt_flag);
-
-    this->micro_ops.emplace([this] { this->reg.u16.SP--; });
-    this->micro_ops.emplace([this] { this->bus.write(this->reg.u16.SP--, u16_msb(this->reg.u16.PC)); });
-    this->micro_ops.emplace(
-        [this, interrupt_address]
-        {
-            this->bus.write(this->reg.u16.SP, u16_lsb(this->reg.u16.PC));
-            this->reg.u16.PC = *interrupt_address;
-        });
-
-    return (true);
 }

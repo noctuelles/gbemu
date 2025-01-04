@@ -249,7 +249,7 @@ const CPU::InstructionLookupTable CPU::instruction_lookup{{
     {"LDH A, (${:02X})", &CPU::LDH_A_MEM_16, AddressingMode::IMMEDIATE},              // 0xF0
     {"POP AF", &CPU::POP_R16},                                                        // 0xF1
     {"LDH A, [C]", &CPU::LDH_A_MEM_C},                                                // 0xF2
-    {"NOP", &CPU::NOP},                                                               // 0xF3
+    {"DI", &CPU::DI},                                                                 // 0xF3
     {},                                                                               // 0xF4
     {"PUSH AF", &CPU::PUSH_R16},                                                      // 0xF5
     {"OR ${:02X}", &CPU::OR_IMM8, AddressingMode::IMMEDIATE},                         // 0xF6
@@ -257,7 +257,7 @@ const CPU::InstructionLookupTable CPU::instruction_lookup{{
     {"LD HL, SP + ${:d}", &CPU::LD_HL_SP_PLUS_IMM8, AddressingMode::RELATIVE},        // 0xF8
     {"LD SP, HL", &CPU::LD_SP_HL},                                                    // 0xF9
     {"LD A, (${:04X})", &CPU::LD_A_MEM_16, AddressingMode::IMMEDIATE_EXTENDED},       // 0xFA
-    {"NOP", &CPU::NOP},                                                               // 0xFB
+    {"EI", &CPU::EI},                                                                 // 0xFB
     {},                                                                               // 0xFC
     {},                                                                               // 0xFD
     {"CP ${:02X}", &CPU::CP_IMM8, AddressingMode::IMMEDIATE},                         // 0xFE
@@ -530,7 +530,10 @@ void CPU::NOP()
 
 void CPU::STOP() {}
 
-void CPU::HALT() {}
+void CPU::HALT()
+{
+    this->state = State::HALTED;
+}
 
 void CPU::CPL()
 {
@@ -578,7 +581,16 @@ void CPU::SCF()
     this->set_half_carry(false);
 }
 
-void CPU::EI() {}
+void CPU::EI()
+{
+    this->ei_counter = 2;
+}
+
+void CPU::DI()
+{
+    this->ei_counter = 0;
+    this->ime        = false;
+}
 
 void CPU::LD_R8_R8()
 {
@@ -1094,8 +1106,6 @@ void CPU::ILL()
     throw IllegalInstruction(this->opcode, this->reg.u16.PC);
 }
 
-void CPU::DI() {}
-
 void CPU::PREFIX()
 {
     this->prefixed = true;
@@ -1190,7 +1200,7 @@ void CPU::RET()
 
 void CPU::RETI()
 {
-    /* TODO: Int. */
+    this->ime = true;
     this->micro_ops.emplace([this] { this->tmp.Z = this->bus.read(this->reg.u16.SP++); });
     this->micro_ops.emplace([this] { this->tmp.W = this->bus.read(this->reg.u16.SP++); });
     this->micro_ops.emplace([this] { this->reg.u16.PC = this->tmp.WZ; });

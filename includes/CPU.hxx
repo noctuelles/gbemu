@@ -29,8 +29,8 @@ class CPU
     enum class InterruptType : uint8_t
     {
         VBLANK = 1,
-        LCD = 1 << 1,
-        TIMER = 1 << 2,
+        LCD    = 1 << 1,
+        TIMER  = 1 << 2,
         SERIAL = 1 << 3,
         JOYPAD = 1 << 4,
     };
@@ -202,10 +202,17 @@ class CPU
         XOR
     };
 
-    enum class CPUState : bool
+    enum class State
     {
         FETCH_DECODE,
-        EXECUTE
+        EXECUTE,
+        HALTED,
+        STOPPED,
+    };
+
+    enum class InterruptState
+    {
+        ISR_CHECK
     };
 
     [[nodiscard]] uint8_t                                            get_b3() const;
@@ -217,6 +224,8 @@ class CPU
     [[nodiscard]] bool                                               check_condition_is_met() const;
 
     void print_state() const;
+    void instruction_done();
+    void handle_interrupt();
 
     void               set_carry(bool carry);
     [[nodiscard]] bool carry() const;
@@ -229,8 +238,6 @@ class CPU
 
     void               set_zero(bool zero);
     [[nodiscard]] bool zero() const;
-
-    bool handle_interrupt();
 
     /**
      * @brief No OPeration.
@@ -769,7 +776,7 @@ class CPU
     /**
      * @brief State of the CPU.
      */
-    CPUState state{CPUState::FETCH_DECODE};
+    State state{State::FETCH_DECODE};
 
     /**
      * @brief Keep track of the ticks in the current M-cycle.
@@ -797,6 +804,17 @@ class CPU
      * @brief Interupt Master Enable flag.
      */
     bool ime{};
+
+    /**
+     * @brief This counter is set to 2 by the EI instruction. It is decremented on the last cycle of an instruction.
+     * When the counter reach 0, the Interrupt Master Enable is set to true.
+     */
+    uint8_t ei_counter{};
+
+    InterruptState interrupt_state{};
+
+    bool should_trigger_halt_bug{};
+    bool is_instruction{true};
 
     Bus& bus;
 
