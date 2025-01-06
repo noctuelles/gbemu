@@ -29,6 +29,27 @@ SM83::SM83(Bus& bus) : bus(bus)
     this->PC = 0x0100;
 }
 
+void SM83::tick()
+{
+    switch (state)
+    {
+        case State::NORMAL:
+            if (request_ime != 0)
+            {
+                request_ime -= 1;
+                if (request_ime == 0)
+                {
+                    this->ime = true;
+                }
+            }
+            fetch_decode_execute();
+            break;
+        case State::STOPPED:
+        case State::HALTED:
+            break;
+    }
+}
+
 SM83::byte SM83::fetch_memory(const word address)
 {
     machine_cycle();
@@ -216,14 +237,26 @@ void SM83::bit(const byte op, const std::size_t bit)
     set_flag(Flags::HalfCarry, true);
 }
 
-SM83::byte SM83::res(byte op, const std::size_t bit)
+SM83::byte SM83::res(const byte op, const std::size_t bit)
 {
     return op & ~(1 << bit);
 }
 
-SM83::byte SM83::set(byte op, const std::size_t bit)
+SM83::byte SM83::set(const byte op, const std::size_t bit)
 {
     return op | 1 << bit;
+}
+
+SM83::byte SM83::swap(const byte op)
+{
+    const auto result{static_cast<byte>((op & 0x0F) << 4 | (op & 0xF0) >> 4)};
+
+    set_flag(Flags::Zero, result == 0);
+    set_flag(Flags::Subtract, false);
+    set_flag(Flags::HalfCarry, false);
+    set_flag(Flags::Carry, false);
+
+    return result;
 }
 
 SM83::word SM83::inc(const word value)

@@ -102,6 +102,7 @@ class SM83
     void        bit(byte op, std::size_t bit);
     static byte res(byte op, std::size_t bit);
     static byte set(byte op, std::size_t bit);
+    byte        swap(byte op);
 
     /* IDU */
     [[nodiscard]] static word inc(word value);
@@ -166,7 +167,9 @@ class SM83
     /**
      * @brief Interupt Master Enable flag.
      */
-    bool IME{};
+    bool ime{};
+
+    byte request_ime{};
 
     Bus& bus;
 

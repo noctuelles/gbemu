@@ -18,7 +18,7 @@ void SM83::machine_cycle() {}
  * may execute standard or extended operations.
  *
  * @param extended_set Determines whether to use the extended instruction set.
- *                     Pass `true` to activate instructions from the extended set,
+ *                     Pass `true` to activate instructions from the extended set (0xCB prefixed),
  *                     otherwise pass `false` to execute standard instructions.
  */
 void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
@@ -691,7 +691,7 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 ret_cc(Conditionals::C);
                 break;
             case 0xD9:
-                this->IME = true;
+                this->ime = true;
                 ret();
                 break;
             case 0xDA:
@@ -752,7 +752,7 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 A = fetch_memory(0xFF00 | C);
                 break;
             case 0xF3:
-                this->IME = false;
+                this->ime = false;
                 break;
             case 0xF5:
                 push(A, F);
@@ -778,8 +778,7 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
             }
             break;
             case 0xFB:
-                /* TODO: delay by one instruction. */
-                this->IME = true;
+                this->request_ime = 2;
                 break;
             case 0xFE:
                 (void) sub(A, fetch_memory(PC++));
@@ -795,6 +794,30 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
     {
         switch (ir)
         {
+            case 0x30:
+                B = swap(B);
+                break;
+            case 0x31:
+                C = swap(C);
+                break;
+            case 0x32:
+                D = swap(D);
+                break;
+            case 0x33:
+                E = swap(E);
+                break;
+            case 0x34:
+                H = swap(H);
+                break;
+            case 0x35:
+                L = swap(L);
+                break;
+            case 0x36:
+                write_memory(HL(), swap(fetch_memory(HL())));
+                break;
+            case 0x37:
+                A = swap(A);
+                break;
             case 0x40:
                 bit(B, 0);
                 break;
@@ -987,7 +1010,6 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
             case 0x7F:
                 bit(A, 7);
                 break;
-
             case 0xC0:
                 B = res(B, 0);
                 break;
@@ -1180,7 +1202,8 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
             case 0xFF:
                 A = set(A, 7);
                 break;
-            default:
+            [[unlikely]] default:
+                throw std::runtime_error("Not implemented");
                 break;
         };
     }
