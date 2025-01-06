@@ -13,12 +13,12 @@ class CPUTesting : public ::testing::Test
 {
   protected:
     std::unique_ptr<Bus> bus{};
-    std::unique_ptr<CPU> cpu{};
+    std::unique_ptr<SM83> cpu{};
 
     void SetUp() override
     {
         this->bus = std::make_unique<Bus>();
-        this->cpu = std::make_unique<CPU>(*bus);
+        this->cpu = std::make_unique<SM83>(*bus);
     }
 
     void TearDown() override

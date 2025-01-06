@@ -7,7 +7,7 @@
 struct RotateParams : TestInstructionParam
 {
     std::string_view name;
-    CPU::Register8   operand;
+    SM83::Register8   operand;
 };
 
 class RR_R8 : public CPUTesting, public ::testing::WithParamInterface<RotateParams>
@@ -283,46 +283,46 @@ TEST_P(RLC_R8, Value)
 }
 
 INSTANTIATE_TEST_SUITE_P(RotateRight, RR_R8,
-                         ::testing::Values(RotateParams{0x18, "RR_B", &CPU::Register::U8::B},
-                                           RotateParams{0x19, "RR_C", &CPU::Register::U8::C},
-                                           RotateParams{0x1A, "RR_D", &CPU::Register::U8::D},
-                                           RotateParams{0x1B, "RR_E", &CPU::Register::U8::E},
-                                           RotateParams{0x1C, "RR_H", &CPU::Register::U8::H},
-                                           RotateParams{0x1D, "RR_L", &CPU::Register::U8::L},
-                                           RotateParams{0x1F, "RR_A", &CPU::Register::U8::A}),
+                         ::testing::Values(RotateParams{0x18, "RR_B", &SM83::Register::U8::B},
+                                           RotateParams{0x19, "RR_C", &SM83::Register::U8::C},
+                                           RotateParams{0x1A, "RR_D", &SM83::Register::U8::D},
+                                           RotateParams{0x1B, "RR_E", &SM83::Register::U8::E},
+                                           RotateParams{0x1C, "RR_H", &SM83::Register::U8::H},
+                                           RotateParams{0x1D, "RR_L", &SM83::Register::U8::L},
+                                           RotateParams{0x1F, "RR_A", &SM83::Register::U8::A}),
                          [](const testing::TestParamInfo<RR_R8::ParamType>& info)
                          { return std::string(info.param.name); });
 
 INSTANTIATE_TEST_SUITE_P(RotateRightCircular, RRC_R8,
-                         ::testing::Values(RotateParams{0x08, "RRC_B", &CPU::Register::U8::B},
-                                           RotateParams{0x09, "RRC_C", &CPU::Register::U8::C},
-                                           RotateParams{0x0A, "RRC_D", &CPU::Register::U8::D},
-                                           RotateParams{0x0B, "RRC_E", &CPU::Register::U8::E},
-                                           RotateParams{0x0C, "RRC_H", &CPU::Register::U8::H},
-                                           RotateParams{0x0D, "RRC_L", &CPU::Register::U8::L},
-                                           RotateParams{0x0F, "RRC_A", &CPU::Register::U8::A}),
+                         ::testing::Values(RotateParams{0x08, "RRC_B", &SM83::Register::U8::B},
+                                           RotateParams{0x09, "RRC_C", &SM83::Register::U8::C},
+                                           RotateParams{0x0A, "RRC_D", &SM83::Register::U8::D},
+                                           RotateParams{0x0B, "RRC_E", &SM83::Register::U8::E},
+                                           RotateParams{0x0C, "RRC_H", &SM83::Register::U8::H},
+                                           RotateParams{0x0D, "RRC_L", &SM83::Register::U8::L},
+                                           RotateParams{0x0F, "RRC_A", &SM83::Register::U8::A}),
                          [](const testing::TestParamInfo<RRC_R8::ParamType>& info)
                          { return std::string(info.param.name); });
 
 INSTANTIATE_TEST_SUITE_P(RotateLeft, RL_R8,
-                         ::testing::Values(RotateParams{0x10, "RL_B", &CPU::Register::U8::B},
-                                           RotateParams{0x11, "RL_C", &CPU::Register::U8::C},
-                                           RotateParams{0x12, "RL_D", &CPU::Register::U8::D},
-                                           RotateParams{0x13, "RL_E", &CPU::Register::U8::E},
-                                           RotateParams{0x14, "RL_H", &CPU::Register::U8::H},
-                                           RotateParams{0x15, "RL_L", &CPU::Register::U8::L},
-                                           RotateParams{0x17, "RL_A", &CPU::Register::U8::A}),
+                         ::testing::Values(RotateParams{0x10, "RL_B", &SM83::Register::U8::B},
+                                           RotateParams{0x11, "RL_C", &SM83::Register::U8::C},
+                                           RotateParams{0x12, "RL_D", &SM83::Register::U8::D},
+                                           RotateParams{0x13, "RL_E", &SM83::Register::U8::E},
+                                           RotateParams{0x14, "RL_H", &SM83::Register::U8::H},
+                                           RotateParams{0x15, "RL_L", &SM83::Register::U8::L},
+                                           RotateParams{0x17, "RL_A", &SM83::Register::U8::A}),
                          [](const testing::TestParamInfo<RL_R8::ParamType>& info)
                          { return std::string(info.param.name); });
 
 
 INSTANTIATE_TEST_SUITE_P(RotateLeftCircular, RLC_R8,
-                         ::testing::Values(RotateParams{0x00, "RLC_B", &CPU::Register::U8::B},
-                                           RotateParams{0x01, "RLC_C", &CPU::Register::U8::C},
-                                           RotateParams{0x02, "RLC_D", &CPU::Register::U8::D},
-                                           RotateParams{0x03, "RLC_E", &CPU::Register::U8::E},
-                                           RotateParams{0x04, "RLC_H", &CPU::Register::U8::H},
-                                           RotateParams{0x05, "RLC_L", &CPU::Register::U8::L},
-                                           RotateParams{0x07, "RLC_A", &CPU::Register::U8::A}),
+                         ::testing::Values(RotateParams{0x00, "RLC_B", &SM83::Register::U8::B},
+                                           RotateParams{0x01, "RLC_C", &SM83::Register::U8::C},
+                                           RotateParams{0x02, "RLC_D", &SM83::Register::U8::D},
+                                           RotateParams{0x03, "RLC_E", &SM83::Register::U8::E},
+                                           RotateParams{0x04, "RLC_H", &SM83::Register::U8::H},
+                                           RotateParams{0x05, "RLC_L", &SM83::Register::U8::L},
+                                           RotateParams{0x07, "RLC_A", &SM83::Register::U8::A}),
                          [](const testing::TestParamInfo<RL_R8::ParamType>& info)
                          { return std::string(info.param.name); });

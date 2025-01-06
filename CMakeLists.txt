@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD 23)
 
 include_directories(includes)
-include_directories(/usr/include/c++/14)
 include(FetchContent)
 
 FetchContent_Declare(
@@ -46,8 +45,8 @@ include_directories(${imgui_SOURCE_DIR})
 include_directories(${imgui_SOURCE_DIR}/backends)
 
 add_executable(gbemu
-        srcs/cpu/CPU.cxx
-        srcs/cpu/Opcode.cxx
+        srcs/core/SM83.cxx
+        srcs/core/Opcode.cxx
         srcs/main.cxx
         srcs/Bus.cxx
         srcs/Cartridge.cxx
@@ -62,8 +61,8 @@ target_link_libraries(
 )
 
 add_executable(gbemu_test
-        srcs/cpu/CPU.cxx
-        srcs/cpu/Opcode.cxx
+        srcs/core/SM83.cxx
+        srcs/core/Opcode.cxx
         srcs/Bus.cxx
         srcs/tests/cpu/Load.cxx
         srcs/tests/cpu/Rotate.cxx
