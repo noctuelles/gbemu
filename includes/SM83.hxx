@@ -6,6 +6,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <vector>
 
 #include "Bus.hxx"
 
@@ -50,7 +51,8 @@ class SM83
     class Disassembler
     {
       public:
-        using DisassembledInstructions = std::map<uint16_t, std::string>;
+        using InstructionDump          = std::pair<uint16_t, std::vector<uint8_t>>;
+        using DisassembledInstructions = std::map<InstructionDump, std::string>;
 
         explicit Disassembler(std::span<uint8_t> memory);
 

@@ -10,15 +10,15 @@
 const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_lookup{{
     {"NOP"},                                                   // 0x00
     {"LD BC, ${:04X}", AddressingMode::IMMEDIATE_EXTENDED},    // 0x01
-    {"LD [BC], A"},                                            // 0x02
+    {"LD (BC), A"},                                            // 0x02
     {"INC BC"},                                                // 0x03
     {"INC B"},                                                 // 0x04
     {"DEC B"},                                                 // 0x05
     {"LD B, ${:02X}", AddressingMode::IMMEDIATE},              // 0x06
     {"RLCA"},                                                  // 0x07
-    {"LD [${:04X}], SP", AddressingMode::IMMEDIATE_EXTENDED},  // 0x08
+    {"LD (${:04X}), SP", AddressingMode::IMMEDIATE_EXTENDED},  // 0x08
     {"ADD HL, BC"},                                            // 0x09
-    {"LD A, [BC]"},                                            // 0x0A
+    {"LD A, (BC)"},                                            // 0x0A
     {"DEC BC"},                                                // 0x0B
     {"INC C"},                                                 // 0x0C
     {"DEC C"},                                                 // 0x0D
@@ -78,7 +78,7 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_look
     {"LD B, E"},                                               // 0x43
     {"LD B, H"},                                               // 0x44
     {"LD B, L"},                                               // 0x45
-    {"LD B, [HL]"},                                            // 0x46
+    {"LD B, (HL)"},                                            // 0x46
     {"LD B, A"},                                               // 0x47
     {"LD C, B"},                                               // 0x48
     {"LD C, C"},                                               // 0x49
@@ -86,7 +86,7 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_look
     {"LD C, E"},                                               // 0x4B
     {"LD C, H"},                                               // 0x4C
     {"LD C, L"},                                               // 0x4D
-    {"LD C, [HL]"},                                            // 0x4E
+    {"LD C, (HL)"},                                            // 0x4E
     {"LD C, A"},                                               // 0x4F
     {"LD D, B"},                                               // 0x50
     {"LD D, C"},                                               // 0x51
@@ -94,7 +94,7 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_look
     {"LD D, E"},                                               // 0x53
     {"LD D, H"},                                               // 0x54
     {"LD D, L"},                                               // 0x55
-    {"LD D, [HL]"},                                            // 0x56
+    {"LD D, (HL)"},                                            // 0x56
     {"LD D, A"},                                               // 0x57
     {"LD E, B"},                                               // 0x58
     {"LD E, C"},                                               // 0x59
@@ -102,7 +102,7 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_look
     {"LD E, E"},                                               // 0x5B
     {"LD E, H"},                                               // 0x5C
     {"LD E, L"},                                               // 0x5D
-    {"LD E, [HL]"},                                            // 0x5E
+    {"LD E, (HL)"},                                            // 0x5E
     {"LD E, A"},                                               // 0x5F
     {"LD H, B"},                                               // 0x60
     {"LD H, C"},                                               // 0x61
@@ -110,7 +110,7 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_look
     {"LD H, E"},                                               // 0x63
     {"LD H, H"},                                               // 0x64
     {"LD H, L"},                                               // 0x65
-    {"LD H, [HL]"},                                            // 0x66
+    {"LD H, (HL)"},                                            // 0x66
     {"LD H, A"},                                               // 0x67
     {"LD L, B"},                                               // 0x68
     {"LD L, C"},                                               // 0x69
@@ -118,23 +118,23 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_look
     {"LD L, E"},                                               // 0x6B
     {"LD L, H"},                                               // 0x6C
     {"LD L, L"},                                               // 0x6D
-    {"LD L, [HL]"},                                            // 0x6E
+    {"LD L, (HL)"},                                            // 0x6E
     {"LD L, A"},                                               // 0x6F
-    {"LD [HL], B"},                                            // 0x70
-    {"LD [HL], C"},                                            // 0x71
-    {"LD [HL], D"},                                            // 0x72
-    {"LD [HL], E"},                                            // 0x73
-    {"LD [HL], H"},                                            // 0x74
-    {"LD [HL], L"},                                            // 0x75
+    {"LD (HL), B"},                                            // 0x70
+    {"LD (HL), C"},                                            // 0x71
+    {"LD (HL), D"},                                            // 0x72
+    {"LD (HL), E"},                                            // 0x73
+    {"LD (HL), H"},                                            // 0x74
+    {"LD (HL), L"},                                            // 0x75
     {"HALT"},                                                  // 0x76
-    {"LD [HL], A"},                                            // 0x77
+    {"LD (HL), A"},                                            // 0x77
     {"LD A, B"},                                               // 0x78
     {"LD A, C"},                                               // 0x79
     {"LD A, D"},                                               // 0x7A
     {"LD A, E"},                                               // 0x7B
     {"LD A, H"},                                               // 0x7C
     {"LD A, L"},                                               // 0x7D
-    {"LD A, [HL]"},                                            // 0x7E
+    {"LD A, (HL)"},                                            // 0x7E
     {"LD A, A"},                                               // 0x7F
     {"ADD A, B"},                                              // 0x80
     {"ADD A, C"},                                              // 0x81
@@ -232,9 +232,9 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_look
     {},                                                        // 0xDD
     {"SBC A, ${:02X}", AddressingMode::IMMEDIATE},             // 0xDE
     {"RST $18"},                                               // 0xDF
-    {"LDH [${:02X}], A", AddressingMode::IMMEDIATE},           // 0xE0
+    {"LD ($FF00 + ${:02X}), A", AddressingMode::IMMEDIATE},    // 0xE0
     {"POP HL"},                                                // 0xE1
-    {"LDH [C], A"},                                            // 0xE2
+    {"LD ($FF00 + C), A"},                                     // 0xE2
     {},                                                        // 0xE3
     {},                                                        // 0xE4
     {"PUSH HL"},                                               // 0xE5
@@ -248,9 +248,9 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_look
     {},                                                        // 0xED
     {"XOR ${:02X}", AddressingMode::IMMEDIATE},                // 0xEE
     {"RST $28"},                                               // 0xEF
-    {"LDH A, (${:02X})", AddressingMode::IMMEDIATE},           // 0xF0
+    {"LD A, ($FF00 + ${:02X})", AddressingMode::IMMEDIATE},    // 0xF0
     {"POP AF"},                                                // 0xF1
-    {"LDH A, [C]"},                                            // 0xF2
+    {"LD A, ($FF00 + C)"},                                     // 0xF2
     {"DI"},                                                    // 0xF3
     {},                                                        // 0xF4
     {"PUSH AF"},                                               // 0xF5
@@ -537,12 +537,18 @@ auto SM83::Disassembler::disassemble(const uint16_t start, const std::optional<u
     while (current_addr < stop_addr)
     {
         DisassembledInstructions::mapped_type name{};
+        DisassembledInstructions::key_type    instruction_dump{current_addr, {}};
         Instruction                           instruction;
-        auto                                  base_addr{current_addr};
-
-        if (auto opcode{memory[current_addr++]}; opcode == 0xCB)
+        const auto                            read_memory = [this, &current_addr, &instruction_dump]
         {
-            opcode      = memory[current_addr++];
+            const auto byte = memory[current_addr++];
+            instruction_dump.second.push_back(byte);
+            return byte;
+        };
+
+        if (auto opcode{read_memory()}; opcode == 0xCB)
+        {
+            opcode      = read_memory();
             instruction = prefixed_instruction_lookup[opcode];
         }
         else
@@ -556,7 +562,7 @@ auto SM83::Disassembler::disassemble(const uint16_t start, const std::optional<u
             {
                 case AddressingMode::RELATIVE:
                 {
-                    const auto value{static_cast<int8_t>(memory[current_addr++])};
+                    const auto value{static_cast<int8_t>(read_memory())};
                     const auto target{current_addr + value};
 
                     name = std::vformat(instruction.name, std::make_format_args(target));
@@ -564,20 +570,20 @@ auto SM83::Disassembler::disassemble(const uint16_t start, const std::optional<u
                 }
                 case AddressingMode::IMMEDIATE_SIGNED:
                 {
-                    const auto value{static_cast<int8_t>(memory[current_addr++])};
+                    const auto value{static_cast<int8_t>(read_memory())};
                     name = std::vformat(instruction.name, std::make_format_args(value));
                     break;
                 }
                 case AddressingMode::IMMEDIATE:
                 {
-                    const auto value{memory[current_addr++]};
+                    const auto value{read_memory()};
                     name = std::vformat(instruction.name, std::make_format_args(value));
                     break;
                 }
                 case AddressingMode::IMMEDIATE_EXTENDED:
                 {
-                    const auto lsb{memory[current_addr++]};
-                    const auto msb{memory[current_addr++]};
+                    const auto lsb{read_memory()};
+                    const auto msb{read_memory()};
                     const auto value{utils::to_word(msb, lsb)};
                     name = std::vformat(instruction.name, std::make_format_args(value));
                     break;
@@ -589,7 +595,7 @@ auto SM83::Disassembler::disassemble(const uint16_t start, const std::optional<u
             name = instruction.name;
         }
 
-        disassembled_instructions.insert({base_addr, name});
+        disassembled_instructions.insert({instruction_dump, name});
     }
 
     return disassembled_instructions;
