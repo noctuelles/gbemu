@@ -6,8 +6,8 @@ TabWidth: 4
 UseTab: Never
 BreakBeforeBraces: Allman
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortCaseExpressionOnASingleLine: true
-AllowShortCaseLabelsOnASingleLine: true
+AllowShortCaseExpressionOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
 AlwaysBreakTemplateDeclarations: Yes
 ColumnLimit: 120
 DerivePointerAlignment: false

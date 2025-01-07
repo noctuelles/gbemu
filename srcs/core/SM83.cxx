@@ -42,11 +42,21 @@ void SM83::tick()
                     this->ime = true;
                 }
             }
+            // print_state();
             fetch_decode_execute();
             break;
         case State::STOPPED:
-        case State::HALTED: break;
+        case State::HALTED:
+            break;
     }
+}
+
+void SM83::print_state()
+{
+    std::print(
+        std::cout,
+        "A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} PCMEM:{:02X},{:02X},{:02X},{:02X}\n",
+        A, F, B, C, D, E, H, L, SP, PC, bus.read(PC), bus.read(PC + 1), bus.read(PC + 2), bus.read(PC + 3));
 }
 
 uint8_t SM83::fetch_memory(const uint16_t address)
@@ -150,6 +160,32 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
     return utils::to_word(lhs_msb, lhs_lsb);
 }
 
+void SM83::daa()
+{
+    uint8_t adj{};
+
+    if ((!get_flag(Flags::Subtract) && (A & 0x0F) > 0x09) || get_flag(Flags::HalfCarry))
+    {
+        adj |= 0x06;
+    }
+    if ((!get_flag(Flags::Subtract) && A > 0x99) || get_flag(Flags::Carry))
+    {
+        adj |= 0x60;
+        set_flag(Flags::Carry, true);
+    }
+    if (!get_flag(Flags::Subtract))
+    {
+        A += adj;
+    }
+    else
+    {
+        A -= adj;
+    }
+
+    set_flag(Flags::HalfCarry, false);
+    set_flag(Flags::Zero, A == 0);
+}
+
 uint8_t SM83::sub(const uint8_t lhs, const uint8_t rhs, const bool borrow)
 {
     const auto sub_borrow{static_cast<uint8_t>(borrow ? get_flag(Flags::Carry) : 0)};
@@ -166,20 +202,24 @@ uint8_t SM83::sub(const uint8_t lhs, const uint8_t rhs, const bool borrow)
 uint8_t SM83::bitwise_and(const uint8_t lhs, const uint8_t rhs)
 {
     const uint8_t result = lhs & rhs;
+
     set_flag(Flags::Zero, result == 0);
     set_flag(Flags::Subtract, false);
     set_flag(Flags::HalfCarry, true);
     set_flag(Flags::Carry, false);
+
     return result;
 }
 
 uint8_t SM83::bitwise_or(const uint8_t lhs, const uint8_t rhs)
 {
     const uint8_t result = lhs | rhs;
-    set_flag(Flags::Zero, result == 1);
+
+    set_flag(Flags::Zero, result == 0);
     set_flag(Flags::Subtract, false);
     set_flag(Flags::HalfCarry, false);
     set_flag(Flags::Carry, false);
+
     return result;
 }
 
@@ -220,6 +260,35 @@ uint8_t SM83::rotate_right(uint8_t op, const bool circular)
     {
         op |= 0x80;
     }
+
+    set_flag(Flags::Zero, op == 0);
+    set_flag(Flags::Subtract, false);
+    set_flag(Flags::HalfCarry, false);
+    set_flag(Flags::Carry, new_carry);
+
+    return op;
+}
+
+uint8_t SM83::shift_right(uint8_t op, const bool arithmetic)
+{
+    const auto new_carry{(op & 0x01) != 0};
+    const auto sign{(op & 0x80) != 0};
+
+    op = op >> 1 | (sign && arithmetic ? 0x80 : 0);
+
+    set_flag(Flags::Zero, op == 0);
+    set_flag(Flags::Subtract, false);
+    set_flag(Flags::HalfCarry, false);
+    set_flag(Flags::Carry, new_carry);
+
+    return op;
+}
+
+uint8_t SM83::shift_left(uint8_t op)
+{
+    const auto new_carry{(op & 0x80) != 0};
+
+    op <<= 1;
 
     set_flag(Flags::Zero, op == 0);
     set_flag(Flags::Subtract, false);
@@ -281,7 +350,7 @@ uint8_t SM83::inc(uint8_t value)
 
 uint8_t SM83::dec(uint8_t value)
 {
-    value += 1;
+    value -= 1;
 
     set_flag(Flags::Zero, value == 0);
     set_flag(Flags::Subtract, true);
@@ -423,9 +492,12 @@ bool SM83::is_condition_met(const Conditionals conditional) const
 {
     switch (conditional)
     {
-        case Conditionals::NZ: return !this->get_flag(Flags::Zero);
-        case Conditionals::Z: return this->get_flag(Flags::Zero);
-        case Conditionals::NC: return !this->get_flag(Flags::Carry);
+        case Conditionals::NZ:
+            return !this->get_flag(Flags::Zero);
+        case Conditionals::Z:
+            return this->get_flag(Flags::Zero);
+        case Conditionals::NC:
+            return !this->get_flag(Flags::Carry);
         case Conditionals::C:
             return this->get_flag(Flags::Carry);
         [[unlikely]] default:

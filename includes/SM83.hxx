@@ -58,6 +58,7 @@ class SM83
     explicit SM83(Bus& bus);
 
     void tick();
+    void print_state();
 
     [[nodiscard]] auto disassemble(uint16_t start, std::optional<uint16_t> stop = std::nullopt) const
         -> DisassembledInstruction;
@@ -86,18 +87,19 @@ class SM83
     [[nodiscard]] uint16_t add(uint16_t lhs, uint16_t rhs);
     [[nodiscard]] uint16_t add(uint16_t lhs, uint8_t rhs);
 
+    void                  daa();
     [[nodiscard]] uint8_t sub(uint8_t lhs, uint8_t rhs, bool borrow = false);
     [[nodiscard]] uint8_t bitwise_and(uint8_t lhs, uint8_t rhs);
     [[nodiscard]] uint8_t bitwise_or(uint8_t lhs, uint8_t rhs);
     [[nodiscard]] uint8_t bitwise_xor(uint8_t lhs, uint8_t rhs);
-
-    uint8_t rotate_left(uint8_t op, bool circular = false);
-    uint8_t rotate_right(uint8_t op, bool circular = false);
-
-    void           bit(uint8_t op, std::size_t bit);
-    static uint8_t res(uint8_t op, std::size_t bit);
-    static uint8_t set(uint8_t op, std::size_t bit);
-    uint8_t        swap(uint8_t op);
+    [[nodiscard]] uint8_t rotate_left(uint8_t op, bool circular = false);
+    [[nodiscard]] uint8_t rotate_right(uint8_t op, bool circular = false);
+    [[nodiscard]] uint8_t shift_right(uint8_t op, bool arithmetic = false);
+    [[nodiscard]] uint8_t shift_left(uint8_t op);
+    void                  bit(uint8_t op, std::size_t bit);
+    static uint8_t        res(uint8_t op, std::size_t bit);
+    static uint8_t        set(uint8_t op, std::size_t bit);
+    uint8_t               swap(uint8_t op);
 
     /* IDU */
     [[nodiscard]] static uint16_t inc(uint16_t value);
