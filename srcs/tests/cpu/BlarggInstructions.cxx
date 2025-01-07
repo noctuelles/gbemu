@@ -65,6 +65,11 @@ TEST_F(BlarggInstructions, Special01)
     ASSERT_NO_THROW(execute_rom("01-special.gb"));
 }
 
+TEST_F(BlarggInstructions, Interrupts02)
+{
+    ASSERT_NO_THROW(execute_rom("02-interrupts.gb"));
+}
+
 TEST_F(BlarggInstructions, OperationRegisterSP_RegisterHL_03)
 {
     ASSERT_NO_THROW(execute_rom("03-op sp,hl.gb"));

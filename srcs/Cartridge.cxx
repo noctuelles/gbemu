@@ -231,10 +231,7 @@ Cartridge::Cartridge(const std::filesystem::path& path)
 {
     std::ifstream input{path, std::ios::binary};
 
-    if (const auto length{file_size(path)}; length < content.size())
-    {
-        throw std::runtime_error("Invalid cartridge");
-    }
+    content.resize(file_size(path));
 
     input.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     input.read(reinterpret_cast<char*>(content.data()), content.size());
@@ -257,8 +254,11 @@ Cartridge::Cartridge(const std::filesystem::path& path)
             static_cast<Type>(type_byte))
     {
         case Type::MBC1:
-        case Type::ROM_ONLY: type = static_cast<Type>(type_byte); break;
-        default: throw std::runtime_error(std::format("Invalid or unsupported cartridge type {:02X}", type_byte));
+        case Type::ROM_ONLY:
+            type = static_cast<Type>(type_byte);
+            break;
+        default:
+            throw std::runtime_error(std::format("Invalid or unsupported cartridge type {:02X}", type_byte));
     }
     size = SIZE * (1 << std::to_integer<decltype(size)>(size_byte));
 }
@@ -291,4 +291,9 @@ Cartridge::Type Cartridge::get_type() const
 std::size_t Cartridge::get_size() const
 {
     return size;
+}
+
+Cartridge::operator std::span<uint8_t>()
+{
+    return {reinterpret_cast<uint8_t*>(content.data()), content.size()};
 }

@@ -54,7 +54,8 @@ add_executable(gbemu
         srcs/Cartridge.cxx
         includes/Cartridge.hxx
         includes/tests/CPU.hxx
-        srcs/Utils.cxx)
+        srcs/Utils.cxx
+        srcs/core/Disassembler.cxx)
 
 target_link_libraries(
         gbemu
@@ -64,6 +65,7 @@ target_link_libraries(
 
 add_executable(gbemu_test
         srcs/core/SM83.cxx
+        srcs/core/Disassembler.cxx
         srcs/core/Opcode.cxx
         srcs/Bus.cxx
         srcs/Cartridge.cxx

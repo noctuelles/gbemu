@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <map>
 #include <optional>
+#include <span>
 #include <string>
 
 #include "Bus.hxx"
@@ -11,8 +12,6 @@
 class SM83
 {
   public:
-    using DisassembledInstruction = std::map<uint16_t, std::string>;
-
     enum class Flags : uint8_t
     {
         Carry     = 0x10,
@@ -41,13 +40,6 @@ class SM83
         h38 = 0x38,
     };
 
-    enum class AddressingMode
-    {
-        IMMEDIATE,
-        IMMEDIATE_EXTENDED,
-        RELATIVE,
-    };
-
     enum class State
     {
         NORMAL,
@@ -55,19 +47,47 @@ class SM83
         STOPPED,
     };
 
+    class Disassembler
+    {
+      public:
+        using DisassembledInstructions = std::map<uint16_t, std::string>;
+
+        explicit Disassembler(std::span<uint8_t> memory);
+
+        [[nodiscard]] auto disassemble(uint16_t start, std::optional<uint16_t> stop = std::nullopt) const
+            -> DisassembledInstructions;
+
+      private:
+        const std::span<uint8_t> memory;
+
+        enum class AddressingMode
+        {
+            IMMEDIATE,
+            IMMEDIATE_SIGNED,
+            IMMEDIATE_EXTENDED,
+            RELATIVE,
+        };
+
+        struct Instruction
+        {
+            std::string_view              name{"ILL"};
+            std::optional<AddressingMode> addressing{std::nullopt};
+        };
+
+        using InstructionLookup = std::array<Instruction, 0x100>;
+
+        static const InstructionLookup instruction_lookup;
+        static const InstructionLookup prefixed_instruction_lookup;
+    };
+
     explicit SM83(Bus& bus);
 
     void tick();
     void print_state();
 
-    [[nodiscard]] auto disassemble(uint16_t start, std::optional<uint16_t> stop = std::nullopt) const
-        -> DisassembledInstruction;
-
   private:
-    void machine_cycle();
-
-    void fetch_decode_execute(bool extended_set = false);
-
+    void    machine_cycle();
+    void    fetch_decode_execute(bool extended_set = false);
     void    fetch_operand();
     uint8_t fetch_memory(uint16_t address);
     void    write_memory(uint16_t address, uint8_t value);
@@ -169,28 +189,6 @@ class SM83
     uint8_t request_ime{};
 
     Bus& bus;
-
-    friend class CPUTesting;
-
-    friend class LD_R8_R8_Value_Test;
-    friend class LD_R8_R8_Flags_Test;
-    friend class LD_MEM_HL_R8_Value_Test;
-    friend class LD_R8_MEM_HL_Value_Test;
-    friend class LD_R8_IMM8_Value_Test;
-    friend class LD_MEM_HL_IMM8_Value_Test;
-    friend class LD_MEM_16_SP_Value_Test;
-    friend class LD_MEM_16_A_Value_Test;
-    friend class LD_A_MEM_16_Value_Test;
-    friend class LD_R16_IMM16_Value_Test;
-    friend class LDH_IMM8_A_Value_Test;
-    friend class LDH_A_IMM8_Value_Test;
-    friend class LDH_MEM_C_A_Value_Test;
-    friend class LDH_A_MEM_C_Value_Test;
-
-    friend class RR_R8_Value_Test;
-    friend class RRC_R8_Value_Test;
-    friend class RL_R8_Value_Test;
-    friend class RLC_R8_Value_Test;
 };
 
 #endif
