@@ -10,7 +10,7 @@
 
 #include "Bus.hxx"
 
-class SM83
+class SM83 : public Component
 {
   public:
     enum class Flags : uint8_t
@@ -39,6 +39,15 @@ class SM83
         h28 = 0x28,
         h30 = 0x30,
         h38 = 0x38,
+    };
+
+    enum class Interrupts : uint8_t
+    {
+        VBlank = 0x00,
+        LCD    = 0x01,
+        Timer  = 0x04,
+        Serial = 0x08,
+        Joypad = 0x10,
     };
 
     enum class State
@@ -82,9 +91,12 @@ class SM83
         static const InstructionLookup prefixed_instruction_lookup;
     };
 
-    explicit SM83(Bus& bus);
+    explicit SM83(Addressable& bus);
 
-    void tick();
+    void                  write(uint16_t address, uint8_t value) override;
+    [[nodiscard]] uint8_t read(uint16_t address) override;
+    void                  tick() override;
+
     void print_state();
 
   private:
@@ -155,9 +167,11 @@ class SM83
 
     /* Misc */
 
-    void               set_flag(Flags flag, bool value);
-    [[nodiscard]] bool get_flag(Flags flag) const;
-    [[nodiscard]] bool is_condition_met(Conditionals conditional) const;
+    void                  set_flag(Flags flag, bool value);
+    [[nodiscard]] bool    get_flag(Flags flag) const;
+    [[nodiscard]] bool    is_condition_met(Conditionals conditional) const;
+    [[nodiscard]] uint8_t get_interrupt_request() const;
+    void                  interrupts();
 
     /**
      * @brief Registers
@@ -172,6 +186,8 @@ class SM83
     uint8_t  L{};
     uint16_t SP{};
     uint16_t PC{};
+    uint8_t  IE{};
+    uint8_t  IF{};
 
     /**
      * @brief State of the CPU.
@@ -190,7 +206,7 @@ class SM83
 
     uint8_t request_ime{};
 
-    Bus& bus;
+    Addressable& bus;
 };
 
 #endif

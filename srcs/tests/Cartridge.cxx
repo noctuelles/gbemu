@@ -14,8 +14,6 @@ TEST(Cartridge, Test)
     Cartridge          cart{path};
     SM83::Disassembler disassembler{static_cast<std::span<uint8_t>>(cart)};
 
-
-
     std::cout << cart.get_title() << std::endl;
     std::cout << cart.get_licensee() << std::endl;
     std::cout << cart.get_size() << std::endl;

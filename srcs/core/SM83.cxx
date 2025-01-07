@@ -15,18 +15,46 @@
 #include <iostream>
 #include <utility>
 
-SM83::SM83(Bus& bus) : bus(bus)
+SM83::SM83(Addressable& bus) : bus(bus)
 {
-    this->A  = 0x01;
-    this->F  = 0xB0;
-    this->B  = 0x00;
-    this->C  = 0x13;
-    this->D  = 0x00;
-    this->E  = 0xD8;
-    this->H  = 0x01;
-    this->L  = 0x4D;
-    this->SP = 0xFFFE;
-    this->PC = 0x0100;
+    A  = 0x01;
+    F  = 0xB0;
+    B  = 0x00;
+    C  = 0x13;
+    D  = 0x00;
+    E  = 0xD8;
+    H  = 0x01;
+    L  = 0x4D;
+    SP = 0xFFFE;
+    PC = 0x0101;
+}
+
+void SM83::write(const uint16_t address, const uint8_t value)
+{
+    switch (address)
+    {
+        case 0xFFFF:
+            IE = value;
+            break;
+        case 0xFF0F:
+            IF = value;
+            break;
+        default:
+            throw std::runtime_error("Invalid SM83 Write");
+    }
+}
+
+uint8_t SM83::read(const uint16_t address)
+{
+    switch (address)
+    {
+        case 0xFFFF:
+            return IE;
+        case 0xFF0F:
+            return IF;
+        default:
+            throw std::runtime_error("Invalid SM83 Write");
+    }
 }
 
 void SM83::tick()
@@ -39,16 +67,18 @@ void SM83::tick()
                 request_ime -= 1;
                 if (request_ime == 0)
                 {
-                    this->ime = true;
+                    ime = true;
                 }
             }
-            // print_state();
+
             fetch_decode_execute();
             break;
         case State::STOPPED:
         case State::HALTED:
             break;
     }
+
+    interrupts();
 }
 
 void SM83::print_state()
@@ -502,5 +532,36 @@ bool SM83::is_condition_met(const Conditionals conditional) const
             return this->get_flag(Flags::Carry);
         [[unlikely]] default:
             throw std::logic_error("Conditional not implemented");
+    }
+}
+
+uint8_t SM83::get_interrupt_request() const
+{
+    return static_cast<uint8_t>(IE & IF & 0x1F);
+}
+
+void SM83::interrupts()
+{
+    if (ime)
+    {
+        const auto bit_zero_count{std::countr_zero(get_interrupt_request())};
+        uint16_t   interrupt_vector{};
+
+        if (bit_zero_count == 8)
+        {
+            return;
+        }
+
+        ime              = false;
+        interrupt_vector = 0x40 + bit_zero_count * 8;
+        IF &= ~(1 << bit_zero_count);
+
+        machine_cycle();
+        machine_cycle();
+        write_memory(--SP, utils::word_msb(PC));
+        write_memory(--SP, utils::word_lsb(PC));
+        machine_cycle();
+
+        PC = interrupt_vector;
     }
 }

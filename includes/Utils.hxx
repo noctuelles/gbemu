@@ -14,7 +14,7 @@ namespace utils
         return static_cast<uint8_t>(x & 0xFF);
     }
 
-    constexpr auto word_msb(const int16_t x)
+    constexpr auto word_msb(const uint16_t x)
     {
         return static_cast<uint8_t>((x & 0xFF00) >> 8);
     }

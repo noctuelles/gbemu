@@ -13,25 +13,38 @@
 class BlarggInstructions : public testing::Test
 {
   protected:
-    std::unique_ptr<Bus>  bus{};
-    std::unique_ptr<SM83> cpu{};
+    std::unique_ptr<Bus> bus{};
 
     void SetUp() override
     {
         this->bus = std::make_unique<Bus>();
-        this->cpu = std::make_unique<SM83>(*bus);
     }
 
     void TearDown() override
     {
         this->bus.reset();
-        this->cpu.reset();
     }
 
-    void execute_rom(const std::string& rom_name) const
+    void execute_rom(const std::string& rom_name)
     {
-        Cartridge   cart{std::string{ROMS_PATH} + std::string{"/blargg/cpu_instrs/"} + rom_name};
-        std::string s{};
+        Cartridge          cart{std::string{ROMS_PATH} + std::string{"/blargg/cpu_instrs/"} + rom_name};
+        std::string        s{};
+        SM83::Disassembler disassembler{static_cast<std::span<uint8_t>>(cart)};
+
+        // const auto disassembly_output = disassembler.disassemble(0xC000, 0xC100);
+
+        // for (const auto& [addr, inst] : disassembly_output)
+        // {
+        //     std::string byte_dump{};
+
+        //     std::print(std::cout, "${:04X}: ", addr.first);
+        //     for (const auto byte : addr.second)
+        //     {
+        //         byte_dump += std::string{std::format("{:02X} ", byte)};
+        //     }
+
+        //     std::println(std::cout, "{:<15s}{:s}", byte_dump, inst);
+        // }
 
         for (std::size_t i = 0; i < cart.get_size(); i++)
         {
@@ -40,7 +53,7 @@ class BlarggInstructions : public testing::Test
 
         while (true)
         {
-            cpu->tick();
+            bus->cpu->tick();
 
             if (bus->read(0xFF02) == 0x81)
             {

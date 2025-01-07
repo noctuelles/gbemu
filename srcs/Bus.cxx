@@ -4,19 +4,34 @@
 
 #include "Bus.hxx"
 
+#include <SM83.hxx>
 #include <utility>
 
-void Bus::write(uint16_t address, uint8_t value)
+Bus::Bus() : cpu(std::make_unique<SM83>(*this)) {}
+
+void Bus::write(const uint16_t address, uint8_t value)
 {
-    ram[address] = std::byte{value};
+    switch (address)
+    {
+        case 0xFF0F:
+        case 0xFFFF:
+            cpu->write(address, value);
+            break;
+        default:
+            ram[address] = std::byte{value};
+    }
 }
 
-uint8_t Bus::read(uint16_t address)
+uint8_t Bus::read(const uint16_t address)
 {
-    if (address == 0xFF44)
+    switch (address)
     {
-        return 0x90;
+        case 0xFF44:
+            return 0x90;
+        case 0xFF0F:
+        case 0xFFFF:
+            return cpu->read(address);
+        default:
+            return std::to_underlying(ram[address]);
     }
-
-    return std::to_underlying(ram[address]);
 }

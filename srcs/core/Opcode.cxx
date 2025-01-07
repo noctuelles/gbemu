@@ -757,7 +757,8 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 A = fetch_memory(0xFF00 | C);
                 break;
             case 0xF3:
-                this->ime = false;
+                this->ime         = false;
+                this->request_ime = 0;
                 break;
             case 0xF5:
                 push(A, F);
