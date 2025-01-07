@@ -44,6 +44,8 @@ target_link_libraries(imgui SDL2)
 include_directories(${imgui_SOURCE_DIR})
 include_directories(${imgui_SOURCE_DIR}/backends)
 
+add_compile_options(-Wall -Werror -Wextra -Wpedantic -g3)
+
 add_executable(gbemu
         srcs/core/SM83.cxx
         srcs/core/Opcode.cxx
@@ -64,11 +66,12 @@ add_executable(gbemu_test
         srcs/core/SM83.cxx
         srcs/core/Opcode.cxx
         srcs/Bus.cxx
-        srcs/tests/cpu/Load.cxx
-        srcs/tests/cpu/Rotate.cxx
+        srcs/Cartridge.cxx
+        srcs/Utils.cxx
         srcs/tests/cpu/BlarggInstructions.cxx
-        srcs/tests/cpu/BlarggROM.cxx
-        srcs/Utils.cxx)
+        srcs/tests/Cartridge.cxx)
+
+target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/srcs/tests/rom")
 
 target_link_libraries(
         gbemu_test

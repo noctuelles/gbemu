@@ -4,30 +4,14 @@
 
 #include "Bus.hxx"
 
-#include <algorithm>
+#include <utility>
 
-Bus::Bus()  = default;
-Bus::~Bus() = default;
-
-uint8_t Bus::read(const uint16_t addr) const
+void Bus::write(uint16_t address, uint8_t value)
 {
-    if (addr == 0xFF44)
-    {
-        return 0x90;
-    }
-
-    return this->ram[addr];
+    ram[address] = std::byte{value};
 }
 
-void Bus::write(const uint16_t addr, const uint8_t data)
+uint8_t Bus::read(uint16_t address)
 {
-    this->ram[addr] = data;
-}
-
-void Bus::write(uint16_t addr, std::initializer_list<uint8_t> data)
-{
-    for (const auto& byte : data)
-    {
-        this->write(addr++, byte);
-    }
+    return std::to_underlying(ram[address]);
 }

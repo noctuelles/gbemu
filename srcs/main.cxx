@@ -91,6 +91,8 @@ class GbEmu
 int main(int argc, char* args[])
 {
     GbEmu emu{};
+    (void)argc;
+    (void)args;
 
     return 0;
 }

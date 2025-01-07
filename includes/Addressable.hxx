@@ -7,10 +7,12 @@
 
 #include <cstdint>
 
-class Addressable {
-    public:
-      virtual uint8_t read(uint16_t address) = 0;
-      virtual void write(uint16_t address, uint8_t value) = 0;
+class Addressable
+{
+  public:
+    virtual ~Addressable()                                 = default;
+    virtual uint8_t read(uint16_t address)                 = 0;
+    virtual void    write(uint16_t address, uint8_t value) = 0;
 };
 
-#endif //ADDRESSABLE_HPP
+#endif  // ADDRESSABLE_HPP

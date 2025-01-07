@@ -1,25 +1,19 @@
 #ifndef CPU_H
 #define CPU_H
 
-#include <array>
-#include <functional>
+#include <cstdint>
 #include <map>
 #include <optional>
-#include <stdexcept>
+#include <string>
 
 #include "Bus.hxx"
 
 class SM83
 {
   public:
-    using byte         = uint8_t;
-    using signed_byte  = int8_t;
-    using word         = uint16_t;
-    using signed_dword = int32_t;
-
     using DisassembledInstruction = std::map<uint16_t, std::string>;
 
-    enum class Flags : byte
+    enum class Flags : uint8_t
     {
         Carry     = 0x10,
         HalfCarry = 0x20,
@@ -35,15 +29,16 @@ class SM83
         C,
     };
 
-    enum class ResetVector : word
+    enum class ResetVector : uint16_t
     {
-        First   = 0x08,
-        Second  = 0x10,
-        Third   = 0x18,
-        Fourth  = 0x20,
-        Fifth   = 0x28,
-        Sixth   = 0x30,
-        Seventh = 0x38,
+        h00 = 0x00,
+        h08 = 0x08,
+        h10 = 0x10,
+        h18 = 0x18,
+        h20 = 0x20,
+        h28 = 0x28,
+        h30 = 0x30,
+        h38 = 0x38,
     };
 
     enum class AddressingMode
@@ -72,43 +67,43 @@ class SM83
 
     void fetch_decode_execute(bool extended_set = false);
 
-    void fetch_operand();
-    byte fetch_memory(word address);
-    void write_memory(word address, byte value);
+    void    fetch_operand();
+    uint8_t fetch_memory(uint16_t address);
+    void    write_memory(uint16_t address, uint8_t value);
 
-    [[nodiscard]] word AF() const;
-    [[nodiscard]] word BC() const;
-    [[nodiscard]] word DE() const;
-    [[nodiscard]] word HL() const;
+    [[nodiscard]] uint16_t AF() const;
+    [[nodiscard]] uint16_t BC() const;
+    [[nodiscard]] uint16_t DE() const;
+    [[nodiscard]] uint16_t HL() const;
 
-    void AF(word value);
-    void BC(word value);
-    void DE(word value);
-    void HL(word value);
+    void AF(uint16_t value);
+    void BC(uint16_t value);
+    void DE(uint16_t value);
+    void HL(uint16_t value);
 
     /* ALU */
-    [[nodiscard]] byte add(byte lhs, byte rhs, bool carry = false);
-    [[nodiscard]] word add(word lhs, word rhs);
-    [[nodiscard]] word add(word lhs, byte rhs);
+    [[nodiscard]] uint8_t  add(uint8_t lhs, uint8_t rhs, bool carry = false);
+    [[nodiscard]] uint16_t add(uint16_t lhs, uint16_t rhs);
+    [[nodiscard]] uint16_t add(uint16_t lhs, uint8_t rhs);
 
-    [[nodiscard]] byte sub(byte lhs, byte rhs, bool borrow = false);
-    [[nodiscard]] byte bitwise_and(byte lhs, byte rhs);
-    [[nodiscard]] byte bitwise_or(byte lhs, byte rhs);
-    [[nodiscard]] byte bitwise_xor(byte lhs, byte rhs);
+    [[nodiscard]] uint8_t sub(uint8_t lhs, uint8_t rhs, bool borrow = false);
+    [[nodiscard]] uint8_t bitwise_and(uint8_t lhs, uint8_t rhs);
+    [[nodiscard]] uint8_t bitwise_or(uint8_t lhs, uint8_t rhs);
+    [[nodiscard]] uint8_t bitwise_xor(uint8_t lhs, uint8_t rhs);
 
-    byte rotate_left(byte op, bool circular = false);
-    byte rotate_right(byte op, bool circular = false);
+    uint8_t rotate_left(uint8_t op, bool circular = false);
+    uint8_t rotate_right(uint8_t op, bool circular = false);
 
-    void        bit(byte op, std::size_t bit);
-    static byte res(byte op, std::size_t bit);
-    static byte set(byte op, std::size_t bit);
-    byte        swap(byte op);
+    void           bit(uint8_t op, std::size_t bit);
+    static uint8_t res(uint8_t op, std::size_t bit);
+    static uint8_t set(uint8_t op, std::size_t bit);
+    uint8_t        swap(uint8_t op);
 
     /* IDU */
-    [[nodiscard]] static word inc(word value);
-    [[nodiscard]] static word dec(word value);
-    [[nodiscard]] byte        inc(byte value);
-    [[nodiscard]] byte        dec(byte value);
+    [[nodiscard]] static uint16_t inc(uint16_t value);
+    [[nodiscard]] static uint16_t dec(uint16_t value);
+    [[nodiscard]] uint8_t         inc(uint8_t value);
+    [[nodiscard]] uint8_t         dec(uint8_t value);
 
     /* Control */
 
@@ -128,11 +123,11 @@ class SM83
 
     /* Stack */
 
-    void push(byte msb, byte lsb);
-    void push(word value);
+    void push(uint8_t msb, uint8_t lsb);
+    void push(uint16_t value);
 
-    void pop(byte& msb, byte& lsb);
-    void pop(word& value);
+    void pop(uint8_t& msb, uint8_t& lsb);
+    void pop(uint16_t& value);
 
     /* Misc */
 
@@ -143,16 +138,16 @@ class SM83
     /**
      * @brief Registers
      */
-    byte A{};
-    byte F{};
-    byte B{};
-    byte C{};
-    byte D{};
-    byte E{};
-    byte H{};
-    byte L{};
-    word SP{};
-    word PC{};
+    uint8_t  A{};
+    uint8_t  F{};
+    uint8_t  B{};
+    uint8_t  C{};
+    uint8_t  D{};
+    uint8_t  E{};
+    uint8_t  H{};
+    uint8_t  L{};
+    uint16_t SP{};
+    uint16_t PC{};
 
     /**
      * @brief State of the CPU.
@@ -162,14 +157,14 @@ class SM83
     /**
      * @brief Represents the current operation code being executed.
      */
-    byte ir{};
+    uint8_t ir{};
 
     /**
      * @brief Interupt Master Enable flag.
      */
     bool ime{};
 
-    byte request_ime{};
+    uint8_t request_ime{};
 
     Bus& bus;
 

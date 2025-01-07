@@ -5,12 +5,39 @@
 #ifndef CARTRIDGE_H
 #define CARTRIDGE_H
 
+#include <filesystem>
 #include <string_view>
 
-class Cartridge
+#include "Addressable.hxx"
+
+class Cartridge final : public Addressable
 {
   public:
-    const std::string_view& get_game_published_name() const;
+    enum class Type
+    {
+        ROM_ONLY,
+        MBC1
+    };
+
+    static constexpr std::size_t SIZE = 32768;
+
+    explicit Cartridge(const std::filesystem::path& path);
+
+    uint8_t    read(uint16_t address) override;
+    void       write(uint16_t address, uint8_t value) override;
+
+    [[nodiscard]] const std::string_view& get_title() const;
+    [[nodiscard]] const std::string_view& get_licensee() const;
+    [[nodiscard]] Type                    get_type() const;
+    [[nodiscard]] std::size_t             get_size() const;
+
+  private:
+    std::string_view title{};
+    std::string_view licensee{};
+    std::size_t      size{};
+    Type             type{};
+
+    std::array<std::byte, SIZE> content{};
 };
 
 #endif  // CARTRIDGE_H

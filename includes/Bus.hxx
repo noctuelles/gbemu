@@ -7,22 +7,19 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 
-class Bus
+#include "Addressable.hxx"
+
+class Bus final : public Addressable
 {
   public:
     static constexpr size_t RAM_SIZE = 1 << 16;
 
-    Bus();
-    ~Bus();
-
-    [[nodiscard]] uint8_t read(uint16_t addr) const;
-    void                  write(uint16_t addr, uint8_t data);
-    void                  write(uint16_t addr, std::initializer_list<uint8_t> data);
+    void    write(uint16_t address, uint8_t value) override;
+    uint8_t read(uint16_t address) override;
 
   private:
-    std::array<uint8_t, RAM_SIZE> ram{};
+    std::array<std::byte, RAM_SIZE> ram{};
 };
 
 #endif  // BUS_HXX

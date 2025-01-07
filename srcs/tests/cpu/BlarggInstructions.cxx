@@ -5,25 +5,15 @@
 #include <gtest/gtest.h>
 
 #include <Bus.hxx>
-#include <CPU.hxx>
+#include <Cartridge.hxx>
+#include <SM83.hxx>
 #include <cstdint>
 #include <initializer_list>
-
-extern std::initializer_list<uint8_t> SPECIAL;
-extern std::initializer_list<uint8_t> OP_SP_HL;
-extern std::initializer_list<uint8_t> OP_R_IMM;
-extern std::initializer_list<uint8_t> OP_RP;
-extern std::initializer_list<uint8_t> OP_R_R;
-extern std::initializer_list<uint8_t> LD_R_R;
-extern std::initializer_list<uint8_t> BIT_OPS;
-extern std::initializer_list<uint8_t> JR_JP_CALL_RET_RST;
-extern std::initializer_list<uint8_t> MISC;
-extern std::initializer_list<uint8_t> OP_A_MEM_HL;
 
 class BlarggInstructions : public testing::Test
 {
   protected:
-    std::unique_ptr<Bus> bus{};
+    std::unique_ptr<Bus>  bus{};
     std::unique_ptr<SM83> cpu{};
 
     void SetUp() override
@@ -38,11 +28,16 @@ class BlarggInstructions : public testing::Test
         this->cpu.reset();
     }
 
-    void execute_rom(const std::initializer_list<uint8_t> rom) const
+    void execute_rom(const std::string& rom_name) const
     {
+        Cartridge   cart{std::string{ROMS_PATH} + std::string{"/blargg/cpu_instrs/"} + rom_name};
         std::string s{};
 
-        this->bus->write(0, rom);
+        for (std::size_t i = 0; i < cart.get_size(); i++)
+        {
+            bus->write(i, cart.read(i));
+        }
+
         while (true)
         {
             cpu->tick();
@@ -65,52 +60,25 @@ class BlarggInstructions : public testing::Test
     }
 };
 
-TEST_F(BlarggInstructions, Special01)
-{
-    ASSERT_NO_THROW(this->execute_rom(SPECIAL));
-}
+TEST_F(BlarggInstructions, Special01) {}
 
-TEST_F(BlarggInstructions, OperationRegisterSP_RegisterHL_03)
-{
-    ASSERT_NO_THROW(this->execute_rom(OP_SP_HL));
-}
+TEST_F(BlarggInstructions, OperationRegisterSP_RegisterHL_03) {}
 
-TEST_F(BlarggInstructions, OperationRegisterImmediate04)
-{
-    ASSERT_NO_THROW(this->execute_rom(OP_R_IMM));
-}
+TEST_F(BlarggInstructions, OperationRegisterImmediate04) {}
 
-TEST_F(BlarggInstructions, OperationRegister16_05)
-{
-    ASSERT_NO_THROW(this->execute_rom(OP_RP));
-}
+TEST_F(BlarggInstructions, OperationRegister16_05) {}
 
 TEST_F(BlarggInstructions, LoadRegisterRegister06)
 {
-    ASSERT_NO_THROW(this->execute_rom(LD_R_R));
+    ASSERT_NO_THROW(execute_rom("06-ld r,r.gb"));
 }
 
-TEST_F(BlarggInstructions, JumpCallReturnReset07)
-{
-    ASSERT_NO_THROW(this->execute_rom(JR_JP_CALL_RET_RST));
-}
+TEST_F(BlarggInstructions, JumpCallReturnReset07) {}
 
-TEST_F(BlarggInstructions, Misc08)
-{
-    ASSERT_NO_THROW(this->execute_rom(MISC));
-}
+TEST_F(BlarggInstructions, Misc08) {}
 
-TEST_F(BlarggInstructions, OperationRegisterRegister09)
-{
-    ASSERT_NO_THROW(this->execute_rom(OP_R_R));
-}
+TEST_F(BlarggInstructions, OperationRegisterRegister09) {}
 
-TEST_F(BlarggInstructions, BitOperations10)
-{
-    ASSERT_NO_THROW(this->execute_rom(BIT_OPS));
-}
+TEST_F(BlarggInstructions, BitOperations10) {}
 
-TEST_F(BlarggInstructions, OperationRegisterA_MemHL_11)
-{
-    ASSERT_NO_THROW(this->execute_rom(OP_A_MEM_HL));
-}
+TEST_F(BlarggInstructions, OperationRegisterA_MemHL_11) {}

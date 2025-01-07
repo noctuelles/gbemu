@@ -45,87 +45,86 @@ void SM83::tick()
             fetch_decode_execute();
             break;
         case State::STOPPED:
-        case State::HALTED:
-            break;
+        case State::HALTED: break;
     }
 }
 
-SM83::byte SM83::fetch_memory(const word address)
+uint8_t SM83::fetch_memory(const uint16_t address)
 {
     machine_cycle();
     return bus.read(address);
 }
 
-void SM83::write_memory(const word address, const byte value)
+void SM83::write_memory(const uint16_t address, const uint8_t value)
 {
     machine_cycle();
     return bus.write(address, value);
 }
 
-SM83::word SM83::AF() const
+uint16_t SM83::AF() const
 {
     return utils::to_word(A, F);
 }
 
-SM83::word SM83::BC() const
+uint16_t SM83::BC() const
 {
     return utils::to_word(B, C);
 }
 
-SM83::word SM83::DE() const
+uint16_t SM83::DE() const
 {
     return utils::to_word(D, E);
 }
 
-SM83::word SM83::HL() const
+uint16_t SM83::HL() const
 {
     return utils::to_word(H, L);
 }
 
-void SM83::AF(const word value)
+void SM83::AF(const uint16_t value)
 {
     utils::to_bytes(value, A, F);
 }
-void SM83::BC(const word value)
+void SM83::BC(const uint16_t value)
 {
     utils::to_bytes(value, B, C);
 }
 
-void SM83::DE(const word value)
+void SM83::DE(const uint16_t value)
 {
     utils::to_bytes(value, D, E);
 }
 
-void SM83::HL(const word value)
+void SM83::HL(const uint16_t value)
 {
     utils::to_bytes(value, H, L);
 }
 
-SM83::byte SM83::add(const byte lhs, const byte rhs, const bool carry)
+uint8_t SM83::add(const uint8_t lhs, const uint8_t rhs, const bool carry)
 {
-    const auto add_carry{static_cast<byte>(carry ? get_flag(Flags::Carry) : 0)};
-    const auto result{static_cast<word>(lhs + rhs + add_carry)};
+    const auto add_carry{static_cast<uint8_t>(carry ? get_flag(Flags::Carry) : 0)};
+    const auto result{static_cast<uint16_t>(lhs + rhs + add_carry)};
 
     set_flag(Flags::Zero, (result & 0xFF) == 0);
     set_flag(Flags::Subtract, false);
     set_flag(Flags::HalfCarry, (lhs & 0x0F) + (rhs & 0x0F) + add_carry > 0x0F);
     set_flag(Flags::Carry, result > 0xFF);
 
-    return static_cast<byte>(result & 0xFF);
+    return static_cast<uint8_t>(result & 0xFF);
 }
 
-SM83::word SM83::add(const word lhs, const word rhs)
+uint16_t SM83::add(const uint16_t lhs, const uint16_t rhs)
 {
-    const signed_dword result{lhs + rhs};
+    const int32_t result{lhs + rhs};
 
     set_flag(Flags::Subtract, false);
     set_flag(Flags::HalfCarry, (lhs & 0x0FFF) + (rhs & 0x0FFF) > 0x0FFF);
     set_flag(Flags::Carry, result > 0xFFFF);
 
-    return static_cast<word>(result);
+    return static_cast<uint16_t>(result);
 }
 
-SM83::word SM83::add(const word lhs, const byte rhs)
+uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 {
     const auto sign{(rhs & 0x80) != 0};
     auto       lhs_lsb{utils::word_lsb(lhs)};
@@ -151,22 +150,22 @@ SM83::word SM83::add(const word lhs, const byte rhs)
     return utils::to_word(lhs_msb, lhs_lsb);
 }
 
-SM83::byte SM83::sub(const byte lhs, const byte rhs, const bool borrow)
+uint8_t SM83::sub(const uint8_t lhs, const uint8_t rhs, const bool borrow)
 {
-    const auto sub_borrow{static_cast<byte>(borrow ? get_flag(Flags::Carry) : 0)};
-    const auto result{static_cast<word>(lhs - rhs - sub_borrow)};
+    const auto sub_borrow{static_cast<uint8_t>(borrow ? get_flag(Flags::Carry) : 0)};
+    const auto result{static_cast<uint16_t>(lhs - rhs - sub_borrow)};
 
     set_flag(Flags::Zero, (result & 0xFF) == 0);
     set_flag(Flags::Subtract, true);
     set_flag(Flags::HalfCarry, (lhs & 0x0F) < (rhs & 0x0F) + sub_borrow);
     set_flag(Flags::Carry, lhs < rhs + sub_borrow);
 
-    return static_cast<byte>(result & 0xFF);
+    return static_cast<uint8_t>(result & 0xFF);
 }
 
-SM83::byte SM83::bitwise_and(const byte lhs, const byte rhs)
+uint8_t SM83::bitwise_and(const uint8_t lhs, const uint8_t rhs)
 {
-    const byte result = lhs & rhs;
+    const uint8_t result = lhs & rhs;
     set_flag(Flags::Zero, result == 0);
     set_flag(Flags::Subtract, false);
     set_flag(Flags::HalfCarry, true);
@@ -174,9 +173,9 @@ SM83::byte SM83::bitwise_and(const byte lhs, const byte rhs)
     return result;
 }
 
-SM83::byte SM83::bitwise_or(const byte lhs, const byte rhs)
+uint8_t SM83::bitwise_or(const uint8_t lhs, const uint8_t rhs)
 {
-    const byte result = lhs | rhs;
+    const uint8_t result = lhs | rhs;
     set_flag(Flags::Zero, result == 1);
     set_flag(Flags::Subtract, false);
     set_flag(Flags::HalfCarry, false);
@@ -184,9 +183,9 @@ SM83::byte SM83::bitwise_or(const byte lhs, const byte rhs)
     return result;
 }
 
-SM83::byte SM83::bitwise_xor(const byte lhs, const byte rhs)
+uint8_t SM83::bitwise_xor(const uint8_t lhs, const uint8_t rhs)
 {
-    const byte result = lhs ^ rhs;
+    const uint8_t result = lhs ^ rhs;
     set_flag(Flags::Zero, result == 0);
     set_flag(Flags::Subtract, false);
     set_flag(Flags::HalfCarry, false);
@@ -194,7 +193,7 @@ SM83::byte SM83::bitwise_xor(const byte lhs, const byte rhs)
     return result;
 }
 
-SM83::byte SM83::rotate_left(byte op, bool circular)
+uint8_t SM83::rotate_left(uint8_t op, const bool circular)
 {
     const auto new_carry{(op & 0x80) != 0};
 
@@ -212,7 +211,7 @@ SM83::byte SM83::rotate_left(byte op, bool circular)
     return op;
 }
 
-SM83::byte SM83::rotate_right(byte op, bool circular)
+uint8_t SM83::rotate_right(uint8_t op, const bool circular)
 {
     const auto new_carry{(op & 0x01) != 0};
 
@@ -230,26 +229,26 @@ SM83::byte SM83::rotate_right(byte op, bool circular)
     return op;
 }
 
-void SM83::bit(const byte op, const std::size_t bit)
+void SM83::bit(const uint8_t op, const std::size_t bit)
 {
     set_flag(Flags::Zero, (op & 1 << bit) == 0);
     set_flag(Flags::Subtract, false);
     set_flag(Flags::HalfCarry, true);
 }
 
-SM83::byte SM83::res(const byte op, const std::size_t bit)
+uint8_t SM83::res(const uint8_t op, const std::size_t bit)
 {
     return op & ~(1 << bit);
 }
 
-SM83::byte SM83::set(const byte op, const std::size_t bit)
+uint8_t SM83::set(const uint8_t op, const std::size_t bit)
 {
     return op | 1 << bit;
 }
 
-SM83::byte SM83::swap(const byte op)
+uint8_t SM83::swap(const uint8_t op)
 {
-    const auto result{static_cast<byte>((op & 0x0F) << 4 | (op & 0xF0) >> 4)};
+    const auto result{static_cast<uint8_t>((op & 0x0F) << 4 | (op & 0xF0) >> 4)};
 
     set_flag(Flags::Zero, result == 0);
     set_flag(Flags::Subtract, false);
@@ -259,17 +258,17 @@ SM83::byte SM83::swap(const byte op)
     return result;
 }
 
-SM83::word SM83::inc(const word value)
+uint16_t SM83::inc(const uint16_t value)
 {
     return value + 1;
 }
 
-SM83::word SM83::dec(const word value)
+uint16_t SM83::dec(const uint16_t value)
 {
     return value - 1;
 }
 
-SM83::byte SM83::inc(byte value)
+uint8_t SM83::inc(uint8_t value)
 {
     value += 1;
 
@@ -280,7 +279,7 @@ SM83::byte SM83::inc(byte value)
     return value;
 }
 
-SM83::byte SM83::dec(byte value)
+uint8_t SM83::dec(uint8_t value)
 {
     value += 1;
 
@@ -293,7 +292,7 @@ SM83::byte SM83::dec(byte value)
 
 void SM83::jr()
 {
-    const auto e8{static_cast<signed_byte>(fetch_memory(PC++))};
+    const auto e8{static_cast<int8_t>(fetch_memory(PC++))};
 
     PC += e8;
     machine_cycle();
@@ -379,14 +378,14 @@ void SM83::rst(const ResetVector rst_vector)
     PC = std::to_underlying(rst_vector);
 }
 
-void SM83::push(const byte msb, const byte lsb)
+void SM83::push(const uint8_t msb, const uint8_t lsb)
 {
     machine_cycle();
     write_memory(--SP, msb);
     write_memory(--SP, lsb);
 }
 
-void SM83::push(const word value)
+void SM83::push(const uint16_t value)
 {
     const auto lsb{utils::word_lsb(value)};
     const auto msb{utils::word_msb(value)};
@@ -396,13 +395,13 @@ void SM83::push(const word value)
     write_memory(--SP, lsb);
 }
 
-void SM83::pop(byte& msb, byte& lsb)
+void SM83::pop(uint8_t& msb, uint8_t& lsb)
 {
     lsb = fetch_memory(SP++);
     msb = fetch_memory(SP++);
 }
 
-void SM83::pop(word& value)
+void SM83::pop(uint16_t& value)
 {
     const auto lsb{fetch_memory(SP++)};
     const auto msb{fetch_memory(SP++)};
@@ -412,7 +411,7 @@ void SM83::pop(word& value)
 void SM83::set_flag(const Flags flag, const bool value)
 {
     const auto bit{std::to_underlying(flag)};
-    F = F & ~bit | (value ? bit : 0);
+    F = (F & ~bit) | (value ? bit : 0);
 }
 
 bool SM83::get_flag(const Flags flag) const
@@ -424,12 +423,9 @@ bool SM83::is_condition_met(const Conditionals conditional) const
 {
     switch (conditional)
     {
-        case Conditionals::NZ:
-            return !this->get_flag(Flags::Zero);
-        case Conditionals::Z:
-            return this->get_flag(Flags::Zero);
-        case Conditionals::NC:
-            return !this->get_flag(Flags::Carry);
+        case Conditionals::NZ: return !this->get_flag(Flags::Zero);
+        case Conditionals::Z: return this->get_flag(Flags::Zero);
+        case Conditionals::NC: return !this->get_flag(Flags::Carry);
         case Conditionals::C:
             return this->get_flag(Flags::Carry);
         [[unlikely]] default:
