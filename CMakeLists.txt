@@ -49,13 +49,15 @@ add_compile_options(-Wall -Werror -Wextra -Wpedantic -g3)
 add_executable(gbemu
         srcs/core/SM83.cxx
         srcs/core/Opcode.cxx
+        srcs/core/Disassembler.cxx
+        srcs/core/Timer.cxx
         srcs/main.cxx
         srcs/Bus.cxx
         srcs/Cartridge.cxx
         includes/Cartridge.hxx
         includes/tests/CPU.hxx
         srcs/Utils.cxx
-        srcs/core/Disassembler.cxx)
+        includes/Timer.hxx)
 
 target_link_libraries(
         gbemu
@@ -67,6 +69,7 @@ add_executable(gbemu_test
         srcs/core/SM83.cxx
         srcs/core/Disassembler.cxx
         srcs/core/Opcode.cxx
+        srcs/core/Timer.cxx
         srcs/Bus.cxx
         srcs/Cartridge.cxx
         srcs/Utils.cxx

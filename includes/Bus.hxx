@@ -22,6 +22,7 @@ class Bus final : public Addressable
     uint8_t read(uint16_t address) override;
 
     std::unique_ptr<Component> cpu;
+    std::unique_ptr<Component> timer;
 
   private:
     std::array<std::byte, RAM_SIZE> ram{};

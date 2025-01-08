@@ -2,6 +2,7 @@
 #define CPU_H
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <optional>
 #include <span>
@@ -91,7 +92,7 @@ class SM83 : public Component
         static const InstructionLookup prefixed_instruction_lookup;
     };
 
-    explicit SM83(Addressable& bus);
+    SM83(Addressable& bus, const std::function<void()>& on_machine_cycle);
 
     void                  write(uint16_t address, uint8_t value) override;
     [[nodiscard]] uint8_t read(uint16_t address) override;
@@ -100,11 +101,10 @@ class SM83 : public Component
     void print_state();
 
   private:
-    void    machine_cycle();
     void    fetch_decode_execute(bool extended_set = false);
     void    fetch_operand();
-    uint8_t fetch_memory(uint16_t address);
-    void    write_memory(uint16_t address, uint8_t value);
+    uint8_t fetch_memory(uint16_t address) const;
+    void    write_memory(uint16_t address, uint8_t value) const;
 
     [[nodiscard]] uint16_t AF() const;
     [[nodiscard]] uint16_t BC() const;
@@ -188,6 +188,8 @@ class SM83 : public Component
     uint16_t PC{};
     uint8_t  IE{};
     uint8_t  IF{};
+
+    std::function<void()> machine_cycle;
 
     /**
      * @brief State of the CPU.

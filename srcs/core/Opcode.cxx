@@ -7,8 +7,6 @@
 #include "SM83.hxx"
 #include "Utils.hxx"
 
-void SM83::machine_cycle() {}
-
 /**
  * Executes the fetch, decode, and execute cycle for a SM83 instruction.
  *
@@ -401,6 +399,9 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 write_memory(HL(), L);
                 break;
             case 0x76:
+                if (!ime)
+                {
+                }
                 state = State::HALTED;
                 break;
             case 0x77:

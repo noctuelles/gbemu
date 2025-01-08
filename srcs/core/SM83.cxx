@@ -15,7 +15,7 @@
 #include <iostream>
 #include <utility>
 
-SM83::SM83(Addressable& bus) : bus(bus)
+SM83::SM83(Addressable& bus, const std::function<void()>& on_machine_cycle) : machine_cycle(on_machine_cycle), bus(bus)
 {
     A  = 0x01;
     F  = 0xB0;
@@ -26,7 +26,7 @@ SM83::SM83(Addressable& bus) : bus(bus)
     H  = 0x01;
     L  = 0x4D;
     SP = 0xFFFE;
-    PC = 0x0101;
+    PC = 0x0100;
 }
 
 void SM83::write(const uint16_t address, const uint8_t value)
@@ -70,11 +70,16 @@ void SM83::tick()
                     ime = true;
                 }
             }
-
+            print_state();
             fetch_decode_execute();
             break;
         case State::STOPPED:
         case State::HALTED:
+            machine_cycle();
+            if ((IE & IF & 0x1F) != 0)
+            {
+                state = State::NORMAL;
+            }
             break;
     }
 
@@ -89,13 +94,13 @@ void SM83::print_state()
         A, F, B, C, D, E, H, L, SP, PC, bus.read(PC), bus.read(PC + 1), bus.read(PC + 2), bus.read(PC + 3));
 }
 
-uint8_t SM83::fetch_memory(const uint16_t address)
+uint8_t SM83::fetch_memory(const uint16_t address) const
 {
     machine_cycle();
     return bus.read(address);
 }
 
-void SM83::write_memory(const uint16_t address, const uint8_t value)
+void SM83::write_memory(const uint16_t address, const uint8_t value) const
 {
     machine_cycle();
     return bus.write(address, value);
@@ -544,6 +549,8 @@ void SM83::interrupts()
 {
     if (ime)
     {
+        state = State::NORMAL;
+
         const auto bit_zero_count{std::countr_zero(get_interrupt_request())};
         uint16_t   interrupt_vector{};
 
