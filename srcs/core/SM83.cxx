@@ -70,7 +70,7 @@ void SM83::tick()
                     ime = true;
                 }
             }
-            print_state();
+            // print_state();
             fetch_decode_execute();
             break;
         case State::STOPPED:
@@ -81,6 +81,8 @@ void SM83::tick()
                 state = State::NORMAL;
             }
             break;
+        case State::HALTED_BUG:
+            throw std::runtime_error("SM83 Halt bug. Not implemented yet.");
     }
 
     interrupts();
@@ -549,8 +551,6 @@ void SM83::interrupts()
 {
     if (ime)
     {
-        state = State::NORMAL;
-
         const auto bit_zero_count{std::countr_zero(get_interrupt_request())};
         uint16_t   interrupt_vector{};
 

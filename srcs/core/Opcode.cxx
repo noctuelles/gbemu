@@ -399,10 +399,14 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 write_memory(HL(), L);
                 break;
             case 0x76:
-                if (!ime)
+                if (!ime && (IE & IF) != 0)
                 {
+                    state = State::HALTED_BUG;
                 }
-                state = State::HALTED;
+                else
+                {
+                    state = State::HALTED;
+                }
                 break;
             case 0x77:
                 write_memory(HL(), A);

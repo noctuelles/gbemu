@@ -55,6 +55,7 @@ class SM83 : public Component
     {
         NORMAL,
         HALTED,
+        HALTED_BUG,
         STOPPED,
     };
 

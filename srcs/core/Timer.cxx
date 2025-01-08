@@ -66,7 +66,6 @@ void Timer::write(uint16_t address, const uint8_t value)
              * the system counter is equal to $3FF0 and TAC to $FC, writing $05 or $06 to TAC will instantly send a
              * “Timer tick”, but $04 or $07 won’t.)
              */
-            const auto old_last_bit{last_bit};
 
             TAC = value;
             break;
