@@ -12,9 +12,14 @@
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 480
 
+#include <imgui_impl_sdlrenderer2.h>
+
+#include <vector>
+
 #include "imgui.h"
-#include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_memory_editor/imgui_memory_editor.h"
 
 template <typename T, auto Init, auto Release, typename... InitArgs>
 class SDLObjWrapper final
@@ -30,7 +35,6 @@ class SDLObjWrapper final
 
     ~SDLObjWrapper()
     {
-        std::cout << "Releasing" << std::endl;
         Release(handle);
     }
 
@@ -44,7 +48,7 @@ class SDLObjWrapper final
         return this->handle;
     }
 
-    operator T() const
+    operator T() const  // NOLINT
     {
         return this->handle;
     }
@@ -57,42 +61,99 @@ using SDLWindow =
     SDLObjWrapper<SDL_Window*, SDL_CreateWindow, SDL_DestroyWindow, const char*, int, int, int, int, Uint32>;
 using SDLTexture =
     SDLObjWrapper<SDL_Texture*, SDL_CreateTexture, SDL_DestroyTexture, SDL_Renderer*, Uint32, int, int, int>;
+using SDLRenderer = SDLObjWrapper<SDL_Renderer*, SDL_CreateRenderer, SDL_DestroyRenderer, SDL_Window*, int, Uint32>;
 
 class GbEmu
 {
   public:
     GbEmu()
-        : window("gbemu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
-                 SDL_WINDOW_SHOWN)
+        : window("gbemu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1200, 800, SDL_WINDOW_SHOWN),
+          renderer(window, -1, 0)
     {
         if (SDL_Init(SDL_INIT_VIDEO) != 0)
         {
             throw std::runtime_error("Failed to initialize SDL");
         }
 
-        SDL_Surface* screenSurface{nullptr};
+        ImGui::CreateContext();
 
-        screenSurface = SDL_GetWindowSurface(window);
-        SDL_FillRect(screenSurface, nullptr, SDL_MapRGB(screenSurface->format, 0xFF, 0xFF, 0xFF));
-        SDL_UpdateWindowSurface(window);
-        SDL_Delay(2000);
+        ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+        ImGui_ImplSDLRenderer2_Init(renderer);
+    }
+
+    void loop()
+    {
+        SDL_Event        event{};
+        const auto       viewport{ImGui::GetMainViewport()};
+
+        while (running)
+        {
+            while (SDL_PollEvent(&event))
+            {
+                if (event.type == SDL_QUIT)
+                {
+                    running = false;
+                }
+                ImGui_ImplSDL2_ProcessEvent(&event);
+            }
+            ImGui_ImplSDLRenderer2_NewFrame();
+            ImGui_ImplSDL2_NewFrame();
+            ImGui::NewFrame();
+
+            ImGui::SetNextWindowPos(viewport->Pos);
+            ImGui::SetNextWindowSize(viewport->Size);
+
+            ImGui::Begin("Emulator");
+
+            if (ImGui::BeginMenuBar())
+            {
+                if (ImGui::BeginMenu("File"))
+                {
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Edit"))
+                {
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenuBar();
+            }
+
+            ImGui::End();
+
+            ImGui::Render();
+
+            // ImGui::ShowDemoWindow();
+
+            SDL_RenderClear(renderer);
+
+            ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+
+            SDL_RenderPresent(renderer);
+        }
     }
 
     ~GbEmu()
     {
-        std::cout << "GbEmu Destructor" << std::endl;
+        ImGui_ImplSDLRenderer2_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
         SDL_Quit();
     }
 
   private:
-    SDLWindow window;
+    SDLWindow   window;
+    SDLRenderer renderer;
+    bool        running{true};
 };
 
 int main(int argc, char* args[])
 {
     GbEmu emu{};
-    (void)argc;
-    (void)args;
+
+    (void) argc;
+    (void) args;
+
+    emu.loop();
 
     return 0;
 }

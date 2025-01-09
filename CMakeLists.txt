@@ -24,8 +24,14 @@ FetchContent_Declare(
         GIT_TAG 993fa347495860ed44b83574254ef2a317d0c14f
 )
 
+FetchContent_Declare(
+        imgui_club
+        GIT_REPOSITORY https://github.com/ocornut/imgui_club
+        GIT_TAG 17510b03602c8b6c7ed48fd8fa29d9a75eb10dc6
+)
+
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest sdl2 imgui)
+FetchContent_MakeAvailable(googletest sdl2 imgui imgui_club)
 
 set(IMGUI_FILES
         ${imgui_SOURCE_DIR}/imgui.cpp
@@ -34,7 +40,7 @@ set(IMGUI_FILES
         ${imgui_SOURCE_DIR}/imgui_tables.cpp
         ${imgui_SOURCE_DIR}/imgui_widgets.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer2.cpp
 )
 
 add_library(imgui STATIC ${IMGUI_FILES})
@@ -43,6 +49,7 @@ target_link_libraries(imgui SDL2)
 
 include_directories(${imgui_SOURCE_DIR})
 include_directories(${imgui_SOURCE_DIR}/backends)
+include_directories(${imgui_club_SOURCE_DIR})
 
 add_compile_options(-Wall -Werror -Wextra -Wpedantic -g3)
 

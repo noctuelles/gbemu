@@ -80,7 +80,7 @@ void SM83::tick()
         case State::STOPPED:
         case State::HALTED:
             machine_cycle();
-            if ((IE & IF & 0x1F) != 0)
+            if ((IE & IF) != 0)
             {
                 state = State::NORMAL;
             }
