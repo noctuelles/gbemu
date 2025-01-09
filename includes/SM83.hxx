@@ -119,6 +119,7 @@ class SM83 : public Component
     void decode_execute_instruction(bool extended_set = false);
 
     [[nodiscard]] uint8_t fetch_memory(uint16_t address) const;
+    [[nodiscard]] uint8_t fetch_operand();
     void                  write_memory(uint16_t address, uint8_t value) const;
 
     /**
@@ -275,6 +276,8 @@ class SM83 : public Component
      * @brief Instruction Register.
      */
     uint8_t IR{};
+
+    std::vector<uint8_t> instruction_buffer{};
 
     /**
      * @brief Callback function when a machine cycle is executed by the CPU.

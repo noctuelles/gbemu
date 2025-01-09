@@ -28,8 +28,8 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
             case 0x00:
                 break;
             case 0x01:
-                C = fetch_memory(PC++);
-                B = fetch_memory(PC++);
+                C = fetch_operand();
+                B = fetch_operand();
                 break;
             case 0x02:
                 write_memory(BC(), A);
@@ -44,7 +44,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 B = dec(B);
                 break;
             case 0x06:
-                B = fetch_memory(PC++);
+                B = fetch_operand();
                 break;
             case 0x07:
                 A = rotate_left(A, true);
@@ -52,8 +52,8 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 break;
             case 0x08:
             {
-                const auto lsb{fetch_memory(PC++)};
-                const auto msb{fetch_memory(PC++)};
+                const auto lsb{fetch_operand()};
+                const auto msb{fetch_operand()};
                 const auto address{utils::to_word(msb, lsb)};
 
                 write_memory(address, utils::word_lsb(SP));
@@ -76,7 +76,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 C = dec(C);
                 break;
             case 0x0E:
-                C = fetch_memory(PC++);
+                C = fetch_operand();
                 break;
             case 0x0F:
                 A = rotate_right(A, true);
@@ -86,8 +86,8 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 state = State::STOPPED;
                 break;
             case 0x11:
-                E = fetch_memory(PC++);
-                D = fetch_memory(PC++);
+                E = fetch_operand();
+                D = fetch_operand();
                 break;
             case 0x12:
                 write_memory(DE(), A);
@@ -102,7 +102,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 D = dec(D);
                 break;
             case 0x16:
-                D = fetch_memory(PC++);
+                D = fetch_operand();
                 break;
             case 0x17:
                 A = rotate_left(A, false);
@@ -127,7 +127,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 E = dec(E);
                 break;
             case 0x1E:
-                E = fetch_memory(PC++);
+                E = fetch_operand();
                 break;
             case 0x1F:
                 A = rotate_right(A, false);
@@ -137,8 +137,8 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 jr_cc(Conditionals::NZ);
                 break;
             case 0x21:
-                L = fetch_memory(PC++);
-                H = fetch_memory(PC++);
+                L = fetch_operand();
+                H = fetch_operand();
                 break;
             case 0x22:
                 write_memory(HL(), A);
@@ -154,7 +154,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 H = dec(H);
                 break;
             case 0x26:
-                H = fetch_memory(PC++);
+                H = fetch_operand();
                 break;
             case 0x27:
                 daa();
@@ -179,7 +179,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 L = dec(L);
                 break;
             case 0x2E:
-                L = fetch_memory(PC++);
+                L = fetch_operand();
                 break;
             case 0x2F:
                 A = ~A;
@@ -190,8 +190,8 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 jr_cc(Conditionals::NC);
                 break;
             case 0x31:
-                SP = fetch_memory(PC++);
-                SP |= fetch_memory(PC++) << 8;
+                SP = fetch_operand();
+                SP |= fetch_operand() << 8;
                 break;
             case 0x32:
                 write_memory(HL(), A);
@@ -207,7 +207,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 write_memory(HL(), dec(fetch_memory(HL())));
                 break;
             case 0x36:
-                write_memory(HL(), fetch_memory(PC++));
+                write_memory(HL(), fetch_operand());
                 break;
             case 0x37:
                 set_flag(Flags::Subtract, false);
@@ -234,7 +234,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 A = dec(A);
                 break;
             case 0x3E:
-                A = fetch_memory(PC++);
+                A = fetch_operand();
                 break;
             case 0x3F:
                 set_flag(Flags::Subtract, false);
@@ -644,7 +644,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 push(B, C);
                 break;
             case 0xC6:
-                A = add(A, fetch_memory(PC++));
+                A = add(A, fetch_operand());
                 break;
             case 0xC7:
                 rst(ResetVector::h00);
@@ -669,7 +669,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 call();
                 break;
             case 0xCE:
-                A = add(A, fetch_memory(PC++), true);
+                A = add(A, fetch_operand(), true);
                 break;
             case 0xCF:
                 rst(ResetVector::h08);
@@ -690,7 +690,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 push(D, E);
                 break;
             case 0xD6:
-                A = sub(A, fetch_memory(PC++));
+                A = sub(A, fetch_operand());
                 break;
             case 0xD7:
                 rst(ResetVector::h10);
@@ -709,13 +709,13 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 call_cc(Conditionals::C);
                 break;
             case 0xDE:
-                A = sub(A, fetch_memory(PC++), true);
+                A = sub(A, fetch_operand(), true);
                 break;
             case 0xDF:
                 rst(ResetVector::h18);
                 break;
             case 0xE0:
-                write_memory(0xFF00 | fetch_memory(PC++), A);
+                write_memory(0xFF00 | fetch_operand(), A);
                 break;
             case 0xE1:
                 pop(H, L);
@@ -727,32 +727,32 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 push(H, L);
                 break;
             case 0xE6:
-                A = bitwise_and(A, fetch_memory(PC++));
+                A = bitwise_and(A, fetch_operand());
                 break;
             case 0xE7:
                 rst(ResetVector::h20);
                 break;
             case 0xE8:
-                SP = add(SP, fetch_memory(PC++));
+                SP = add(SP, fetch_operand());
                 break;
             case 0xE9:
                 PC = HL();
                 break;
             case 0xEA:
             {
-                const auto lsb = fetch_memory(PC++);
-                const auto msb = fetch_memory(PC++);
+                const auto lsb = fetch_operand();
+                const auto msb = fetch_operand();
                 write_memory(utils::to_word(msb, lsb), A);
             }
             break;
             case 0xEE:
-                A = bitwise_xor(A, fetch_memory(PC++));
+                A = bitwise_xor(A, fetch_operand());
                 break;
             case 0xEF:
                 rst(ResetVector::h28);
                 break;
             case 0xF0:
-                A = fetch_memory(0xFF00 | fetch_memory(PC++));
+                A = fetch_memory(0xFF00 | fetch_operand());
                 break;
             case 0xF1:
                 pop(A, F);
@@ -769,13 +769,13 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 push(A, F);
                 break;
             case 0xF6:
-                A = bitwise_or(A, fetch_memory(PC++));
+                A = bitwise_or(A, fetch_operand());
                 break;
             case 0xF7:
                 rst(ResetVector::h30);
                 break;
             case 0xF8:
-                HL(add(SP, fetch_memory(PC++)));
+                HL(add(SP, fetch_operand()));
                 break;
             case 0xF9:
                 SP = HL();
@@ -783,8 +783,8 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 break;
             case 0xFA:
             {
-                const auto lsb{fetch_memory(PC++)};
-                const auto msb{fetch_memory(PC++)};
+                const auto lsb{fetch_operand()};
+                const auto msb{fetch_operand()};
                 A = fetch_memory(utils::to_word(msb, lsb));
             }
             break;
@@ -792,7 +792,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 this->request_ime = 1;
                 break;
             case 0xFE:
-                (void) sub(A, fetch_memory(PC++));
+                (void) sub(A, fetch_operand());
                 break;
             case 0xFF:
                 rst(ResetVector::h38);

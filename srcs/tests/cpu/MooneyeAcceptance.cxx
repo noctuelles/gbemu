@@ -80,6 +80,11 @@ TEST_F(MooneyeAcceptance, IntrerrupTiming)
     ASSERT_NO_THROW(execute_rom("intr_timing.gb"));
 }
 
+TEST_F(MooneyeAcceptance, DivTiming)
+{
+    ASSERT_NO_THROW(execute_rom("div_timing.gb"));
+}
+
 TEST_F(MooneyeAcceptance, IF_IE_Registers)
 {
     ASSERT_NO_THROW(execute_rom("if_ie_registers.gb"));

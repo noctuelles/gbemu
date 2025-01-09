@@ -27,6 +27,8 @@ SM83::SM83(Addressable& bus, const std::function<void()>& on_machine_cycle) : ma
     L  = 0x4D;
     SP = 0xFFFE;
     PC = 0x0100;
+
+    instruction_buffer.reserve(16);
 }
 
 void SM83::write(const uint16_t address, const uint8_t value)
@@ -63,6 +65,7 @@ void SM83::tick()
     {
         case State::NORMAL:
         {
+            auto saved_PC{PC};
             if (request_ime != 0)
             {
                 request_ime -= 1;
@@ -71,10 +74,20 @@ void SM83::tick()
                     IME = true;
                 }
             }
-            print_state();
 
             fetch_instruction();
             decode_execute_instruction();
+
+            SM83::Disassembler disassembler{instruction_buffer};
+            const auto         instruction{disassembler.disassemble(0)};
+
+            for (const auto& line : instruction)
+            {
+                std::print(std::cout, "{:04X}: {:s} - ", saved_PC, line.second);
+            }
+            print_state();
+
+            instruction_buffer.clear();
             break;
         }
         case State::STOPPED:
@@ -99,19 +112,27 @@ void SM83::print_state()
 {
     std::print(
         std::cout,
-        "A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} PCMEM:{:02X},{:02X},{:02X},{:02X}\n",
-        A, F, B, C, D, E, H, L, SP, PC, bus.read(PC), bus.read(PC + 1), bus.read(PC + 2), bus.read(PC + 3));
+        "A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} IE:{:04X} IF:{:04X}\n",
+        A, F, B, C, D, E, H, L, SP, PC, IE, IF);
 }
 
 void SM83::fetch_instruction()
 {
     IR = fetch_memory(PC++);
+    instruction_buffer.push_back(IR);
 }
 
 uint8_t SM83::fetch_memory(const uint16_t address) const
 {
     machine_cycle();
     return bus.read(address);
+}
+
+uint8_t SM83::fetch_operand()
+{
+    const auto byte{fetch_memory(PC++)};
+    instruction_buffer.push_back(byte);
+    return byte;
 }
 
 void SM83::write_memory(const uint16_t address, const uint8_t value) const
@@ -410,7 +431,7 @@ uint8_t SM83::dec(uint8_t value)
 
 void SM83::jr()
 {
-    const auto e8{static_cast<int8_t>(fetch_memory(PC++))};
+    const auto e8{static_cast<int8_t>(fetch_operand())};
 
     PC += e8;
     machine_cycle();
@@ -418,8 +439,8 @@ void SM83::jr()
 
 void SM83::jp()
 {
-    const auto lsb{fetch_memory(PC++)};
-    const auto msb{fetch_memory(PC++)};
+    const auto lsb{fetch_operand()};
+    const auto msb{fetch_operand()};
 
     PC = utils::to_word(msb, lsb);
     machine_cycle();
@@ -427,8 +448,8 @@ void SM83::jp()
 
 void SM83::call()
 {
-    const auto lsb{fetch_memory(PC++)};
-    const auto msb{fetch_memory(PC++)};
+    const auto lsb{fetch_operand()};
+    const auto msb{fetch_operand()};
 
     push(PC);
     PC = utils::to_word(msb, lsb);
@@ -442,8 +463,8 @@ void SM83::call_cc(Conditionals conditional)
     }
     else
     {
-        (void) fetch_memory(PC++);
-        (void) fetch_memory(PC++);
+        (void) fetch_operand();
+        (void) fetch_operand();
     }
 }
 
@@ -473,8 +494,8 @@ void SM83::jp_cc(Conditionals conditional)
     }
     else
     {
-        (void) fetch_memory(PC++);
-        (void) fetch_memory(PC++);
+        (void) fetch_operand();
+        (void) fetch_operand();
     }
 }
 
@@ -486,7 +507,7 @@ void SM83::jr_cc(const Conditionals conditional)
     }
     else
     {
-        (void) fetch_memory(PC++);
+        (void) fetch_operand();
     }
 }
 
