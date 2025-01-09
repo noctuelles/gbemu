@@ -18,6 +18,11 @@ class Bus final : public Addressable
 
     static constexpr size_t RAM_SIZE = 1 << 16;
 
+    static constexpr uint16_t IE = 0xFFFF;
+    static constexpr uint16_t IF = 0xFF0F;
+    static constexpr uint16_t LY = 0xFF44;
+    static constexpr uint16_t SC = 0xFF02;
+
     void    write(uint16_t address, uint8_t value) override;
     uint8_t read(uint16_t address) override;
 

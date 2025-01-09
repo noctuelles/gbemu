@@ -237,18 +237,18 @@ Cartridge::Cartridge(const std::filesystem::path& path)
     input.read(reinterpret_cast<char*>(content.data()), content.size());
     input.close();
 
-    const auto old_licensee_byte = content[0x014B];
+    // const auto old_licensee_byte = content[0x014B];
     const auto title_byte_addr   = &content[0x0134];
-    const auto new_licensee_addr = &content[0x0144];
+    // const auto new_licensee_addr = &content[0x0144];
     const auto size_byte         = content[0x0148];
 
     title = std::string_view{reinterpret_cast<const char*>(title_byte_addr), 16};
 
-    if (old_licensee_byte == std::byte{0x33})
-    {
-        licensee = new_licensee_code.at(std::string_view{reinterpret_cast<const char*>(new_licensee_addr), 2});
-    }
-    licensee = old_licensee_code.at(old_licensee_byte);
+    // if (old_licensee_byte == std::byte{0x33})
+    // {
+    //     licensee = new_licensee_code.at(std::string_view{reinterpret_cast<const char*>(new_licensee_addr), 2});
+    // }
+    // licensee = old_licensee_code.at(old_licensee_byte);
 
     switch (const auto type_byte = static_cast<std::underlying_type_t<Type>>(content[0x0147]);
             static_cast<Type>(type_byte))

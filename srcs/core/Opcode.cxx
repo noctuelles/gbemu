@@ -8,7 +8,7 @@
 #include "Utils.hxx"
 
 /**
- * Executes the fetch, decode, and execute cycle for a SM83 instruction.
+ * Executes decode, and execute cycle for a SM83 instruction.
  *
  * This method performs the fetching of the instruction from memory, decoding
  * the instruction to determine its intended operation, and executing the
@@ -19,12 +19,11 @@
  *                     Pass `true` to activate instructions from the extended set (0xCB prefixed),
  *                     otherwise pass `false` to execute standard instructions.
  */
-void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
+void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
 {
-    ir = fetch_memory(PC++);
     if (!extended_set)
     {
-        switch (ir)
+        switch (IR)
         {
             case 0x00:
                 break;
@@ -399,7 +398,7 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 write_memory(HL(), L);
                 break;
             case 0x76:
-                if (!ime && (IE & IF) != 0)
+                if (!IME && (IE & IF) != 0)
                 {
                     state = State::HALTED_BUG;
                 }
@@ -660,7 +659,8 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 jp_cc(Conditionals::Z);
                 break;
             case 0xCB:
-                fetch_decode_execute(true);
+                fetch_instruction();
+                decode_execute_instruction(true);
                 break;
             case 0xCC:
                 call_cc(Conditionals::Z);
@@ -699,7 +699,7 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 ret_cc(Conditionals::C);
                 break;
             case 0xD9:
-                this->ime = true;
+                this->IME = true;
                 ret();
                 break;
             case 0xDA:
@@ -762,7 +762,7 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 A = fetch_memory(0xFF00 | C);
                 break;
             case 0xF3:
-                this->ime         = false;
+                this->IME         = false;
                 this->request_ime = 0;
                 break;
             case 0xF5:
@@ -798,12 +798,12 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 rst(ResetVector::h38);
                 break;
             [[unlikely]] default:
-                throw std::runtime_error(std::format("Illegal opcode: {:02X}", ir));
+                throw std::runtime_error(std::format("Illegal opcode: {:02X}", IR));
         };
     }
     else
     {
-        switch (ir)
+        switch (IR)
         {
             case 0x00:
                 B = rotate_left(B, true);
@@ -1578,7 +1578,7 @@ void SM83::fetch_decode_execute(const bool extended_set)  // NOLINT
                 A = set(A, 7);
                 break;
             [[unlikely]] default:
-                throw std::runtime_error(std::format("Opcode not implemented {:02X}", ir));
+                throw std::runtime_error(std::format("Opcode not implemented {:02X}", IR));
         };
     }
 }

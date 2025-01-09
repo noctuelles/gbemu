@@ -39,8 +39,9 @@ uint8_t Bus::read(const uint16_t address)
         case 0xFF06:
         case 0xFF07:
             return timer->read(address);
+        case 0xFF02:
         case 0xFF44:
-            return 0x90;
+            return 0xFF;
         case 0xFF0F:
         case 0xFFFF:
             return cpu->read(address);

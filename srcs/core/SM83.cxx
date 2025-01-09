@@ -33,14 +33,14 @@ void SM83::write(const uint16_t address, const uint8_t value)
 {
     switch (address)
     {
-        case 0xFFFF:
-            IE = value;
+        case Bus::IE:
+            IE = value & 0x1F;
             break;
-        case 0xFF0F:
-            IF = value;
+        case Bus::IF:
+            IF = value & 0x1F;
             break;
         default:
-            throw std::runtime_error("Invalid SM83 Write");
+            throw std::logic_error("Invalid SM83 Write");
     }
 }
 
@@ -48,12 +48,12 @@ uint8_t SM83::read(const uint16_t address)
 {
     switch (address)
     {
-        case 0xFFFF:
+        case Bus::IE:
             return IE;
-        case 0xFF0F:
+        case Bus::IF:
             return IF;
         default:
-            throw std::runtime_error("Invalid SM83 Write");
+            throw std::logic_error("Invalid SM83 Write");
     }
 }
 
@@ -62,17 +62,21 @@ void SM83::tick()
     switch (state)
     {
         case State::NORMAL:
+        {
             if (request_ime != 0)
             {
                 request_ime -= 1;
                 if (request_ime == 0)
                 {
-                    ime = true;
+                    IME = true;
                 }
             }
-            // print_state();
-            fetch_decode_execute();
+            print_state();
+
+            fetch_instruction();
+            decode_execute_instruction();
             break;
+        }
         case State::STOPPED:
         case State::HALTED:
             machine_cycle();
@@ -82,7 +86,10 @@ void SM83::tick()
             }
             break;
         case State::HALTED_BUG:
-            throw std::runtime_error("SM83 Halt bug. Not implemented yet.");
+            fetch_instruction();
+            PC--;
+            decode_execute_instruction();
+            break;
     }
 
     interrupts();
@@ -94,6 +101,11 @@ void SM83::print_state()
         std::cout,
         "A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} PCMEM:{:02X},{:02X},{:02X},{:02X}\n",
         A, F, B, C, D, E, H, L, SP, PC, bus.read(PC), bus.read(PC + 1), bus.read(PC + 2), bus.read(PC + 3));
+}
+
+void SM83::fetch_instruction()
+{
+    IR = fetch_memory(PC++);
 }
 
 uint8_t SM83::fetch_memory(const uint16_t address) const
@@ -496,9 +508,7 @@ void SM83::push(const uint16_t value)
     const auto lsb{utils::word_lsb(value)};
     const auto msb{utils::word_msb(value)};
 
-    machine_cycle();
-    write_memory(--SP, msb);
-    write_memory(--SP, lsb);
+    push(msb, lsb);
 }
 
 void SM83::pop(uint8_t& msb, uint8_t& lsb)
@@ -549,7 +559,7 @@ uint8_t SM83::get_interrupt_request() const
 
 void SM83::interrupts()
 {
-    if (ime)
+    if (IME)
     {
         const auto bit_zero_count{std::countr_zero(get_interrupt_request())};
         uint16_t   interrupt_vector{};
@@ -559,7 +569,7 @@ void SM83::interrupts()
             return;
         }
 
-        ime              = false;
+        IME              = false;
         interrupt_vector = 0x40 + bit_zero_count * 8;
         IF &= ~(1 << bit_zero_count);
 

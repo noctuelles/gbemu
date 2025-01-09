@@ -22,49 +22,50 @@ void Timer::write(uint16_t address, const uint8_t value)
              * Resetting the entire system counter (by writing to DIV) can reset the bit currently selected by the
              * multiplexer, thus sending a “Timer tick” and/or “DIV-APU event” pulse early.
              */
-
             (void) value;
             set_div(0);
             break;
         case 0xFF05:
-            /**
-             * Writing to TIMA during cycle A acts as if the overflow didn’t happen! TMA will not be copied to TIMA (the
-             * value written will therefore stay), and bit 2 of IF will not be set. Writing to DIV, TAC, or other
-             * registers won’t prevent the IF flag from being set or TIMA from being reloaded.
-             */
-
-            if (schedule_interrupt_for_next_cycle)
+            switch (state)
             {
-                schedule_interrupt_for_next_cycle = false;
-            }
-            if (!setting_tima_to_tma)
-            {
-                TIMA = value;
-            }
-            else
-            {
-                (void) value;
+                [[likely]] case State::NORMAL:
+                    TIMA = value;
+                    break;
+                /* Writing to TIMA during cycle A acts as if the overflow did not happen! TMA will not be copied to TIMA
+                 * (the value written will therefore stay), and bit 2 of IF will not be set. */
+                [[unlikely]] case State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD:
+                    TIMA  = value;
+                    state = State::NORMAL;
+                    break;
+                /* Writing to TIMA during the cycle when TIMA have been set to TMA will be ignored; TIMA will be equal
+                 * to TMA at the end of the cycle anyway. */
+                [[unlikely]] case State::RELOADING_TIMA_TO_TMA:
+                    break;
             }
             break;
         case 0xFF06:
-            /**
-             * Writing to TMA during cycle B will have the same value copied to TIMA as well, on the same cycle.
-             */
-            if (setting_tima_to_tma)
+            switch (state)
             {
-                TIMA = value;
+                [[likely]] case State::NORMAL:
+                [[likely]] case State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD:
+                    TMA = value;
+                    break;
+                /* Writing to TMA during cycle B will have the same value copied to TIMA as well, on the same cycle. */
+                [[unlikely]] case State::RELOADING_TIMA_TO_TMA:
+                    TMA  = value;
+                    TIMA = TMA;
+                    break;
             }
-            TMA = value;
             break;
         case 0xFF07:
         {
             /**
              * TODO
              *
-             * Changing which bit of the system counter is selected (by changing the “Clock select” bits of TAC) from a
-             * bit currently set to another that is currently unset, will send a “Timer tick” pulse. (For example: if
-             * the system counter is equal to $3FF0 and TAC to $FC, writing $05 or $06 to TAC will instantly send a
-             * “Timer tick”, but $04 or $07 won’t.)
+             * Changing which bit of the system counter is selected (by changing the “Clock select” bits of TAC)
+             * from a bit currently set to another that is currently unset, will send a “Timer tick” pulse. (For
+             * example: if the system counter is equal to $3FF0 and TAC to $FC, writing $05 or $06 to TAC will
+             * instantly send a “Timer tick”, but $04 or $07 won’t.)
              */
 
             TAC = value;
@@ -94,13 +95,17 @@ uint8_t Timer::read(const uint16_t address)
 
 void Timer::tick()
 {
-    setting_tima_to_tma = false;
-    if (schedule_interrupt_for_next_cycle)
+    switch (state)
     {
-        schedule_interrupt_for_next_cycle = false;
-        setting_tima_to_tma               = true;
-        TIMA                              = TMA;
-        bus.write(0xFF0F, bus.read(0xFF0F) | 1 << 2);
+        case State::NORMAL:
+            break;
+        case State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD:
+            state = State::RELOADING_TIMA_TO_TMA;
+            TIMA  = TMA;
+            bus.write(0xFF0F, bus.read(0xFF0F) | 1 << 2);
+            break;
+        case State::RELOADING_TIMA_TO_TMA:
+            state = State::NORMAL;
     }
 
     set_div(DIV + 1);
@@ -128,11 +133,15 @@ void Timer::set_div(const uint8_t value)
             bit_set = (DIV >> 5 & 1) != 0; /* Every 64 M-cycles */
             break;
     };
+
     bit_set = bit_set && (TAC & 0b100) != 0;
     detect_falling_edge(bit_set);
     last_bit = bit_set;
 }
 
+/**
+ * @note Do not interpret a "falling edge" with a clock falling edge ! This is different.
+ */
 void Timer::detect_falling_edge(const bool bit)
 {
     if (!bit & last_bit)
@@ -140,7 +149,12 @@ void Timer::detect_falling_edge(const bool bit)
         TIMA += 1;
         if (TIMA == 0)
         {
-            schedule_interrupt_for_next_cycle = true;
+            /**
+             * When TIMA overflows, the value from TMA is copied, and the timer flag is set in IF, but one M-cycle
+             * later. This means that TIMA is equal to $00 for the M-cycle after it overflows. This only happens
+             * when TIMA overflows from incrementing, it cannot be made to happen by manually writing to TIMA.
+             */
+            state = State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD;
         }
     }
 }

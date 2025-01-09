@@ -73,9 +73,10 @@ add_executable(gbemu_test
         srcs/Bus.cxx
         srcs/Cartridge.cxx
         srcs/Utils.cxx
+        srcs/tests/Cartridge.cxx
         srcs/tests/cpu/BlarggInstructions.cxx
         srcs/tests/cpu/Disassembler.cxx
-        srcs/tests/Cartridge.cxx)
+        srcs/tests/cpu/MooneyeAcceptance.cxx)
 
 target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/srcs/tests/rom")
 

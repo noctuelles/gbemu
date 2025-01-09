@@ -55,6 +55,12 @@ class SM83 : public Component
     {
         NORMAL,
         HALTED,
+        /**
+         * @brief The halt bug is a hardware bug in the SM83 CPU that happens when halt is executed with IME==0 and IE &
+         * IF
+         * != 0. The bug is usually explained as duplicating the next
+         * byte in the instruction pipeline.
+         */
         HALTED_BUG,
         STOPPED,
     };
@@ -102,27 +108,99 @@ class SM83 : public Component
     void print_state();
 
   private:
-    void    fetch_decode_execute(bool extended_set = false);
-    void    fetch_operand();
-    uint8_t fetch_memory(uint16_t address) const;
-    void    write_memory(uint16_t address, uint8_t value) const;
+    /**
+     * @brief Load an instruction into the IR register.
+     */
+    void fetch_instruction();
 
+    /**
+     * @brief Execute the instruction stored in the IR register.
+     */
+    void decode_execute_instruction(bool extended_set = false);
+
+    [[nodiscard]] uint8_t fetch_memory(uint16_t address) const;
+    void                  write_memory(uint16_t address, uint8_t value) const;
+
+    /**
+     * @brief AF register getter.
+     */
     [[nodiscard]] uint16_t AF() const;
+    /**
+     * @brief BC register getter.
+     */
     [[nodiscard]] uint16_t BC() const;
+    /**
+     * @brief DE register getter.
+     */
     [[nodiscard]] uint16_t DE() const;
+    /**
+     * @brief HL register getter.
+     */
     [[nodiscard]] uint16_t HL() const;
 
+    /**
+     * @brief Sets the contents of the A and F registers using the provided 16-bit value.
+     * @param value The 16-bit value to be split and assigned to the A and F registers.
+     */
     void AF(uint16_t value);
+    /**
+     * @brief Sets the BC register pair by splitting a 16-bit value into two 8-bit values.
+     * @param value The 16-bit value to be split and stored in the B and C registers.
+     */
     void BC(uint16_t value);
+    /**
+     * @brief Sets the DE register using the specified 16-bit value.
+     * @param value The 16-bit value to be split and stored into the D and E registers.
+     */
     void DE(uint16_t value);
+    /**
+     * @brief Sets the HL register pair using the provided 16-bit value.
+     * @param value A 16-bit value split into two 8-bit values for the H and L registers.
+     */
     void HL(uint16_t value);
 
-    /* ALU */
-    [[nodiscard]] uint8_t  add(uint8_t lhs, uint8_t rhs, bool carry = false);
+    /**
+     * @brief Performs an 8-bit addition with optional carry flag support.
+     *
+     * @param lhs The left-hand operand for the addition.
+     * @param rhs The right-hand operand for the addition.
+     * @param carry Specifies whether to include the carry flag in the operation.
+     * @return The 8-bit result of the addition.
+     *
+     * This function evaluates the sum of two 8-bit operands and optionally includes
+     * a carry flag. It also updates relevant processor flags, such as Zero, Subtract,
+     * Half-Carry, and Carry flags, based on the result of the operation.
+     */
+    [[nodiscard]] uint8_t add(uint8_t lhs, uint8_t rhs, bool carry = false);
+
+    /**
+     * @brief Perform 16-bit addition and update relevant CPU flags.
+     *
+     * @param lhs The left-hand operand for the addition.
+     * @param rhs The right-hand operand for the addition.
+     * @return The 16-bit result of the addition.
+     */
     [[nodiscard]] uint16_t add(uint16_t lhs, uint16_t rhs);
+
+    /**
+     * @brief Performs addition on a 16-bit and an 8-bit value, incorporating CPU flags for adjustments.
+     *
+     * @param lhs The 16-bit unsigned integer operand (left-hand side).
+     * @param rhs The 8-bit integer operand (right-hand side).
+     * @return The resulting 16-bit unsigned integer after performing the addition operation.
+     */
     [[nodiscard]] uint16_t add(uint16_t lhs, uint8_t rhs);
 
-    void                  daa();
+    /**
+     * @brief Adjusts the accumulator register A for binary-coded decimal (BCD) arithmetic.
+     *
+     * This method modifies the accumulator (A) and flags based on the current values,
+     * ensuring the result complies with BCD representation. It applies adjustments
+     * for subtraction, half-carry, and carry conditions and updates the Zero, Carry,
+     * and HalfCarry flags accordingly.
+     */
+    void daa();
+
     [[nodiscard]] uint8_t sub(uint8_t lhs, uint8_t rhs, bool borrow = false);
     [[nodiscard]] uint8_t bitwise_and(uint8_t lhs, uint8_t rhs);
     [[nodiscard]] uint8_t bitwise_or(uint8_t lhs, uint8_t rhs);
@@ -174,9 +252,6 @@ class SM83 : public Component
     [[nodiscard]] uint8_t get_interrupt_request() const;
     void                  interrupts();
 
-    /**
-     * @brief Registers
-     */
     uint8_t  A{};
     uint8_t  F{};
     uint8_t  B{};
@@ -187,9 +262,23 @@ class SM83 : public Component
     uint8_t  L{};
     uint16_t SP{};
     uint16_t PC{};
-    uint8_t  IE{};
-    uint8_t  IF{};
 
+    /**
+     * @brief Interrupt Enable.
+     */
+    uint8_t IE{};
+    /**
+     * @brief Interrupt Flags.
+     */
+    uint8_t IF{};
+    /**
+     * @brief Instruction Register.
+     */
+    uint8_t IR{};
+
+    /**
+     * @brief Callback function when a machine cycle is executed by the CPU.
+     */
     std::function<void()> machine_cycle;
 
     /**
@@ -200,16 +289,17 @@ class SM83 : public Component
     /**
      * @brief Represents the current operation code being executed.
      */
-    uint8_t ir{};
 
     /**
-     * @brief Interupt Master Enable flag.
+     * @brief Interrupt Master Enable flag.
      */
-    bool ime{};
+    bool IME{};
 
     uint8_t request_ime{};
 
     Addressable& bus;
+
+    friend class MooneyeAcceptance;
 };
 
 #endif
