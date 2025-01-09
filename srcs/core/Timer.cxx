@@ -23,7 +23,7 @@ void Timer::write(uint16_t address, const uint8_t value)
              * multiplexer, thus sending a “Timer tick” and/or “DIV-APU event” pulse early.
              */
             (void) value;
-            set_div(0);
+            set_system_counter(0);
             break;
         case 0xFF05:
             switch (state)
@@ -60,15 +60,13 @@ void Timer::write(uint16_t address, const uint8_t value)
         case 0xFF07:
         {
             /**
-             * TODO
-             *
              * Changing which bit of the system counter is selected (by changing the “Clock select” bits of TAC)
              * from a bit currently set to another that is currently unset, will send a “Timer tick” pulse. (For
              * example: if the system counter is equal to $3FF0 and TAC to $FC, writing $05 or $06 to TAC will
              * instantly send a “Timer tick”, but $04 or $07 won’t.)
              */
-
             TAC = value;
+            set_system_counter(system_counter);
             break;
         }
         default:
@@ -81,7 +79,7 @@ uint8_t Timer::read(const uint16_t address)
     switch (address)
     {
         case 0xFF04:
-            return DIV >> 6;
+            return system_counter >> 6;
         case 0xFF05:
             return TIMA;
         case 0xFF06:
@@ -108,29 +106,29 @@ void Timer::tick()
             state = State::NORMAL;
     }
 
-    set_div(DIV + 1);
+    set_system_counter(system_counter + 1);
 }
 
-void Timer::set_div(const uint8_t value)
+void Timer::set_system_counter(const uint16_t value)
 {
     auto bit_set{false};
 
-    DIV = value;
+    system_counter = value;
 
     // ReSharper disable once CppDefaultCaseNotHandledInSwitchStatement
     switch (static_cast<uint8_t>(TAC & 0b11))
     {
         case 0b00:
-            bit_set = (DIV >> 7 & 1) != 0; /* Every 256 M-cycles. */
+            bit_set = (system_counter >> 7 & 1) != 0; /* Every 256 M-cycles. */
             break;
         case 0b01:
-            bit_set = (DIV >> 1 & 1) != 0; /* Every 4 M-cycles */
+            bit_set = (system_counter >> 1 & 1) != 0; /* Every 4 M-cycles */
             break;
         case 0b10:
-            bit_set = (DIV >> 3 & 1) != 0; /* Every 16 M-cycles */
+            bit_set = (system_counter >> 3 & 1) != 0; /* Every 16 M-cycles */
             break;
         case 0b11:
-            bit_set = (DIV >> 5 & 1) != 0; /* Every 64 M-cycles */
+            bit_set = (system_counter >> 5 & 1) != 0; /* Every 64 M-cycles */
             break;
     };
 

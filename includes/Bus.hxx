@@ -20,6 +20,7 @@ class Bus final : public Addressable
 
     static constexpr uint16_t IE = 0xFFFF;
     static constexpr uint16_t IF = 0xFF0F;
+
     static constexpr uint16_t LY = 0xFF44;
     static constexpr uint16_t SC = 0xFF02;
 
