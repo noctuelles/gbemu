@@ -65,6 +65,26 @@ TEST_F(MooneyeAcceptance, TimingRet)
     ASSERT_NO_THROW(execute_rom("ret_timing.gb"));
 }
 
+TEST_F(MooneyeAcceptance, EiTiming)
+{
+    ASSERT_NO_THROW(execute_rom("ei_timing.gb"));
+}
+
+TEST_F(MooneyeAcceptance, DiTiming)
+{
+    ASSERT_NO_THROW(execute_rom("di_timing.gb"));
+}
+
+TEST_F(MooneyeAcceptance, IntrerrupTiming)
+{
+    ASSERT_NO_THROW(execute_rom("intr_timing.gb"));
+}
+
+TEST_F(MooneyeAcceptance, IF_IE_Registers)
+{
+    ASSERT_NO_THROW(execute_rom("if_ie_registers.gb"));
+}
+
 TEST_F(MooneyeAcceptance, TimerDivWrite)
 {
     ASSERT_NO_THROW(execute_rom("timer/div_write.gb"));

@@ -789,7 +789,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
             }
             break;
             case 0xFB:
-                this->request_ime = 2;
+                this->request_ime = 1;
                 break;
             case 0xFE:
                 (void) sub(A, fetch_memory(PC++));
