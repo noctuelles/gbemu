@@ -36,10 +36,10 @@ void SM83::write(const uint16_t address, const uint8_t value)
     switch (address)
     {
         case Bus::IE:
-            IE = value & 0x1F;
+            IE = value;
             break;
         case Bus::IF:
-            IF = value & 0x1F;
+            IF = 0xE0 | value;
             break;
         default:
             throw std::logic_error("Invalid SM83 Write");
@@ -66,6 +66,9 @@ void SM83::tick()
         case State::NORMAL:
         {
             auto saved_PC{PC};
+
+            print_state();
+
             if (request_ime != 0)
             {
                 request_ime -= 1;
@@ -79,13 +82,12 @@ void SM83::tick()
             decode_execute_instruction();
 
             SM83::Disassembler disassembler{instruction_buffer};
-            const auto         instruction{disassembler.disassemble(0)};
+            const auto         instruction{disassembler.disassemble(0, std::nullopt, saved_PC)};
 
             for (const auto& line : instruction)
             {
-                std::print(std::cout, "{:04X}: {:s} - ", saved_PC, line.second);
+                std::println(std::cout, "{:04X}: {:s}", saved_PC, line.second);
             }
-            print_state();
 
             instruction_buffer.clear();
             break;
@@ -110,10 +112,10 @@ void SM83::tick()
 
 void SM83::print_state()
 {
-    std::print(
-        std::cout,
-        "A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} IE:{:04X} IF:{:04X}\n",
-        A, F, B, C, D, E, H, L, SP, PC, IE, IF);
+    std::string formatted_state{std::format(
+        "A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} IE:{:02X} IF:{:02X} IME:{:s}",
+        A, F, B, C, D, E, H, L, SP, PC, IE, IF, IME)};
+    std::print(std::cout, "{:<85s} - ", formatted_state);
 }
 
 void SM83::fetch_instruction()
@@ -580,26 +582,28 @@ uint8_t SM83::get_interrupt_request() const
 
 void SM83::interrupts()
 {
-    if (IME)
+    if (!IME)
     {
-        const auto bit_zero_count{std::countr_zero(get_interrupt_request())};
-        uint16_t   interrupt_vector{};
-
-        if (bit_zero_count == 8)
-        {
-            return;
-        }
-
-        IME              = false;
-        interrupt_vector = 0x40 + bit_zero_count * 8;
-        IF &= ~(1 << bit_zero_count);
-
-        machine_cycle();
-        machine_cycle();
-        write_memory(--SP, utils::word_msb(PC));
-        write_memory(--SP, utils::word_lsb(PC));
-        machine_cycle();
-
-        PC = interrupt_vector;
+        return;
     }
+
+    const auto bit_zero_count{std::countr_zero(get_interrupt_request())};
+    uint16_t   interrupt_vector{};
+
+    if (bit_zero_count == 8)
+    {
+        return;
+    }
+
+    IME              = false;
+    interrupt_vector = 0x40 + bit_zero_count * 8;
+    IF &= ~(1 << bit_zero_count);
+
+    machine_cycle();
+    machine_cycle();
+    write_memory(--SP, utils::word_msb(PC));
+    write_memory(--SP, utils::word_lsb(PC));
+    machine_cycle();
+
+    PC = interrupt_vector;
 }

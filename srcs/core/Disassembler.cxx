@@ -527,8 +527,8 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::prefixed_instruc
 
 SM83::Disassembler::Disassembler(const std::span<uint8_t> memory) : memory(memory) {}
 
-auto SM83::Disassembler::disassemble(const uint16_t start, const std::optional<uint16_t> stop) const
-    -> DisassembledInstructions
+auto SM83::Disassembler::disassemble(const uint16_t start, const std::optional<uint16_t> stop,
+                                     const std::optional<uint16_t> base_addr) const -> DisassembledInstructions
 {
     DisassembledInstructions disassembled_instructions{};
     uint16_t                 current_addr{start};
@@ -563,7 +563,16 @@ auto SM83::Disassembler::disassemble(const uint16_t start, const std::optional<u
                 case AddressingMode::RELATIVE:
                 {
                     const auto value{static_cast<int8_t>(read_memory())};
-                    const auto target{current_addr + value};
+                    uint16_t   target{static_cast<uint16_t>(value)};
+
+                    if (base_addr.has_value())
+                    {
+                        target = *base_addr + target;
+                    }
+                    else
+                    {
+                        target = current_addr + target;
+                    }
 
                     name = std::vformat(instruction.name, std::make_format_args(target));
                     break;

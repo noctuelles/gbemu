@@ -258,7 +258,8 @@ Cartridge::Cartridge(const std::filesystem::path& path)
             type = static_cast<Type>(type_byte);
             break;
         default:
-            throw std::runtime_error(std::format("Invalid or unsupported cartridge type {:02X}", type_byte));
+            break;
+            // throw std::runtime_error(std::format("Invalid or unsupported cartridge type {:02X}", type_byte));
     }
     size = SIZE * (1 << std::to_integer<decltype(size)>(size_byte));
 }

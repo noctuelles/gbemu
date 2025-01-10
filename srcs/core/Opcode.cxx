@@ -398,13 +398,19 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 write_memory(HL(), L);
                 break;
             case 0x76:
-                if (!IME && (IE & IF) != 0)
+                if (IME)
                 {
-                    state = State::HALTED_BUG;
+                    if ((IE & IF) == 0)
+                    {
+                        state = State::HALTED;
+                    }
                 }
-                else
+                if (!IME)
                 {
-                    state = State::HALTED;
+                    if ((IE & IF) != 0)
+                    {
+                        state = State::HALTED_BUG;
+                    }
                 }
                 break;
             case 0x77:

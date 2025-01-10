@@ -73,8 +73,8 @@ class SM83 : public Component
 
         explicit Disassembler(std::span<uint8_t> memory);
 
-        [[nodiscard]] auto disassemble(uint16_t start, std::optional<uint16_t> stop = std::nullopt) const
-            -> DisassembledInstructions;
+        [[nodiscard]] auto disassemble(uint16_t start, std::optional<uint16_t> stop = {},
+                                       std::optional<uint16_t> base_addr = {}) const -> DisassembledInstructions;
 
       private:
         const std::span<uint8_t> memory;
@@ -267,11 +267,11 @@ class SM83 : public Component
     /**
      * @brief Interrupt Enable.
      */
-    uint8_t IE{};
+    uint8_t IE{0x00};
     /**
      * @brief Interrupt Flags.
      */
-    uint8_t IF{};
+    uint8_t IF{0xE0};
     /**
      * @brief Instruction Register.
      */
