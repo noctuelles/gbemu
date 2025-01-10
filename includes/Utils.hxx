@@ -7,6 +7,8 @@
 
 #include <cstdint>
 
+#include "Common.hxx"
+
 namespace utils
 {
     constexpr auto word_lsb(const uint16_t x)
@@ -28,6 +30,11 @@ namespace utils
     {
         msb = static_cast<uint8_t>(word >> 8);
         lsb = static_cast<uint8_t>(word & 0xFF);
+    }
+
+    constexpr bool address_in(const uint16_t addr, const MemoryMap::AddressRange& range)
+    {
+        return addr >= range.first && addr <= range.second;
     }
 };  // namespace utils
 

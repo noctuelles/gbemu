@@ -51,7 +51,7 @@ include_directories(${imgui_SOURCE_DIR})
 include_directories(${imgui_SOURCE_DIR}/backends)
 include_directories(${imgui_club_SOURCE_DIR})
 
-add_compile_options(-Wall -Werror -Wextra -g3)
+add_compile_options(-Wall -Werror -Wextra -Wpedantic -g3)
 
 add_executable(gbemu
         srcs/core/SM83.cxx
@@ -65,6 +65,7 @@ add_executable(gbemu
         srcs/Utils.cxx
         includes/Cartridge.hxx
         includes/tests/CPU.hxx
+        includes/Common.hxx
         includes/PPU.hxx
         includes/Timer.hxx)
 

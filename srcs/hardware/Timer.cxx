@@ -9,6 +9,8 @@
 #include <format>
 #include <stdexcept>
 
+#include "Common.hxx"
+
 Timer::Timer(Addressable& bus) : bus(bus) {}
 
 Timer::~Timer() = default;
@@ -17,7 +19,7 @@ void Timer::write(uint16_t address, const uint8_t value)
 {
     switch (address)
     {
-        case Bus::MemoryMap::DIV:
+        case MemoryMap::IORegisters::DIV:
             /**
              * Resetting the entire system counter (by writing to DIV) can reset the bit currently selected by the
              * multiplexer, thus sending a “Timer tick” and/or “DIV-APU event” pulse early.
@@ -25,39 +27,39 @@ void Timer::write(uint16_t address, const uint8_t value)
             (void) value;
             set_system_counter(0);
             break;
-        case Bus::MemoryMap::TIMA:
+        case MemoryMap::IORegisters::TIMA:
             switch (state)
             {
-                [[likely]] case State::NORMAL:
+                case State::NORMAL:
                     TIMA = value;
                     break;
                 /* Writing to TIMA during cycle A acts as if the overflow did not happen! TMA will not be copied to TIMA
                  * (the value written will therefore stay), and bit 2 of IF will not be set. */
-                [[unlikely]] case State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD:
+                case State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD:
                     TIMA  = value;
                     state = State::NORMAL;
                     break;
                 /* Writing to TIMA during the cycle when TIMA have been set to TMA will be ignored; TIMA will be equal
                  * to TMA at the end of the cycle anyway. */
-                [[unlikely]] case State::RELOADING_TIMA_TO_TMA:
+                case State::RELOADING_TIMA_TO_TMA:
                     break;
             }
             break;
-        case 0xFF06:
+        case MemoryMap::IORegisters::TMA:
             switch (state)
             {
-                [[likely]] case State::NORMAL:
-                [[likely]] case State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD:
+                case State::NORMAL:
+                case State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD:
                     TMA = value;
                     break;
                 /* Writing to TMA during cycle B will have the same value copied to TIMA as well, on the same cycle. */
-                [[unlikely]] case State::RELOADING_TIMA_TO_TMA:
+                case State::RELOADING_TIMA_TO_TMA:
                     TMA  = value;
                     TIMA = TMA;
                     break;
             }
             break;
-        case 0xFF07:
+        case MemoryMap::IORegisters::TAC:
         {
             /**
              * Changing which bit of the system counter is selected (by changing the “Clock select” bits of TAC)
@@ -107,13 +109,13 @@ uint8_t Timer::read(const uint16_t address)
 {
     switch (address)
     {
-        case 0xFF04:
+        case MemoryMap::IORegisters::DIV:
             return system_counter >> 6;
-        case 0xFF05:
+        case MemoryMap::IORegisters::TIMA:
             return TIMA;
-        case 0xFF06:
+        case MemoryMap::IORegisters::TMA:
             return TMA;
-        case 0xFF07:
+        case MemoryMap::IORegisters::TAC:
             return 0xF8 | TAC;
         default:
             throw std::logic_error(std::format("Invalid timer read at 0x{:04X}", address));
