@@ -267,11 +267,11 @@ class SM83 : public Component
     /**
      * @brief Interrupt Enable.
      */
-    uint8_t IE{0x00};
+    uint8_t IE{};
     /**
      * @brief Interrupt Flags.
      */
-    uint8_t IF{0xE0};
+    uint8_t IF{};
     /**
      * @brief Instruction Register.
      */

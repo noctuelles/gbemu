@@ -57,13 +57,15 @@ add_executable(gbemu
         srcs/core/SM83.cxx
         srcs/core/Opcode.cxx
         srcs/core/Disassembler.cxx
-        srcs/core/Timer.cxx
+        srcs/hardware/Timer.cxx
+        srcs/hardware/PPU.cxx
         srcs/main.cxx
         srcs/Bus.cxx
         srcs/Cartridge.cxx
+        srcs/Utils.cxx
         includes/Cartridge.hxx
         includes/tests/CPU.hxx
-        srcs/Utils.cxx
+        includes/PPU.hxx
         includes/Timer.hxx)
 
 target_link_libraries(
@@ -76,7 +78,8 @@ add_executable(gbemu_test
         srcs/core/SM83.cxx
         srcs/core/Disassembler.cxx
         srcs/core/Opcode.cxx
-        srcs/core/Timer.cxx
+        srcs/hardware/Timer.cxx
+        srcs/hardware/PPU.cxx
         srcs/Bus.cxx
         srcs/Cartridge.cxx
         srcs/Utils.cxx

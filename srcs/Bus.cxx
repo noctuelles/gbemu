@@ -15,14 +15,14 @@ void Bus::write(const uint16_t address, uint8_t value)
 {
     switch (address)
     {
-        case 0xFF04:
-        case 0xFF05:
-        case 0xFF06:
-        case 0xFF07:
+        case MemoryMap::DIV:
+        case MemoryMap::TIMA:
+        case MemoryMap::TMA:
+        case MemoryMap::TAC:
             timer->write(address, value);
             break;
-        case 0xFF0F:
-        case 0xFFFF:
+        case MemoryMap::IF:
+        case MemoryMap::IE:
             cpu->write(address, value);
             break;
         default:
@@ -34,16 +34,16 @@ uint8_t Bus::read(const uint16_t address)
 {
     switch (address)
     {
-        case 0xFF04:
-        case 0xFF05:
-        case 0xFF06:
-        case 0xFF07:
+        case MemoryMap::DIV:
+        case MemoryMap::TIMA:
+        case MemoryMap::TMA:
+        case MemoryMap::TAC:
             return timer->read(address);
         case 0xFF02:
         case 0xFF44:
             return 0xFF;
-        case 0xFF0F:
-        case 0xFFFF:
+        case MemoryMap::IF:
+        case MemoryMap::IE:
             return cpu->read(address);
         default:
             return std::to_underlying(ram[address]);

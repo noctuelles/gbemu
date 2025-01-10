@@ -35,10 +35,10 @@ void SM83::write(const uint16_t address, const uint8_t value)
 {
     switch (address)
     {
-        case Bus::IE:
+        case Bus::MemoryMap::IE:
             IE = value;
             break;
-        case Bus::IF:
+        case Bus::MemoryMap::IF:
             IF = 0xE0 | value;
             break;
         default:
@@ -50,10 +50,10 @@ uint8_t SM83::read(const uint16_t address)
 {
     switch (address)
     {
-        case Bus::IE:
+        case Bus::MemoryMap::IE:
             return IE;
-        case Bus::IF:
-            return IF;
+        case Bus::MemoryMap::IF:
+            return 0xE0 | IF;
         default:
             throw std::logic_error("Invalid SM83 Write");
     }

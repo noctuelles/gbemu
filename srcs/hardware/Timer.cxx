@@ -4,7 +4,7 @@
 
 #include "Timer.hxx"
 
-#include <bitset>
+#include <Bus.hxx>
 #include <chrono>
 #include <format>
 #include <stdexcept>
@@ -17,7 +17,7 @@ void Timer::write(uint16_t address, const uint8_t value)
 {
     switch (address)
     {
-        case 0xFF04:
+        case Bus::MemoryMap::DIV:
             /**
              * Resetting the entire system counter (by writing to DIV) can reset the bit currently selected by the
              * multiplexer, thus sending a “Timer tick” and/or “DIV-APU event” pulse early.
@@ -25,7 +25,7 @@ void Timer::write(uint16_t address, const uint8_t value)
             (void) value;
             set_system_counter(0);
             break;
-        case 0xFF05:
+        case Bus::MemoryMap::TIMA:
             switch (state)
             {
                 [[likely]] case State::NORMAL:
@@ -65,8 +65,37 @@ void Timer::write(uint16_t address, const uint8_t value)
              * example: if the system counter is equal to $3FF0 and TAC to $FC, writing $05 or $06 to TAC will
              * instantly send a “Timer tick”, but $04 or $07 won’t.)
              */
-            TAC = value;
-            set_system_counter(system_counter);
+
+            TAC = 0xF8 | value;
+
+            auto bit_set{false};
+
+            // ReSharper disable once CppDefaultCaseNotHandledInSwitchStatement
+            switch (static_cast<uint8_t>(TAC & 0b11))
+            {
+                case 0b00:
+                    bit_set = (system_counter >> 7 & 1) != 0; /* Every 256 M-cycles. */
+                    break;
+                case 0b01:
+                    bit_set = (system_counter >> 1 & 1) != 0; /* Every 4 M-cycles */
+                    break;
+                case 0b10:
+                    bit_set = (system_counter >> 3 & 1) != 0; /* Every 16 M-cycles */
+                    break;
+                case 0b11:
+                    bit_set = (system_counter >> 5 & 1) != 0; /* Every 64 M-cycles */
+                    break;
+            };
+
+            bit_set = bit_set && (TAC & 0b100) != 0;
+            if (last_bit == true && bit_set == false)
+            {
+                TIMA += 1;
+                if (TIMA == 0)
+                {
+                    state = State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD;
+                }
+            }
             break;
         }
         default:
@@ -85,7 +114,7 @@ uint8_t Timer::read(const uint16_t address)
         case 0xFF06:
             return TMA;
         case 0xFF07:
-            return TAC;
+            return 0xF8 | TAC;
         default:
             throw std::logic_error(std::format("Invalid timer read at 0x{:04X}", address));
     };
@@ -142,7 +171,7 @@ void Timer::set_system_counter(const uint16_t value)
  */
 void Timer::detect_falling_edge(const bool bit)
 {
-    if (!bit & last_bit)
+    if (last_bit == true && bit == false)
     {
         TIMA += 1;
         if (TIMA == 0)
