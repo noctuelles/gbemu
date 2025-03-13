@@ -1,4 +1,4 @@
-#include "SM83.hxx"
+#include "hardware/core/SM83.hxx"
 
 /**
  * @note https://gbdev.io/gb-opcodes/optables/
@@ -59,16 +59,17 @@ uint8_t SM83::read(const uint16_t address)
     }
 }
 
+Addressable::AddressableRange SM83::get_addressable_range() const
+{
+    return {MemoryMap::IE, MemoryMap::IORegisters::IF};
+}
+
 void SM83::tick()
 {
     switch (state)
     {
         case State::NORMAL:
         {
-            auto saved_PC{PC};
-
-            print_state();
-
             if (request_ime != 0)
             {
                 request_ime -= 1;
@@ -80,14 +81,6 @@ void SM83::tick()
 
             fetch_instruction();
             decode_execute_instruction();
-
-            SM83::Disassembler disassembler{instruction_buffer};
-            const auto         instruction{disassembler.disassemble(0, std::nullopt, saved_PC)};
-
-            for (const auto& line : instruction)
-            {
-                std::println(std::cout, "{:04X}: {:s}", saved_PC, line.second);
-            }
 
             instruction_buffer.clear();
             break;

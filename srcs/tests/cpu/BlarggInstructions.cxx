@@ -4,40 +4,71 @@
 
 #include <gtest/gtest.h>
 
-#include <Bus.hxx>
-#include <Cartridge.hxx>
-#include <SM83.hxx>
 #include <cstdint>
+#include <fstream>
 #include <initializer_list>
+#include <istream>
+
+#include "hardware/Bus.hxx"
+#include "hardware/Cartridge.hxx"
+#include "hardware/core/SM83.hxx"
+
+struct FakeRAM final : Addressable
+{
+    uint8_t read(const uint16_t address) override
+    {
+        return content[address];
+    }
+    void write(const uint16_t address, const uint8_t value) override
+    {
+        content[address] = value;
+    }
+
+    [[nodiscard]] AddressableRange get_addressable_range() const override
+    {
+        return {std::make_pair(0x0000, 0xFFFF)};
+    }
+
+    std::array<uint8_t, 0xFFFF> content{};
+};
 
 class BlarggInstructions : public testing::Test
 {
   protected:
-    std::unique_ptr<Bus> bus{};
+    std::unique_ptr<Bus>     bus{};
+    std::unique_ptr<SM83>    cpu{};
+    std::unique_ptr<FakeRAM> ram{};
 
     void SetUp() override
     {
-        this->bus = std::make_unique<Bus>();
+        bus = std::make_unique<Bus>();
+
+        cpu = std::make_unique<SM83>(*bus, [] {});
+        ram = std::make_unique<FakeRAM>();
+
+        bus->attach(*cpu);
+        bus->attach(*ram);
     }
 
     void TearDown() override
     {
-        this->bus.reset();
+        bus.reset();
+        cpu.reset();
+        ram.reset();
     }
 
     void execute_rom(const std::string& rom_name)
     {
-        Cartridge   cart{std::string{ROMS_PATH} + std::string{"/blargg/cpu_instrs/"} + rom_name};
+        std::ifstream input{std::string{ROMS_PATH} + std::string{"/blargg/cpu_instrs/"} + rom_name, std::ios::binary};
         std::string s{};
 
-        for (std::size_t i = 0; i < cart.get_size(); i++)
-        {
-            bus->write(i, cart.read(i));
-        }
+        input.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        input.read(reinterpret_cast<char*>(ram->content.data()), 0x8000);
+        input.close();
 
         while (true)
         {
-            bus->cpu->tick();
+            cpu->tick();
 
             if (bus->read(0xFF02) == 0x81)
             {

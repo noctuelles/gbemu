@@ -2,7 +2,7 @@
 // Created by plouvel on 1/7/25.
 //
 
-#include "Cartridge.hxx"
+#include "../../includes/hardware/Cartridge.hxx"
 
 #include "SM83.hxx"
 #include "gtest/gtest.h"

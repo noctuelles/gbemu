@@ -2,7 +2,7 @@
 // Created by plouvel on 12/18/24.
 //
 
-#include "Cartridge.hxx"
+#include "../../includes/hardware/Cartridge.hxx"
 
 #include <cstdint>
 #include <fstream>

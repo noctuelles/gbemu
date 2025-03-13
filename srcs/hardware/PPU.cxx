@@ -1,7 +1,7 @@
 //
 // Created by plouvel on 1/10/25.
 //
-#include "PPU.hxx"
+#include "../../includes/hardware/PPU.hxx"
 
 #include <Utils.hxx>
 #include <stdexcept>

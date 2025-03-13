@@ -2,14 +2,14 @@
 // Created by plouvel on 1/8/25.
 //
 
-#include "Timer.hxx"
+#include "hardware/Timer.hxx"
 
-#include <Bus.hxx>
 #include <chrono>
 #include <format>
 #include <stdexcept>
 
 #include "Common.hxx"
+#include "hardware/Bus.hxx"
 
 Timer::Timer(Addressable& bus) : bus(bus) {}
 
@@ -120,6 +120,11 @@ uint8_t Timer::read(const uint16_t address)
         default:
             throw std::logic_error(std::format("Invalid timer read at 0x{:04X}", address));
     };
+}
+Addressable::AddressableRange Timer::get_addressable_range() const
+{
+    return {MemoryMap::IORegisters::DIV, MemoryMap::IORegisters::TIMA, MemoryMap::IORegisters::TMA,
+            MemoryMap::IORegisters::TAC};
 }
 
 void Timer::tick()

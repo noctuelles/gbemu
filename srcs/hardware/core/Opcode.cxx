@@ -4,7 +4,7 @@
 
 #include <format>
 
-#include "SM83.hxx"
+#include "hardware/core/SM83.hxx"
 #include "Utils.hxx"
 
 /**

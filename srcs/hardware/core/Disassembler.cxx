@@ -5,7 +5,7 @@
 #include <Utils.hxx>
 #include <format>
 
-#include "SM83.hxx"
+#include "hardware/core/SM83.hxx"
 
 const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_lookup{{
     {"NOP"},                                                   // 0x00

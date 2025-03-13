@@ -5,7 +5,7 @@
 #include <Bus.hxx>
 #include <SM83.hxx>
 
-#include "Cartridge.hxx"
+#include "../../../includes/hardware/Cartridge.hxx"
 #include "gtest/gtest.h"
 
 class MooneyeAcceptance : public testing::Test

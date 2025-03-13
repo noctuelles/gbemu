@@ -14,6 +14,8 @@
 
 #include <imgui_impl_sdlrenderer2.h>
 
+#include <hardware/Bus.hxx>
+#include <memory>
 #include <vector>
 
 #include "imgui.h"
@@ -62,6 +64,18 @@ using SDLWindow =
 using SDLTexture =
     SDLObjWrapper<SDL_Texture*, SDL_CreateTexture, SDL_DestroyTexture, SDL_Renderer*, Uint32, int, int, int>;
 using SDLRenderer = SDLObjWrapper<SDL_Renderer*, SDL_CreateRenderer, SDL_DestroyRenderer, SDL_Window*, int, Uint32>;
+
+void destroyRenderer(SDL_Renderer* renderer)
+{
+    SDL_DestroyRenderer(renderer);
+}
+
+using SDLRendererPtr = std::unique_ptr<SDL_Renderer, decltype(&destroyRenderer)>;
+
+auto make_sdl_renderer(SDL_Window *window, const int opt, Uint32 flags)
+{
+    return SDLRendererPtr{SDL_CreateRenderer(window, opt, flags), &destroyRenderer};
+}
 
 class GbEmu
 {
@@ -149,9 +163,7 @@ class GbEmu
 int main(int argc, char* args[])
 {
     GbEmu emu{};
-
-    (void) argc;
-    (void) args;
+    Bus bus{};
 
     emu.loop();
 

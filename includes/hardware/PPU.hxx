@@ -7,7 +7,7 @@
 
 #include <array>
 
-#include "Addressable.hxx"
+#include "hardware/Addressable.hxx"
 
 class PPU final : public Component
 {

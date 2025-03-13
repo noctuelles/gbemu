@@ -9,9 +9,9 @@
 #include <string>
 #include <vector>
 
-#include "Bus.hxx"
+#include "hardware/Addressable.hxx"
 
-class SM83 : public Component
+class SM83 final : public Component
 {
   public:
     enum class Flags : uint8_t
@@ -103,6 +103,8 @@ class SM83 : public Component
 
     void                  write(uint16_t address, uint8_t value) override;
     [[nodiscard]] uint8_t read(uint16_t address) override;
+    [[nodiscard]] AddressableRange get_addressable_range() const override;
+
     void                  tick() override;
 
     void print_state();

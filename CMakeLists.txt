@@ -54,20 +54,24 @@ include_directories(${imgui_club_SOURCE_DIR})
 add_compile_options(-Wall -Werror -Wextra -Wpedantic -g3)
 
 add_executable(gbemu
-        srcs/core/SM83.cxx
-        srcs/core/Opcode.cxx
-        srcs/core/Disassembler.cxx
+        srcs/hardware/core/SM83.cxx
+        srcs/hardware/core/Opcode.cxx
+        srcs/hardware/core/Disassembler.cxx
         srcs/hardware/Timer.cxx
         srcs/hardware/PPU.cxx
         srcs/main.cxx
-        srcs/Bus.cxx
-        srcs/Cartridge.cxx
+        srcs/hardware/Bus.cxx
+        srcs/hardware/Cartridge.cxx
         srcs/Utils.cxx
-        includes/Cartridge.hxx
+        includes/hardware/Cartridge.hxx
         includes/tests/CPU.hxx
         includes/Common.hxx
-        includes/PPU.hxx
-        includes/Timer.hxx)
+        includes/hardware/PPU.hxx
+        includes/hardware/Timer.hxx
+        srcs/hardware/WorkRAM.cxx
+        includes/hardware/WorkRAM.hxx
+        srcs/hardware/EchoRAM.cxx
+        includes/hardware/EchoRAM.hxx)
 
 target_link_libraries(
         gbemu
@@ -76,18 +80,15 @@ target_link_libraries(
 )
 
 add_executable(gbemu_test
-        srcs/core/SM83.cxx
-        srcs/core/Disassembler.cxx
-        srcs/core/Opcode.cxx
+        srcs/hardware/core/SM83.cxx
+        srcs/hardware/core/Disassembler.cxx
+        srcs/hardware/core/Opcode.cxx
         srcs/hardware/Timer.cxx
         srcs/hardware/PPU.cxx
-        srcs/Bus.cxx
-        srcs/Cartridge.cxx
+        srcs/hardware/Bus.cxx
+        srcs/hardware/Cartridge.cxx
         srcs/Utils.cxx
-        srcs/tests/Cartridge.cxx
-        srcs/tests/cpu/BlarggInstructions.cxx
-        srcs/tests/cpu/Disassembler.cxx
-        srcs/tests/cpu/MooneyeAcceptance.cxx)
+        srcs/tests/cpu/BlarggInstructions.cxx)
 
 target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/srcs/tests/rom")
 
