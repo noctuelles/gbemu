@@ -3,6 +3,7 @@
 //
 
 #include "hardware/Bus.hxx"
+
 #include <utility>
 
 Addressable::AddressableRange Bus::get_addressable_range() const
@@ -16,23 +17,19 @@ void Bus::attach(Addressable& addressable)
     {
         if (const auto memoryLocation{std::get_if<uint16_t>(&range)}; memoryLocation)
         {
-            // if (memory_map[*memoryLocation] != nullptr)
-            // {
-            //     throw std::logic_error{"Address already in use."};
-            // }
-
-            memory_map[*memoryLocation] = &addressable;
+            if (memory_map[*memoryLocation] == nullptr)
+            {
+                memory_map[*memoryLocation] = &addressable;
+            }
         }
         else if (const auto memoryRange{std::get_if<AddressRange>(&range)}; memoryRange)
         {
             for (std::size_t address = memoryRange->first; address <= memoryRange->second; ++address)
             {
-                // if (memory_map[address] != nullptr)
-                // {
-                //     throw std::logic_error{"Address already in use."};
-                // }
-
-                memory_map[address] = &addressable;
+                if (memory_map[address] == nullptr)
+                {
+                    memory_map[address] = &addressable;
+                }
             }
         }
     }
@@ -42,7 +39,7 @@ void Bus::write(const uint16_t address, const uint8_t value)
 {
     if (memory_map[address] == nullptr)
     {
-        throw std::logic_error{std::format("Cannot perform bus write at 0x{:04X}.", address)};
+        throw std::logic_error{std::format("Cannot perform bus write at {:#04x}.", address)};
     }
 
     memory_map[address]->write(address, value);
@@ -52,7 +49,7 @@ uint8_t Bus::read(const uint16_t address)
 {
     if (memory_map[address] == nullptr)
     {
-        throw std::logic_error{std::format("Cannot perform bus read at 0x{:04X}.", address)};
+        throw std::logic_error{std::format("Cannot perform bus read at {:#04x}.", address)};
     }
     return memory_map[address]->read(address);
 }
