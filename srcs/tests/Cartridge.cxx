@@ -6,8 +6,23 @@
 
 #include <iostream>
 
+#include "faker-cxx/faker.h"
 #include "gtest/gtest.h"
 #include "hardware/core/SM83.hxx"
+
+TEST(Cartridge, InvalidFile)
+{
+    const std::filesystem::path path{faker::system::filePath()};
+
+    ASSERT_THROW(Cartridge{path}, std::filesystem::filesystem_error);
+}
+
+TEST(Cardtridge, InvalidFileSize)
+{
+    const std::filesystem::path path{std::format("{}/test/invalid_size.gb", ROMS_PATH)};
+
+    ASSERT_THROW(Cartridge{path}, std::runtime_error);
+}
 
 TEST(Cartridge, Test)
 {

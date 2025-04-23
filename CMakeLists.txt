@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 project(gbemu VERSION 1.0)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD 23)
+set(BUILD_TESTING OFF)
 
 include_directories(includes)
 include(FetchContent)
@@ -18,6 +19,11 @@ FetchContent_Declare(
         GIT_TAG 9c821dc21ccbd69b2bda421fdb35cb4ae2da8f5e
 )
 
+FetchContent_Declare(faker
+        GIT_REPOSITORY https://github.com/cieslarmichal/faker-cxx.git
+        GIT_TAG main
+)
+
 FetchContent_Declare(
         imgui
         GIT_REPOSITORY https://github.com/ocornut/imgui
@@ -31,7 +37,7 @@ FetchContent_Declare(
 )
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest sdl2 imgui imgui_club)
+FetchContent_MakeAvailable(googletest sdl2 imgui imgui_club faker)
 
 set(IMGUI_FILES
         ${imgui_SOURCE_DIR}/imgui.cpp
@@ -41,6 +47,7 @@ set(IMGUI_FILES
         ${imgui_SOURCE_DIR}/imgui_widgets.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer2.cpp
+        includes/hardware/Joypad.hxx
 )
 
 add_library(imgui STATIC ${IMGUI_FILES})
@@ -71,7 +78,8 @@ add_executable(gbemu
         srcs/hardware/WorkRAM.cxx
         includes/hardware/WorkRAM.hxx
         srcs/hardware/EchoRAM.cxx
-        includes/hardware/EchoRAM.hxx)
+        includes/hardware/EchoRAM.hxx
+        srcs/hardware/Joypad.cxx)
 
 target_link_libraries(
         gbemu
@@ -98,6 +106,7 @@ target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/srcs
 target_link_libraries(
         gbemu_test
         GTest::gtest_main
+        faker-cxx
 )
 
 include(GoogleTest)
