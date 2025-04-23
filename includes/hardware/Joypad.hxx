@@ -40,7 +40,7 @@ class Joypad final : public Addressable
 
     [[nodiscard]] uint8_t          read(uint16_t address) override;
     void                           write(uint16_t address, uint8_t value) override;
-    [[nodiscard]] AddressableRange get_addressable_range() const override;
+    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
 
     void press(Button button);
     void release(Button button);

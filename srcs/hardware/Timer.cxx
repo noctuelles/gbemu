@@ -121,7 +121,7 @@ uint8_t Timer::read(const uint16_t address)
             throw std::logic_error(std::format("Invalid timer read at 0x{:04X}", address));
     };
 }
-Addressable::AddressableRange Timer::get_addressable_range() const
+Addressable::AddressableRange Timer::get_addressable_range() const noexcept
 {
     return {MemoryMap::IORegisters::DIV, MemoryMap::IORegisters::TIMA, MemoryMap::IORegisters::TMA,
             MemoryMap::IORegisters::TAC};
@@ -174,7 +174,7 @@ void Timer::set_system_counter(const uint16_t value)
 }
 
 /**
- * @note Do not interpret a "falling edge" with a clock falling edge ! This is different.
+ * @note Do not interpret a "falling edge" with a clock falling edge! This is different.
  */
 void Timer::detect_falling_edge(const bool bit)
 {

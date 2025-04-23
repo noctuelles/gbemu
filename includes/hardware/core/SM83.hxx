@@ -11,6 +11,11 @@
 
 #include "hardware/Addressable.hxx"
 
+namespace Test
+{
+    class SM83;
+}
+
 class SM83 final : public Component
 {
   public:
@@ -101,11 +106,11 @@ class SM83 final : public Component
 
     SM83(Addressable& bus, const std::function<void()>& on_machine_cycle);
 
-    void                  write(uint16_t address, uint8_t value) override;
-    [[nodiscard]] uint8_t read(uint16_t address) override;
-    [[nodiscard]] AddressableRange get_addressable_range() const override;
+    void                           write(uint16_t address, uint8_t value) override;
+    [[nodiscard]] uint8_t          read(uint16_t address) override;
+    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
 
-    void                  tick() override;
+    void tick() override;
 
     void print_state();
 
@@ -305,6 +310,7 @@ class SM83 final : public Component
     Addressable& bus;
 
     friend class MooneyeAcceptance;
+    friend class Test::SM83;
 };
 
 #endif

@@ -2,7 +2,7 @@
 // Created by plouvel on 1/7/25.
 //
 
-#include <SM83.hxx>
+#include "hardware/core/SM83.hxx"
 
 #include "gtest/gtest.h"
 

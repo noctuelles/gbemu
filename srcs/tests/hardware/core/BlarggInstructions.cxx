@@ -11,26 +11,9 @@
 
 #include "hardware/Bus.hxx"
 #include "hardware/Cartridge.hxx"
+#include "hardware/Timer.hxx"
 #include "hardware/core/SM83.hxx"
-
-struct FakeRAM final : Addressable
-{
-    uint8_t read(const uint16_t address) override
-    {
-        return content[address];
-    }
-    void write(const uint16_t address, const uint8_t value) override
-    {
-        content[address] = value;
-    }
-
-    [[nodiscard]] AddressableRange get_addressable_range() const override
-    {
-        return {std::make_pair(0x0000, 0xFFFF)};
-    }
-
-    std::array<uint8_t, 0xFFFF> content{};
-};
+#include "tests/hardware/FakeRAM.hxx"
 
 class BlarggInstructions : public testing::Test
 {
@@ -38,15 +21,18 @@ class BlarggInstructions : public testing::Test
     std::unique_ptr<Bus>     bus{};
     std::unique_ptr<SM83>    cpu{};
     std::unique_ptr<FakeRAM> ram{};
+    std::unique_ptr<Timer>   timer{};
 
     void SetUp() override
     {
         bus = std::make_unique<Bus>();
 
-        cpu = std::make_unique<SM83>(*bus, [] {});
-        ram = std::make_unique<FakeRAM>();
+        timer = std::make_unique<Timer>(*bus);
+        cpu   = std::make_unique<SM83>(*bus, [this] { timer->tick(); });
+        ram   = std::make_unique<FakeRAM>();
 
         bus->attach(*cpu);
+        bus->attach(*timer);
         bus->attach(*ram);
     }
 
@@ -60,7 +46,7 @@ class BlarggInstructions : public testing::Test
     void execute_rom(const std::string& rom_name)
     {
         std::ifstream input{std::string{ROMS_PATH} + std::string{"/blargg/cpu_instrs/"} + rom_name, std::ios::binary};
-        std::string s{};
+        std::string   s{};
 
         input.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         input.read(reinterpret_cast<char*>(ram->content.data()), 0x8000);

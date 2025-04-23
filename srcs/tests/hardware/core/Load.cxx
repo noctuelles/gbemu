@@ -4,8 +4,8 @@
 
 #include <format>
 
+#include "../../../../includes/tests/hardware/core/SM83.hxx"
 #include "Utils.hxx"
-#include "tests/CPU.hxx"
 
 struct LD_R8_R8_Params : TestInstructionParam
 {
@@ -13,7 +13,7 @@ struct LD_R8_R8_Params : TestInstructionParam
     SM83::Register8 src;
 };
 
-class LD_R8_R8 : public CPUTesting, public ::testing::WithParamInterface<LD_R8_R8_Params>
+class LD_R8_R8 : public SM83Tester, public ::testing::WithParamInterface<LD_R8_R8_Params>
 {
 };
 
@@ -96,7 +96,7 @@ struct LD_MEM_HL_R8_Params : TestInstructionParam
     SM83::Register8 src;
 };
 
-class LD_MEM_HL_R8 : public CPUTesting, public ::testing::WithParamInterface<LD_MEM_HL_R8_Params>
+class LD_MEM_HL_R8 : public SM83Tester, public ::testing::WithParamInterface<LD_MEM_HL_R8_Params>
 {
 };
 
@@ -128,7 +128,7 @@ struct LD_R8_MEM_HL_Params : TestInstructionParam
     SM83::Register8 dest;
 };
 
-class LD_R8_MEM_HL : public CPUTesting, public ::testing::WithParamInterface<LD_R8_MEM_HL_Params>
+class LD_R8_MEM_HL : public SM83Tester, public ::testing::WithParamInterface<LD_R8_MEM_HL_Params>
 {
 };
 
@@ -162,7 +162,7 @@ struct LD_R8_IMM8_Params : TestInstructionParam
     SM83::Register8 dest;
 };
 
-class LD_R8_IMM8 : public CPUTesting, public ::testing::WithParamInterface<LD_R8_IMM8_Params>
+class LD_R8_IMM8 : public SM83Tester, public ::testing::WithParamInterface<LD_R8_IMM8_Params>
 {
 };
 
@@ -186,7 +186,7 @@ INSTANTIATE_TEST_SUITE_P(
     [](const testing::TestParamInfo<LD_R8_IMM8::ParamType>& info)
     { return std::format("LD_{:s}_IMM8", SM83::get_register8_name(info.param.dest)); });
 
-class LD_MEM_HL_IMM8 : public CPUTesting
+class LD_MEM_HL_IMM8 : public SM83Tester
 {
 };
 
@@ -201,7 +201,7 @@ TEST_F(LD_MEM_HL_IMM8, Value)
     ASSERT_EQ(this->bus->read(this->cpu->reg.u16.HL), byte);
 }
 
-class LD_MEM_16_SP : public CPUTesting
+class LD_MEM_16_SP : public SM83Tester
 {
 };
 
@@ -218,7 +218,7 @@ TEST_F(LD_MEM_16_SP, Value)
     ASSERT_EQ(this->bus->read(addr + 1), u16_msb(this->cpu->reg.u16.SP));
 }
 
-class LD_MEM_16_A : public CPUTesting
+class LD_MEM_16_A : public SM83Tester
 {
 };
 
@@ -234,7 +234,7 @@ TEST_F(LD_MEM_16_A, Value)
     ASSERT_EQ(this->bus->read(addr), this->cpu->reg.u8.A);
 }
 
-class LD_A_MEM_16 : public CPUTesting
+class LD_A_MEM_16 : public SM83Tester
 {
 };
 
@@ -257,7 +257,7 @@ struct LD_R16_IMM16_Params : TestInstructionParam
     SM83::Register16  dest;
 };
 
-class LD_R16_IMM16 : public CPUTesting, public ::testing::WithParamInterface<LD_R16_IMM16_Params>
+class LD_R16_IMM16 : public SM83Tester, public ::testing::WithParamInterface<LD_R16_IMM16_Params>
 {
 };
 
@@ -281,7 +281,7 @@ INSTANTIATE_TEST_SUITE_P(LoadRegister16FromImmediate16, LD_R16_IMM16,
                          [](const testing::TestParamInfo<LD_R16_IMM16::ParamType>& info)
                          { return std::string(info.param.name); });
 
-class LDH_IMM8_A : public CPUTesting {};
+class LDH_IMM8_A : public SM83Tester {};
 
 TEST_F(LDH_IMM8_A, Value)
 {
@@ -295,7 +295,7 @@ TEST_F(LDH_IMM8_A, Value)
     ASSERT_EQ(this->bus->read(u16(0xFF, addr_lsb)), this->cpu->reg.u8.A);
 };
 
-class LDH_A_IMM8 : public CPUTesting {};
+class LDH_A_IMM8 : public SM83Tester {};
 
 TEST_F(LDH_A_IMM8, Value)
 {
@@ -309,7 +309,7 @@ TEST_F(LDH_A_IMM8, Value)
     ASSERT_EQ(this->cpu->reg.u8.A, this->bus->read(u16(0xFF, addr_lsb)));
 };
 
-class LDH_MEM_C_A : public CPUTesting {};
+class LDH_MEM_C_A : public SM83Tester {};
 
 TEST_F(LDH_MEM_C_A, Value)
 {
@@ -325,7 +325,7 @@ TEST_F(LDH_MEM_C_A, Value)
 }
 
 
-class LDH_A_MEM_C : public CPUTesting {};
+class LDH_A_MEM_C : public SM83Tester {};
 
 TEST_F(LDH_A_MEM_C, Value)
 {

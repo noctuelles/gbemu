@@ -98,7 +98,7 @@ class GbEmu
     void loop()
     {
         SDL_Event        event{};
-        const auto       viewport{ImGui::GetMainViewport()};
+        std::vector<uint8_t> memory(0x10000);
 
         while (running)
         {
@@ -114,25 +114,9 @@ class GbEmu
             ImGui_ImplSDL2_NewFrame();
             ImGui::NewFrame();
 
-            ImGui::SetNextWindowPos(viewport->Pos);
-            ImGui::SetNextWindowSize(viewport->Size);
+            static MemoryEditor editor;
 
-            ImGui::Begin("Emulator");
-
-            if (ImGui::BeginMenuBar())
-            {
-                if (ImGui::BeginMenu("File"))
-                {
-                    ImGui::EndMenu();
-                }
-                if (ImGui::BeginMenu("Edit"))
-                {
-                    ImGui::EndMenu();
-                }
-                ImGui::EndMenuBar();
-            }
-
-            ImGui::End();
+            editor.DrawWindow("Test", memory.data(), memory.size());
 
             ImGui::Render();
 
@@ -162,6 +146,8 @@ class GbEmu
 
 int main(int argc, char* args[])
 {
+    (void)argc;
+    (void)args;
     GbEmu emu{};
     Bus bus{};
 

@@ -28,17 +28,21 @@ void PPU::write(const uint16_t address, const uint8_t value)
     {
         video_ram[address - 0x8000] = value;
     }
-    if (utils::address_in(address, MemoryMap::OAM))
+    else if (utils::address_in(address, MemoryMap::OAM))
     {
         reinterpret_cast<uint8_t*>(oam_entries.data())[address - 0xFE00] = value;
     }
-
-    throw std::logic_error{"Invalid PPU Write"};
+    else
+    {
+        throw std::logic_error{"Invalid PPU Write"};
+    }
 }
 
 inline void PPU::tick()
 {
     /* There is 4 dot per single M-cycle */
+
+    OAMEntry entry;
 
     switch (mode)
     {

@@ -16,7 +16,7 @@ void WorkRAM::write(const uint16_t address, const uint8_t value)
     content[address & 0x1FFF] = value;
 }
 
-Addressable::AddressableRange WorkRAM::get_addressable_range() const
+Addressable::AddressableRange WorkRAM::get_addressable_range() const noexcept
 {
     return {MemoryMap::WORK_RAM};
 }

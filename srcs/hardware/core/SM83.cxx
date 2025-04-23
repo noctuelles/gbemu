@@ -59,7 +59,7 @@ uint8_t SM83::read(const uint16_t address)
     }
 }
 
-Addressable::AddressableRange SM83::get_addressable_range() const
+Addressable::AddressableRange SM83::get_addressable_range() const noexcept
 {
     return {MemoryMap::IE, MemoryMap::IORegisters::IF};
 }

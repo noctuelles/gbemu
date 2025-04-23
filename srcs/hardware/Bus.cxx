@@ -6,11 +6,21 @@
 
 #include <utility>
 
-Addressable::AddressableRange Bus::get_addressable_range() const
+Addressable::AddressableRange Bus::get_addressable_range() const noexcept
 {
     return {std::make_pair(0x0000, 0xFFFF)};
 }
 
+/**
+ * @brief Attaches an Addressable object to the bus memory map.
+ *
+ * This method maps the addressable object's address or address range
+ * to the bus' internal memory map. If an address within the specified
+ * range is already mapped, it will not be overwritten.
+ *
+ * @param addressable A reference to an Addressable object, which contains
+ *        addressable ranges that need to be mapped to the bus.
+ */
 void Bus::attach(Addressable& addressable)
 {
     for (const auto& range : addressable.get_addressable_range())

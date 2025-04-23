@@ -14,7 +14,7 @@ public:
 
     uint8_t read(uint16_t address) override;
     void write(uint16_t address, uint8_t value) override;
-    [[nodiscard]] AddressableRange get_addressable_range() const override;
+    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
 
 private:
     std::array<uint8_t, 8192> content{};

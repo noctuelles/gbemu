@@ -22,7 +22,7 @@ void Joypad::write(const uint16_t address, const uint8_t value)
     state = value & 0xF0;
 }
 
-Addressable::AddressableRange Joypad::get_addressable_range() const
+Addressable::AddressableRange Joypad::get_addressable_range() const noexcept
 {
     return {MemoryMap::IORegisters::JOYPAD};
 }

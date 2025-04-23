@@ -48,6 +48,7 @@ set(IMGUI_FILES
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer2.cpp
         includes/hardware/Joypad.hxx
+        includes/tests/hardware/FakeRAM.hxx
 )
 
 add_library(imgui STATIC ${IMGUI_FILES})
@@ -71,7 +72,7 @@ add_executable(gbemu
         srcs/hardware/Cartridge.cxx
         srcs/Utils.cxx
         includes/hardware/Cartridge.hxx
-        includes/tests/CPU.hxx
+        includes/tests/hardware/core/SM83.hxx
         includes/Common.hxx
         includes/hardware/PPU.hxx
         includes/hardware/Timer.hxx
@@ -96,12 +97,14 @@ add_executable(gbemu_test
         srcs/hardware/Bus.cxx
         srcs/hardware/Cartridge.cxx
         srcs/Utils.cxx
-        srcs/tests/cpu/BlarggInstructions.cxx
-        srcs/tests/Cartridge.cxx
-        srcs/tests/cpu/MooneyeAcceptance.cxx
-        srcs/tests/cpu/Disassembler.cxx)
+        srcs/tests/hardware/core/BlarggInstructions.cxx
+        srcs/tests/hardware/Cartridge.cxx
+        srcs/tests/hardware/core/MooneyeAcceptance.cxx
+        srcs/tests/hardware/core/Disassembler.cxx
+        srcs/tests/hardware/FakeRAM.cxx
+        srcs/tests/hardware/core/SM83.cxx)
 
-target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/srcs/tests/rom")
+target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/roms")
 
 target_link_libraries(
         gbemu_test
