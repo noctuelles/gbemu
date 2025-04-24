@@ -36,8 +36,14 @@ FetchContent_Declare(
         GIT_TAG 17510b03602c8b6c7ed48fd8fa29d9a75eb10dc6
 )
 
+FetchContent_Declare(
+        imgui_filedialog
+        GIT_REPOSITORY https://github.com/aiekick/ImGuiFileDialog.git
+        GIT_TAG v0.6.7
+)
+
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest sdl2 imgui imgui_club faker)
+FetchContent_MakeAvailable(googletest sdl2 imgui imgui_club imgui_filedialog faker)
 
 set(IMGUI_FILES
         ${imgui_SOURCE_DIR}/imgui.cpp
@@ -47,14 +53,19 @@ set(IMGUI_FILES
         ${imgui_SOURCE_DIR}/imgui_widgets.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer2.cpp
-        includes/hardware/Joypad.hxx
-        includes/tests/hardware/FakeRAM.hxx
+)
+
+set(IMGUI_FILEDIALOG_FILES
+        ${imgui_filedialog_SOURCE_DIR}/ImGuiFileDialog.cpp
 )
 
 add_library(imgui STATIC ${IMGUI_FILES})
 target_include_directories(imgui PRIVATE ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 target_link_libraries(imgui SDL2)
 
+add_library(imgui_filedialog STATIC ${IMGUI_FILEDIALOG_FILES})
+
+include_directories(${imgui_filedialog_SOURCE_DIR})
 include_directories(${imgui_SOURCE_DIR})
 include_directories(${imgui_SOURCE_DIR}/backends)
 include_directories(${imgui_club_SOURCE_DIR})
@@ -80,11 +91,13 @@ add_executable(gbemu
         includes/hardware/WorkRAM.hxx
         srcs/hardware/EchoRAM.cxx
         includes/hardware/EchoRAM.hxx
-        srcs/hardware/Joypad.cxx)
+        srcs/hardware/Joypad.cxx
+)
 
 target_link_libraries(
         gbemu
         imgui
+        imgui_filedialog
         SDL2
 )
 

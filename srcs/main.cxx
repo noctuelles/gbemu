@@ -18,6 +18,7 @@
 #include <memory>
 #include <vector>
 
+#include "ImGuiFileDialog.h"
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
@@ -72,7 +73,7 @@ void destroyRenderer(SDL_Renderer* renderer)
 
 using SDLRendererPtr = std::unique_ptr<SDL_Renderer, decltype(&destroyRenderer)>;
 
-auto make_sdl_renderer(SDL_Window *window, const int opt, Uint32 flags)
+auto make_sdl_renderer(SDL_Window* window, const int opt, Uint32 flags)
 {
     return SDLRendererPtr{SDL_CreateRenderer(window, opt, flags), &destroyRenderer};
 }
@@ -97,7 +98,7 @@ class GbEmu
 
     void loop()
     {
-        SDL_Event        event{};
+        SDL_Event            event{};
         std::vector<uint8_t> memory(0x10000);
 
         while (running)
@@ -114,13 +115,38 @@ class GbEmu
             ImGui_ImplSDL2_NewFrame();
             ImGui::NewFrame();
 
-            static MemoryEditor editor;
+            if (ImGui::BeginMainMenuBar())
+            {
+                if (ImGui::BeginMenu("File"))
+                {
+                    if (ImGui::MenuItem("Open", "Crtl+O"))
+                    {
+                        IGFD::FileDialogConfig config;
+                        config.path = ".";
+                        config.countSelectionMax = 1;
+                        config.flags = ImGuiFileDialogFlags_Modal | ImGuiFileDialogFlags_DisableCreateDirectoryButton;
 
-            editor.DrawWindow("Test", memory.data(), memory.size());
+                        ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".cpp,.h,.hpp",
+                                                                config);
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMainMenuBar();
+            }
+
+            if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+            {
+                if (ImGuiFileDialog::Instance()->IsOk())
+                {  // action if OK
+                    std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                    std::string filePath     = ImGuiFileDialog::Instance()->GetCurrentPath();
+                    // action
+                }
+
+                ImGuiFileDialog::Instance()->Close();
+            }
 
             ImGui::Render();
-
-            // ImGui::ShowDemoWindow();
 
             SDL_RenderClear(renderer);
 
@@ -146,10 +172,10 @@ class GbEmu
 
 int main(int argc, char* args[])
 {
-    (void)argc;
-    (void)args;
+    (void) argc;
+    (void) args;
     GbEmu emu{};
-    Bus bus{};
+    Bus   bus{};
 
     emu.loop();
 
