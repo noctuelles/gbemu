@@ -11,6 +11,9 @@
 
 namespace utils
 {
+    template <typename E>
+    concept EnumType = std::is_enum_v<E> && std::is_same_v<std::underlying_type_t<E>, uint8_t>;
+
     constexpr auto word_lsb(const uint16_t x)
     {
         return static_cast<uint8_t>(x & 0xFF);
@@ -35,6 +38,18 @@ namespace utils
     constexpr bool address_in(const uint16_t addr, const MemoryMap::AddressRange& range)
     {
         return addr >= range.first && addr <= range.second;
+    }
+
+    template <EnumType Enum>
+    constexpr std::underlying_type_t<Enum> operator&(const std::underlying_type_t<Enum> lhs, const Enum rhs)
+    {
+        return lhs & std::to_underlying(rhs);
+    }
+
+    template <EnumType Enum>
+    constexpr std::underlying_type_t<Enum> operator|(const std::underlying_type_t<Enum> lhs, const Enum rhs)
+    {
+        return lhs | std::to_underlying(rhs);
     }
 };  // namespace utils
 

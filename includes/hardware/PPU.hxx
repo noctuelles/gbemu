@@ -6,20 +6,65 @@
 #define PPU_HXX
 
 #include <array>
+#include <utility>
 
 #include "hardware/Addressable.hxx"
 
 class PPU final : public Component
 {
   public:
+    static constexpr std::size_t LCD_HEIGHT{144};
+    static constexpr std::size_t LCD_WIDTH{144};
+    static constexpr std::size_t VERTICAL_BLANK_SCANLINE{10};
+
     explicit PPU(Addressable& bus);
 
     enum class Mode
     {
+        /**
+         * @brief The PPU has finished drawing a single scanline. VRAM, OAM, CGB palettes are accessible.
+         */
         HorizontalBlank = 0,
-        VerticalBlank   = 1,
-        OAMScan         = 2,
-        Drawing         = 3,
+
+        /**
+         * @brief The PPU has finished drawing the entire frame. VRAM, OAM, CGB palettes are accessible.
+         */
+        VerticalBlank = 1,
+        OAMScan       = 2,
+        Drawing       = 3,
+    };
+
+    enum class LCDControlFlags : uint8_t
+    {
+        /**
+         * @brief LCDC.0 has different meanings depending on Game Boy type and Mode:
+         *
+         * Non-CGB Mode (DMG, SGB and CGB in compatibility mode): BG and Window display
+         * When Bit 0 is cleared, both background and window become blank (white), and the Window Display Bit is ignored
+         in that
+         * case. Only objects may still be displayed (if enabled in Bit 1).
+         * CGB Mode: BG and Window master priority
+         * When Bit 0 is cleared, the background and window lose their priority - the objects will always be displayed
+         * on top of
+         * background and window, independently of the priority flags in OAM and BG Map attributes.
+         *
+         * @ref https://gbdev.io/pandocs/LCDC.html#lcdc0--bg-and-window-enablepriority
+         */
+        BgWindowEnableOrPriority = 0x00,
+
+        /**
+         * @brief This bit toggles whether objects are displayed or not.
+         *
+         * @ref https://gbdev.io/pandocs/LCDC.html#lcdc1--obj-enable
+         */
+        ObjEnable = 0x01,
+
+        /**
+         * @brief This bit controls the size of all objects (1 tile or 2 stacked vertically).
+         *
+         * @see https://gbdev.io/pandocs/LCDC.html#lcdc2--obj-size
+         */
+        ObjSize = 0x02,
     };
 
     struct OAMEntry
@@ -101,12 +146,21 @@ class PPU final : public Component
     void    tick() override;
 
   private:
+    using OAMArray = std::array<OAMEntry, 40>;
+
+    void transition(Mode transition_to);
+
     Addressable& bus;
 
     std::array<uint8_t, 0x2000> video_ram{};
-    std::array<OAMEntry, 40>    oam_entries{};
+    OAMArray                    oam_entries{};
+    OAMArray::const_iterator    curr_oam_entry{};
 
-    uint16_t dot_elapsed{};
+    std::vector<decltype(curr_oam_entry)> obj_to_draw{};
+
+    uint16_t dots{};
+
+    uint8_t x{};
 
     /**
      * @brief LCD Control (R/W).
@@ -133,6 +187,11 @@ class PPU final : public Component
      * drawn. LY can hold any value from 0 to 153, with values from 144 to 153 indicating the VBlank period (R).
      */
     uint8_t LY{};
+
+    /**
+     * @brief The Game Boy constantly compares the value of the LYC and LY registers. When both values are identical,
+     the “LYC=LY” flag in the STAT register is set, and (if enabled) a STAT interrupt is requested.
+     */
     uint8_t LYC{};
     uint8_t DMA{};
     uint8_t BGP{};
@@ -141,7 +200,7 @@ class PPU final : public Component
     uint8_t WY{};
     uint8_t WX{};
 
-    Mode mode{Mode::OAMScan};
+    Mode mode{};
 };
 
 #endif  // PPU_HXX
