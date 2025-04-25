@@ -8,6 +8,7 @@
 #include <array>
 #include <utility>
 
+#include "Displayable.hxx"
 #include "hardware/Addressable.hxx"
 
 class PPU final : public Component
@@ -17,7 +18,7 @@ class PPU final : public Component
     static constexpr std::size_t LCD_WIDTH{144};
     static constexpr std::size_t VERTICAL_BLANK_SCANLINE{10};
 
-    explicit PPU(Addressable& bus);
+    explicit PPU(Addressable& bus, Displayable& display);
 
     enum class Mode
     {
@@ -151,6 +152,7 @@ class PPU final : public Component
     void transition(Mode transition_to);
 
     Addressable& bus;
+    Displayable& display;
 
     std::array<uint8_t, 0x2000> video_ram{};
     OAMArray                    oam_entries{};

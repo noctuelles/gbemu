@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "ImGuiFileDialog.h"
+#include "hardware/LCD.hxx"
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
@@ -82,24 +83,23 @@ class GbEmu
 {
   public:
     GbEmu()
-        : window("gbemu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1200, 800, SDL_WINDOW_SHOWN),
-          renderer(window, -1, 0)
+        : window("gbemu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, Displayable::WIDTH * 3, Displayable::HEIGHT * 3, SDL_WINDOW_SHOWN),
+          renderer(window, -1, 0), lcd(*renderer)
     {
         if (SDL_Init(SDL_INIT_VIDEO) != 0)
         {
             throw std::runtime_error("Failed to initialize SDL");
         }
 
-        ImGui::CreateContext();
-
-        ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
-        ImGui_ImplSDLRenderer2_Init(renderer);
+        // ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+        // ImGui_ImplSDLRenderer2_Init(renderer);
     }
 
     void loop()
     {
-        SDL_Event            event{};
-        std::vector<uint8_t> memory(0x10000);
+        SDL_Event event{};
+
+        lcd.put_pixel(0, 10, 1);
 
         while (running)
         {
@@ -109,8 +109,12 @@ class GbEmu
                 {
                     running = false;
                 }
-                ImGui_ImplSDL2_ProcessEvent(&event);
+                // ImGui_ImplSDL2_ProcessEvent(&event);
             }
+
+            lcd.update();
+
+            /*
             ImGui_ImplSDLRenderer2_NewFrame();
             ImGui_ImplSDL2_NewFrame();
             ImGui::NewFrame();
@@ -151,6 +155,7 @@ class GbEmu
             SDL_RenderClear(renderer);
 
             ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
+            */
 
             SDL_RenderPresent(renderer);
         }
@@ -158,15 +163,18 @@ class GbEmu
 
     ~GbEmu()
     {
+        /*
         ImGui_ImplSDLRenderer2_Shutdown();
         ImGui_ImplSDL2_Shutdown();
         ImGui::DestroyContext();
+        */
         SDL_Quit();
     }
 
   private:
     SDLWindow   window;
     SDLRenderer renderer;
+    LCD         lcd;
     bool        running{true};
 };
 

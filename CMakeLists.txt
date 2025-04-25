@@ -92,6 +92,11 @@ add_executable(gbemu
         srcs/hardware/EchoRAM.cxx
         includes/hardware/EchoRAM.hxx
         srcs/hardware/Joypad.cxx
+        includes/hardware/Displayable.hxx
+        includes/hardware/LCD.hxx
+        srcs/hardware/Displayable.cxx
+        srcs/hardware/LCD.cxx
+        includes/SDL2.hxx
 )
 
 target_link_libraries(
@@ -115,7 +120,8 @@ add_executable(gbemu_test
         srcs/tests/hardware/core/MooneyeAcceptance.cxx
         srcs/tests/hardware/core/Disassembler.cxx
         srcs/tests/hardware/FakeRAM.cxx
-        srcs/tests/hardware/core/SM83.cxx)
+        srcs/tests/hardware/core/SM83.cxx
+        includes/hardware/Displayable.hxx)
 
 target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/roms")
 

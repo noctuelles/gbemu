@@ -3,14 +3,13 @@
 //
 #include "../../includes/hardware/PPU.hxx"
 
-#include <assert.h>
-
 #include <Utils.hxx>
+#include <cassert>
 #include <stdexcept>
 
 #include "Utils.hxx"
 
-PPU::PPU(Addressable& bus) : bus(bus)
+PPU::PPU(Addressable& bus, Displayable& display) : bus(bus), display(display)
 {
     obj_to_draw.reserve(10);
     transition(Mode::OAMScan);
@@ -74,7 +73,6 @@ void PPU::tick()
                  * will hide it, but it will still count towards the limit, possibly causing another object later in OAM
                  * not to be drawn.
                  */
-
                 if (const uint8_t obj_height = (LCDC & LCDControlFlags::ObjSize) != 0 ? 16 : 8;
                     LY >= curr_oam_entry->y && LY < curr_oam_entry->y + obj_height)
                 {
@@ -95,7 +93,6 @@ void PPU::tick()
             break;
         case Mode::Drawing:
             /* TODO */
-
             x += 1;
             if (x == 160)
             {
@@ -110,7 +107,7 @@ void PPU::tick()
                 dots = 0;
                 LY += 1;
 
-                if (LY == LCD_HEIGHT)
+                if (LY == Displayable::HEIGHT)
                 {
                     /* TODO: request VBlank interrupt */
 
@@ -130,7 +127,7 @@ void PPU::tick()
                 dots = 0;
                 LY += 1;
 
-                if (LY == LCD_HEIGHT + VERTICAL_BLANK_SCANLINE - 1)
+                if (LY == Displayable::HEIGHT + 10 - 1)
                 {
                     LY = 0;
                     transition(Mode::OAMScan);
