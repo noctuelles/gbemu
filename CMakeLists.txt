@@ -36,14 +36,8 @@ FetchContent_Declare(
         GIT_TAG 17510b03602c8b6c7ed48fd8fa29d9a75eb10dc6
 )
 
-FetchContent_Declare(
-        imgui_filedialog
-        GIT_REPOSITORY https://github.com/aiekick/ImGuiFileDialog.git
-        GIT_TAG v0.6.7
-)
-
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest sdl2 imgui imgui_club imgui_filedialog faker)
+FetchContent_MakeAvailable(googletest sdl2 imgui imgui_club faker)
 
 set(IMGUI_FILES
         ${imgui_SOURCE_DIR}/imgui.cpp
@@ -55,17 +49,10 @@ set(IMGUI_FILES
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer2.cpp
 )
 
-set(IMGUI_FILEDIALOG_FILES
-        ${imgui_filedialog_SOURCE_DIR}/ImGuiFileDialog.cpp
-)
-
 add_library(imgui STATIC ${IMGUI_FILES})
 target_include_directories(imgui PRIVATE ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 target_link_libraries(imgui SDL2)
 
-add_library(imgui_filedialog STATIC ${IMGUI_FILEDIALOG_FILES})
-
-include_directories(${imgui_filedialog_SOURCE_DIR})
 include_directories(${imgui_SOURCE_DIR})
 include_directories(${imgui_SOURCE_DIR}/backends)
 include_directories(${imgui_club_SOURCE_DIR})
@@ -96,14 +83,13 @@ add_executable(gbemu
         includes/hardware/LCD.hxx
         srcs/hardware/Displayable.cxx
         srcs/hardware/LCD.cxx
-        includes/SDL2.hxx
+        includes/ForkAwesomeFont.hxx
 )
 
 target_link_libraries(
         gbemu
         imgui
-        imgui_filedialog
-        SDL2
+        SDL2::SDL2
 )
 
 add_executable(gbemu_test

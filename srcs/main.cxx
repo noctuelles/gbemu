@@ -14,16 +14,13 @@
 
 #include <imgui_impl_sdlrenderer2.h>
 
-#include <hardware/Bus.hxx>
 #include <memory>
 #include <vector>
 
-#include "ImGuiFileDialog.h"
+#include "ForkAwesomeFont.hxx"
 #include "hardware/LCD.hxx"
 #include "imgui.h"
-#include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
-#include "imgui_memory_editor/imgui_memory_editor.h"
 
 template <typename T, auto Init, auto Release, typename... InitArgs>
 class SDLObjWrapper final
@@ -83,107 +80,126 @@ class GbEmu
 {
   public:
     GbEmu()
-        : window("gbemu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, Displayable::WIDTH * 3, Displayable::HEIGHT * 3, SDL_WINDOW_SHOWN),
-          renderer(window, -1, 0), lcd(*renderer)
+        : window("gbemu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_SHOWN),
+          renderer(window, -1, 0)
     {
         if (SDL_Init(SDL_INIT_VIDEO) != 0)
         {
             throw std::runtime_error("Failed to initialize SDL");
         }
+        IMGUI_CHECKVERSION();
 
-        // ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
-        // ImGui_ImplSDLRenderer2_Init(renderer);
-    }
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
+        io.Fonts->AddFontDefault();
+
+        float iconFontSize = 13.0f;
+
+        static const ImWchar icons_ranges[] = { ICON_MIN_FK, ICON_MAX_16_FK, 0 };
+        ImFontConfig icons_config;
+        icons_config.MergeMode = true;
+        icons_config.PixelSnapH = true;
+        icons_config.GlyphMinAdvanceX = iconFontSize;
+        io.Fonts->AddFontFromFileTTF( FONT_ICON_FILE_NAME_FK, iconFontSize, &icons_config, icons_ranges );     }
 
     void loop()
     {
-        SDL_Event event{};
+        SDL_Event   event{};
+        auto& io = ImGui::GetIO();
 
-        lcd.put_pixel(0, 10, 1);
+        ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+        ImGui_ImplSDLRenderer2_Init(renderer);
 
         while (running)
         {
             while (SDL_PollEvent(&event))
             {
+                ImGui_ImplSDL2_ProcessEvent(&event);
                 if (event.type == SDL_QUIT)
                 {
                     running = false;
                 }
-                // ImGui_ImplSDL2_ProcessEvent(&event);
             }
 
-            lcd.update();
-
-            /*
             ImGui_ImplSDLRenderer2_NewFrame();
             ImGui_ImplSDL2_NewFrame();
+
             ImGui::NewFrame();
 
-            if (ImGui::BeginMainMenuBar())
+            ImGui::Begin("Debugger");
+            ImGui::BeginGroup();
             {
-                if (ImGui::BeginMenu("File"))
+                ImGui::Button(ICON_FK_PLAY);
+                if (ImGui::IsItemHovered())
                 {
-                    if (ImGui::MenuItem("Open", "Crtl+O"))
-                    {
-                        IGFD::FileDialogConfig config;
-                        config.path = ".";
-                        config.countSelectionMax = 1;
-                        config.flags = ImGuiFileDialogFlags_Modal | ImGuiFileDialogFlags_DisableCreateDirectoryButton;
-
-                        ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".cpp,.h,.hpp",
-                                                                config);
-                    }
-                    ImGui::EndMenu();
+                    ImGui::SetTooltip("Continue");
                 }
-                ImGui::EndMainMenuBar();
+                ImGui::SameLine();
+                ImGui::Button(ICON_FK_ARROW_DOWN);
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip("Step in");
+                }
+                ImGui::SameLine();
+                ImGui::Button(ICON_FK_ARROW_RIGHT);
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip("Step over");
+                }
             }
+            ImGui::EndGroup();
+            ImGui::Separator();
 
-            if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+            if (ImGui::BeginListBox("I", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
             {
-                if (ImGuiFileDialog::Instance()->IsOk())
-                {  // action if OK
-                    std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-                    std::string filePath     = ImGuiFileDialog::Instance()->GetCurrentPath();
-                    // action
-                }
-
-                ImGuiFileDialog::Instance()->Close();
+                ImGui::EndListBox();
             }
+            ImGui::Separator();
+            ImGui::End();
+
+            ImGui::ShowDemoWindow();
 
             ImGui::Render();
 
+            SDL_RenderSetScale(renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
             SDL_RenderClear(renderer);
-
             ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
-            */
-
             SDL_RenderPresent(renderer);
         }
     }
 
     ~GbEmu()
     {
-        /*
         ImGui_ImplSDLRenderer2_Shutdown();
         ImGui_ImplSDL2_Shutdown();
         ImGui::DestroyContext();
-        */
+
         SDL_Quit();
     }
 
   private:
     SDLWindow   window;
     SDLRenderer renderer;
-    LCD         lcd;
     bool        running{true};
 };
 
+// Window size
+#define WINDOW_WIDTH 640
+#define WINDOW_HEIGHT 480
+
+// Image size
+#define IMAGE_WIDTH 256
+#define IMAGE_HEIGHT 256
+
 int main(int argc, char* args[])
 {
-    (void) argc;
-    (void) args;
+    (void)argc;
+    (void)args;
     GbEmu emu{};
-    Bus   bus{};
 
     emu.loop();
 

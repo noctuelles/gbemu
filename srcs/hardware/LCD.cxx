@@ -4,8 +4,6 @@
 
 #include "hardware/LCD.hxx"
 
-#include "SDL2.hxx"
-
 SDL_Color LCD::PALETTE[4] = {
     {255, 255, 255, 255},
     {255, 192, 192, 192},

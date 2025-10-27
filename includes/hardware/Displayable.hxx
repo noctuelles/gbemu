@@ -17,8 +17,8 @@ struct Displayable
         OutOfBound(std::size_t x, std::size_t y);
     };
 
-    static constexpr std::size_t WIDTH{144};
-    static constexpr std::size_t HEIGHT{160};
+    static constexpr std::size_t WIDTH{160};
+    static constexpr std::size_t HEIGHT{144};
 
     Displayable()          = default;
     virtual ~Displayable() = default;

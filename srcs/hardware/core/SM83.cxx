@@ -6,8 +6,6 @@
  * https://dn790000.ca.archive.org/0/items/GameBoyProgManVer1.1/GameBoyProgManVer1.1.pdf
  */
 
-#include <X11/extensions/randr.h>
-
 #include <Utils.hxx>
 #include <bitset>
 #include <cassert>

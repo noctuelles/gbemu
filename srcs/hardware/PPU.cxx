@@ -28,7 +28,7 @@ uint8_t PPU::read(const uint16_t address)
             return 0xFF;
         }
 
-        return reinterpret_cast<uint8_t*>(oam_entries.data())[address - 0xFE00];
+        return reinterpret_cast<uint8_t*>(oam_entries.data())[address - MemoryMap::OAM.first];
     }
 
     throw std::logic_error{"Invalid PPU Read"};
@@ -47,7 +47,9 @@ void PPU::write(const uint16_t address, const uint8_t value)
             return;
         }
 
-        reinterpret_cast<uint8_t*>(oam_entries.data())[address - 0xFE00] = value;
+        reinterpret_cast<uint8_t*>(oam_entries.data())[address - MemoryMap::OAM.first] = value;
+    } else if (address == 0xFF41) {
+        LY = 0;
     }
     else
     {
@@ -86,8 +88,6 @@ void PPU::tick()
 
             if (dots == 80)
             {
-                assert(curr_oam_entry == oam_entries.end());
-
                 transition(Mode::Drawing);
             }
             break;
@@ -101,7 +101,6 @@ void PPU::tick()
             break;
         case Mode::HorizontalBlank:
             /* Idle... */
-
             if (dots == 456)
             {
                 dots = 0;
@@ -109,8 +108,6 @@ void PPU::tick()
 
                 if (LY == Displayable::HEIGHT)
                 {
-                    /* TODO: request VBlank interrupt */
-
                     transition(Mode::VerticalBlank);
                 }
                 else
