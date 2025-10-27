@@ -15,6 +15,7 @@
 #include <imgui_impl_sdlrenderer2.h>
 
 #include <memory>
+#include <ranges>
 #include <vector>
 
 #include "ForkAwesomeFont.hxx"
@@ -94,22 +95,26 @@ class GbEmu
 
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
         io.Fonts->AddFontDefault();
 
         float iconFontSize = 13.0f;
 
-        static const ImWchar icons_ranges[] = { ICON_MIN_FK, ICON_MAX_16_FK, 0 };
-        ImFontConfig icons_config;
-        icons_config.MergeMode = true;
-        icons_config.PixelSnapH = true;
+        static const ImWchar icons_ranges[] = {ICON_MIN_FK, ICON_MAX_16_FK, 0};
+        ImFontConfig         icons_config;
+        icons_config.MergeMode        = true;
+        icons_config.PixelSnapH       = true;
         icons_config.GlyphMinAdvanceX = iconFontSize;
-        io.Fonts->AddFontFromFileTTF( FONT_ICON_FILE_NAME_FK, iconFontSize, &icons_config, icons_ranges );     }
+        io.Fonts->AddFontFromFileTTF(FONT_ICON_FILE_NAME_FK, iconFontSize, &icons_config, icons_ranges);
+    }
 
     void loop()
     {
-        SDL_Event   event{};
-        auto& io = ImGui::GetIO();
+        SDL_Event                                               event{};
+        auto&                                                   io = ImGui::GetIO();
+        std::vector<std::tuple<bool, const char*, std::string>> instructions(10, {false, "0x1000", "LD A, A"});
+        int                                                     selectedIndex{0};
 
         ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
         ImGui_ImplSDLRenderer2_Init(renderer);
@@ -139,7 +144,11 @@ class GbEmu
                     ImGui::SetTooltip("Continue");
                 }
                 ImGui::SameLine();
-                ImGui::Button(ICON_FK_ARROW_DOWN);
+                if (ImGui::Button(ICON_FK_ARROW_DOWN))
+                {
+                    selectedIndex += 1;
+                }
+
                 if (ImGui::IsItemHovered())
                 {
                     ImGui::SetTooltip("Step in");
@@ -152,13 +161,61 @@ class GbEmu
                 }
             }
             ImGui::EndGroup();
-            ImGui::Separator();
 
-            if (ImGui::BeginListBox("I", ImVec2(-FLT_MIN, 5 * ImGui::GetTextLineHeightWithSpacing())))
+            const auto availableWidth{ImGui::GetContentRegionAvail().x};
+
+            ImGui::BeginChild("##instrList", ImVec2(availableWidth * 0.75f, 0), true);
+
+            for (auto [i, instruction] : std::views::enumerate(instructions))
             {
-                ImGui::EndListBox();
+                auto& breakpointActive = std::get<0>(instruction);
+
+                ImGui::PushID(i);
+                if (ImGui::InvisibleButton("##hoverBtn", ImVec2(18, 18)))
+                {
+                    breakpointActive = !breakpointActive;
+                }
+
+                if (ImGui::IsItemHovered() || breakpointActive)
+                {
+                    const auto pos = ImGui::GetItemRectMin();
+                    const auto opacity{breakpointActive ? 1.0f : 0.5f};
+                    auto       drawList{ImGui::GetWindowDrawList()};
+
+                    drawList->AddText(ImVec2(pos.x + 4.5f, pos.y + 2.5f), IM_COL32(255, 0, 0, 255 * opacity),
+                                      ICON_FK_CIRCLE, nullptr);
+                }
+
+                ImGui::SameLine();
+                ImGui::Text("%s     %s", std::get<1>(instruction), std::get<2>(instruction).c_str());
+
+                if (selectedIndex == i)
+                {
+                    auto       drawList = ImGui::GetWindowDrawList();
+                    const auto style    = ImGui::GetStyle();
+                    auto       color    = ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered);
+
+                    auto pMin{ImVec2(ImGui::GetItemRectMin().x - style.FramePadding.x,
+                                     ImGui::GetItemRectMin().y - style.FramePadding.y)};
+                    auto pMax{ImVec2(ImGui::GetItemRectMax().x + style.FramePadding.x,
+                                     ImGui::GetItemRectMax().y + style.FramePadding.y)};
+
+                    drawList->AddRectFilled(pMin, pMax,
+                                            IM_COL32(color.x * 255.f, color.y * 255.f, color.z * 255.f,
+                                                     color.w * 255.f * 0.5f));
+
+                    ImGui::SetScrollHereY();
+                }
+
+                ImGui::PopID();
             }
-            ImGui::Separator();
+            ImGui::EndChild();
+            ImGui::SameLine();
+
+            ImGui::BeginChild("##registers", ImVec2(0, 0), true);
+            ImGui::Text("Registers");
+            ImGui::EndChild();
+
             ImGui::End();
 
             ImGui::ShowDemoWindow();
@@ -197,8 +254,8 @@ class GbEmu
 
 int main(int argc, char* args[])
 {
-    (void)argc;
-    (void)args;
+    (void) argc;
+    (void) args;
     GbEmu emu{};
 
     emu.loop();
