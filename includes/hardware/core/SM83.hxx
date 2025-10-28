@@ -311,6 +311,7 @@ class SM83 final : public Component
 
     friend class MooneyeAcceptance;
     friend class Test::SM83;
+    friend class Debugger;
 };
 
 #endif

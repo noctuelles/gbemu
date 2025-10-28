@@ -57,7 +57,9 @@ include_directories(${imgui_SOURCE_DIR})
 include_directories(${imgui_SOURCE_DIR}/backends)
 include_directories(${imgui_club_SOURCE_DIR})
 
-add_compile_options(-Wall -Werror -Wextra -Wpedantic -g3)
+add_compile_options(-Wall -Werror -Wextra -Wpedantic -g3 -fsanitize=address)
+
+add_link_options(-fsanitize=address)
 
 add_executable(gbemu
         srcs/hardware/core/SM83.cxx

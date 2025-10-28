@@ -9,10 +9,12 @@
 #include <string>
 #include <vector>
 
+#include "hardware/core/SM83.hxx"
+
 class Debugger
 {
   public:
-    Debugger();
+    explicit Debugger(SM83 &cpu);
 
     void render();
     void setDisabled(bool _disabled);
@@ -20,6 +22,7 @@ class Debugger
   private:
     void ImGuiTextRegister(const std::string& regName, uint16_t value, bool sixteenBitsRegister = false) const;
 
+    SM83 &cpu;
     int  selectedIndex{};
     bool showValueAsHexadecimal{true};
     bool showValueAsDecimal{false};

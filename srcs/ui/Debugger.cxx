@@ -11,7 +11,7 @@
 #include "imgui.h"
 #include "ui/ForkAwesomeFont.hxx"
 
-Debugger::Debugger() : instructions(10, {false, "$1000:", "LD A, A"}) {}
+Debugger::Debugger(SM83& cpu) : cpu(cpu), instructions(10, {false, "$1000:", "LD A, A"}) {}
 
 void Debugger::render()
 {
@@ -49,7 +49,7 @@ void Debugger::render()
 
         if (ImGui::Button(ICON_FK_ARROW_DOWN))
         {
-            selectedIndex += 1;
+            cpu.tick();
         }
         if (ImGui::IsItemHovered())
         {
@@ -126,57 +126,59 @@ void Debugger::render()
         ImGui::SeparatorText("CPU Registers");
         ImGui::Spacing();
 
-        ImGuiTextRegister("A", 2);
+        ImGuiTextRegister("A", cpu.A);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("AF", 25, true);
+        ImGuiTextRegister("AF", cpu.AF(), true);
 
-        ImGuiTextRegister("B", 2);
+        ImGuiTextRegister("B", cpu.B);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("BC", 2, true);
+        ImGuiTextRegister("BC", cpu.BC(), true);
 
-        ImGuiTextRegister("C", 2);
+        ImGuiTextRegister("C", cpu.C);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("DE", 2, true);
+        ImGuiTextRegister("DE", cpu.DE(), true);
 
-        ImGuiTextRegister("D", 2);
+        ImGuiTextRegister("D", cpu.D);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("HL", 2, true);
+        ImGuiTextRegister("HL", cpu.HL(), true);
 
-        ImGuiTextRegister("E", 2);
+        ImGuiTextRegister("E", cpu.E);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("SP", 2, true);
+        ImGuiTextRegister("SP", cpu.SP, true);
 
-        ImGuiTextRegister("H", 2);
+        ImGuiTextRegister("H", cpu.H);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("PC", 2, true);
+        ImGuiTextRegister("PC", cpu.PC, true);
 
-        ImGuiTextRegister("L", 2);
+        ImGuiTextRegister("L", cpu.L);
 
         ImGui::Spacing();
         ImGui::SeparatorText("CPU Flags");
         ImGui::Spacing();
 
-        const auto spacing{ImGui::GetContentRegionAvail().x / 4.f};
+        const auto     spacing{ImGui::GetContentRegionAvail().x / 4.f};
+        constexpr auto green{ImVec4(0, 1, 0, 1)};
+        constexpr auto red{ImVec4(1, 0, 0, 1)};
 
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Z");
+        ImGui::TextColored(cpu.get_flag(SM83::Flags::Zero) ? green : red, "Z");
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Zero flag");
         }
         ImGui::SameLine(0, spacing);
-        ImGui::TextColored(ImVec4(0, 1, 0, 1), "N");
+        ImGui::TextColored(cpu.get_flag(SM83::Flags::Subtract) ? green : red, "N");
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Substraction flag (BCD)");
         }
         ImGui::SameLine(0, spacing);
-        ImGui::TextColored(ImVec4(0, 1, 0, 1), "H");
+        ImGui::TextColored(cpu.get_flag(SM83::Flags::HalfCarry) ? green : red, "H");
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Half Carry flag (BCD)");
         }
         ImGui::SameLine(0, spacing);
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "C");
+        ImGui::TextColored(cpu.get_flag(SM83::Flags::Carry) ? green : red, "C");
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Carry flag");
@@ -196,14 +198,17 @@ void Debugger::ImGuiTextRegister(const std::string& regName, const uint16_t valu
 {
     std::string formattedValueHexadecimal{};
     std::string formattedValueDecimal{};
+    std::string formattedValueBinary{};
 
     if (sixteenBitsRegister)
     {
         formattedValueHexadecimal = std::format("${:04X}", value);
+        formattedValueBinary      = std::format("{:b}", value);
     }
     else
     {
         formattedValueHexadecimal = std::format("${:02X}", value);
+        formattedValueBinary      = std::format("{:b}", value);
     }
 
     formattedValueDecimal = std::format("{}", value);
@@ -215,6 +220,7 @@ void Debugger::ImGuiTextRegister(const std::string& regName, const uint16_t valu
         ImGui::BeginTooltip();
         ImGui::Text("Decimal : %s", formattedValueDecimal.c_str());
         ImGui::Text("Hexadecimal : %s", formattedValueHexadecimal.c_str());
+        ImGui::Text("Binary : %s", formattedValueBinary.c_str());
         ImGui::EndTooltip();
     }
 }

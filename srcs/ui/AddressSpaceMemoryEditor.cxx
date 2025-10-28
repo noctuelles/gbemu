@@ -4,7 +4,10 @@
 
 #include "ui/AddressSpaceMemoryEditor.hxx"
 
-AddressSpaceMemoryEditor::AddressSpaceMemoryEditor()
+#include <iostream>
+#include <ostream>
+
+AddressSpaceMemoryEditor::AddressSpaceMemoryEditor(Addressable& bus) : bus(bus)
 {
     editor.ReadFn   = readFn;
     editor.WriteFn  = writeFn;
@@ -17,21 +20,18 @@ void AddressSpaceMemoryEditor::render()
     editor.DrawWindow("Address Space", addressSpace.data(), addressSpace.size());
 }
 
-ImU8 AddressSpaceMemoryEditor::readFn(const ImU8* data, size_t offset, void* user_data)
+ImU8 AddressSpaceMemoryEditor::readFn(const ImU8* mem, const size_t offset, void* user_data)
 {
-    (void) data;
-
     auto thisPtr{static_cast<AddressSpaceMemoryEditor*>(user_data)};
-    return thisPtr->addressSpace.at(offset);
+    (void) mem;
+
+    return thisPtr->bus.read(offset);
 }
 
-void AddressSpaceMemoryEditor::writeFn(ImU8* mem, size_t off, ImU8 d, void* user_data)
+void AddressSpaceMemoryEditor::writeFn(ImU8* mem, const size_t offset, const ImU8 d, void* user_data)
 {
     auto thisPtr{static_cast<AddressSpaceMemoryEditor*>(user_data)};
-
-    (void) thisPtr;
     (void) mem;
-    (void) off;
-    (void) d;
-    (void) user_data;
+
+    thisPtr->bus.write(offset, d);
 }
