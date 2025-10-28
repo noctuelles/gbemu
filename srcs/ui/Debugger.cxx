@@ -74,9 +74,16 @@ void Debugger::render()
         ImGui::SeparatorText("Instructions List");
         ImGui::Spacing();
 
-        for (auto [i, instruction] : std::views::enumerate(instructions))
+        std::vector<uint8_t> inst{};
+        for (auto i = cpu.PC; i < cpu.PC + 0x200; ++i)
+           inst.push_back(cpu.bus.read(i));
+
+        SM83::Disassembler disassembler{inst};
+        auto list{disassembler.disassemble(0)};
+
+        for (auto [i, instruction] : std::views::enumerate(list))
         {
-            auto& breakpointActive = std::get<0>(instruction);
+            auto breakpointActive = false;
 
             ImGui::PushID(i);
             if (ImGui::InvisibleButton("##hoverBtn", ImVec2(18, 18)))
@@ -95,7 +102,7 @@ void Debugger::render()
             }
 
             ImGui::SameLine();
-            ImGui::Text("%s     %s", std::get<1>(instruction), std::get<2>(instruction).c_str());
+            ImGui::Text("$%04X     %s", instruction.first.first, instruction.second.c_str());
 
             if (selectedIndex == i)
             {
@@ -110,8 +117,6 @@ void Debugger::render()
 
                 drawList->AddRectFilled(pMin, pMax,
                                         IM_COL32(color.x * 255.f, color.y * 255.f, color.z * 255.f, color.w * 255.f));
-
-                ImGui::SetScrollHereY();
             }
 
             ImGui::PopID();
