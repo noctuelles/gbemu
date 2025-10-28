@@ -83,7 +83,12 @@ add_executable(gbemu
         includes/hardware/LCD.hxx
         srcs/hardware/Displayable.cxx
         srcs/hardware/LCD.cxx
-        includes/ForkAwesomeFont.hxx
+        includes/ui/ForkAwesomeFont.hxx
+        srcs/ui/Debugger.cxx
+        includes/ui/Debugger.hxx
+        includes/ui/AddressSpaceMemoryEditor.hxx
+        srcs/ui/AddressSpaceMemoryEditor.cxx
+        includes/ui/AddressSpaceMemoryEditor.hxx
 )
 
 target_link_libraries(
