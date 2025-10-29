@@ -52,12 +52,12 @@ GbEmu::GbEmu()
 
 GbEmu::~GbEmu()
 {
-    SDL_Quit();
+    ImGui_ImplSDLRenderer2_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
 
     ImGui::DestroyContext();
 
-    ImGui_ImplSDLRenderer2_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
+    SDL_Quit();
 }
 
 void GbEmu::onCpuMachineCycle() {}

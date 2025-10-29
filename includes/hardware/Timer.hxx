@@ -21,7 +21,7 @@ class Timer final : public Component
     ~Timer() override;
 
     void    write(uint16_t address, uint8_t value) override;
-    uint8_t read(uint16_t address) override;
+    uint8_t read(uint16_t address) const override;
     [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
     void    tick() override;
 

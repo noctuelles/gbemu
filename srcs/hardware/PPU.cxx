@@ -15,7 +15,7 @@ PPU::PPU(Addressable& bus, Displayable& display) : bus(bus), display(display)
     transition(Mode::OAMScan);
 }
 
-uint8_t PPU::read(const uint16_t address)
+uint8_t PPU::read(const uint16_t address) const
 {
     if (utils::address_in(address, MemoryMap::VIDEO_RAM))
     {
@@ -28,7 +28,7 @@ uint8_t PPU::read(const uint16_t address)
             return 0xFF;
         }
 
-        return reinterpret_cast<uint8_t*>(oam_entries.data())[address - MemoryMap::OAM.first];
+        return reinterpret_cast<const uint8_t*>(oam_entries.data())[address - MemoryMap::OAM.first];
     }
 
     throw std::logic_error{"Invalid PPU Read"};

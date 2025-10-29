@@ -7,7 +7,7 @@
 
 #include "hardware/core/SM83.hxx"
 
-const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_lookup{{
+const SM83::Disassembler::InstructionLookup SM83::Disassembler::instructionLookup{{
     {"NOP"},                                                   // 0x00
     {"LD BC, ${:04X}", AddressingMode::IMMEDIATE_EXTENDED},    // 0x01
     {"LD (BC), A"},                                            // 0x02
@@ -266,7 +266,7 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::instruction_look
     {"RST $38"},                                               // 0xFF
 }};
 
-const SM83::Disassembler::InstructionLookup SM83::Disassembler::prefixed_instruction_lookup{{
+const SM83::Disassembler::InstructionLookup SM83::Disassembler::prefixedInstructionLookup{{
     {"RLC B"},        // 0x00
     {"RLC C"},        // 0x01
     {"RLC D"},        // 0x02
@@ -525,35 +525,35 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::prefixed_instruc
     {"SET 7, A"}      // 0xFF
 }};
 
-SM83::Disassembler::Disassembler(const std::span<uint8_t> memory) : memory(memory) {}
+SM83::Disassembler::Disassembler(const Addressable& addressable) : addressable(addressable) {}
 
-auto SM83::Disassembler::disassemble(const uint16_t start, const std::optional<uint16_t> stop,
-                                     const std::optional<uint16_t> base_addr) const -> DisassembledInstructions
+auto SM83::Disassembler::disassemble(const uint16_t startingAddress, std::size_t nbrOfInstructions,
+                                     const std::optional<uint16_t> baseAddress) const -> DisassembledInstructions
 {
     DisassembledInstructions disassembled_instructions{};
-    uint16_t                 current_addr{start};
-    const uint16_t           stop_addr{stop.value_or(memory.size())};
+    uint16_t                 currentAddress{startingAddress};
 
-    while (current_addr < stop_addr)
+    while (nbrOfInstructions)
     {
         DisassembledInstructions::mapped_type name{};
-        DisassembledInstructions::key_type    instruction_dump{current_addr, {}};
+        DisassembledInstructions::key_type    instruction_dump{currentAddress, {}};
         Instruction                           instruction;
-        const auto                            read_memory = [this, &current_addr, &instruction_dump]
+        const auto                            read_memory = [this, &currentAddress, &instruction_dump]
         {
-            const auto byte = memory[current_addr++];
+            const auto byte{addressable.read(currentAddress++)};
             instruction_dump.second.push_back(byte);
+
             return byte;
         };
 
         if (auto opcode{read_memory()}; opcode == 0xCB)
         {
             opcode      = read_memory();
-            instruction = prefixed_instruction_lookup[opcode];
+            instruction = prefixedInstructionLookup[opcode];
         }
         else
         {
-            instruction = instruction_lookup[opcode];
+            instruction = instructionLookup[opcode];
         }
 
         if (auto mode = instruction.addressing)
@@ -565,13 +565,13 @@ auto SM83::Disassembler::disassemble(const uint16_t start, const std::optional<u
                     const auto value{static_cast<int8_t>(read_memory())};
                     uint16_t   target{static_cast<uint16_t>(value)};
 
-                    if (base_addr.has_value())
+                    if (baseAddress.has_value())
                     {
-                        target = *base_addr + target;
+                        target = *baseAddress + target;
                     }
                     else
                     {
-                        target = current_addr + target;
+                        target = currentAddress + target;
                     }
 
                     name = std::vformat(instruction.name, std::make_format_args(target));
@@ -605,6 +605,8 @@ auto SM83::Disassembler::disassemble(const uint16_t start, const std::optional<u
         }
 
         disassembled_instructions.insert({instruction_dump, name});
+
+        nbrOfInstructions -= 1;
     }
 
     return disassembled_instructions;

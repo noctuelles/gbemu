@@ -39,7 +39,7 @@ void Joypad::release(const Button button)
     state |= ~std::to_underlying(button);
 }
 
-uint8_t Joypad::read(const uint16_t address)
+uint8_t Joypad::read(const uint16_t address) const
 {
     if (address != MemoryMap::IORegisters::JOYPAD) [[unlikely]]
     {

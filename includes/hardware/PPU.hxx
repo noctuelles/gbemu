@@ -142,7 +142,7 @@ class PPU final : public Component
         uint8_t priority : 1 {};
     } __attribute__((packed));
 
-    uint8_t read(uint16_t address) override;
+    uint8_t read(uint16_t address) const override;
     void    write(uint16_t address, uint8_t value) override;
     void    tick() override;
 

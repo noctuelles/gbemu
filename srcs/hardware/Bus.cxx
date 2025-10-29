@@ -55,11 +55,12 @@ void Bus::write(const uint16_t address, const uint8_t value)
     memory_map[address]->write(address, value);
 }
 
-uint8_t Bus::read(const uint16_t address)
+uint8_t Bus::read(const uint16_t address) const
 {
     if (memory_map[address] == nullptr)
     {
         throw std::logic_error{std::format("Cannot perform bus read at {:#04x}.", address)};
     }
+
     return memory_map[address]->read(address);
 }

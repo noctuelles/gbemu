@@ -45,7 +45,7 @@ void SM83::write(const uint16_t address, const uint8_t value)
     }
 }
 
-uint8_t SM83::read(const uint16_t address)
+uint8_t SM83::read(const uint16_t address) const
 {
     switch (address)
     {

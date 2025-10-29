@@ -5,19 +5,40 @@
 #ifndef WORKRAM_HXX
 #define WORKRAM_HXX
 
-#include "Addressable.hxx"
 #include <array>
 
-class WorkRAM final : public Addressable {
-public:
-    WorkRAM() = default;
+#include "Addressable.hxx"
 
-    uint8_t read(uint16_t address) override;
-    void write(uint16_t address, uint8_t value) override;
-    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
+template <std::size_t N>
+class FixedSizeRAM : public Addressable
+{
+  public:
+    FixedSizeRAM() = default;
 
-private:
-    std::array<uint8_t, 8192> content{};
+    [[nodiscard]] uint8_t read(uint16_t address) const override
+    {
+        return content[address];
+    }
+
+    void write(uint16_t address, uint8_t value) override
+    {
+        content[address] = value;
+    }
+
+  private:
+    std::array<uint8_t, N> content{};
 };
 
-#endif //WORKRAM_HXX
+class WorkRAM final : public FixedSizeRAM<8192>
+{
+  public:
+    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
+};
+
+class FakeRAM final : public FixedSizeRAM<0x10000>
+{
+  public:
+    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
+};
+
+#endif  // WORKRAM_HXX

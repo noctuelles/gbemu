@@ -48,7 +48,7 @@ class Cartridge final : public Addressable
 
     explicit Cartridge(const std::filesystem::path& path);
 
-    uint8_t                        read(uint16_t address) override;
+    uint8_t                        read(uint16_t address) const override;
     void                           write(uint16_t address, uint8_t value) override;
     [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
 

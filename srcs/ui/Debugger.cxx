@@ -74,12 +74,9 @@ void Debugger::render()
         ImGui::SeparatorText("Instructions List");
         ImGui::Spacing();
 
-        std::vector<uint8_t> inst{};
-        for (auto i = cpu.PC; i < cpu.PC + 0x200; ++i)
-           inst.push_back(cpu.bus.read(i));
+        SM83::Disassembler disassembler{cpu.bus};
 
-        SM83::Disassembler disassembler{inst};
-        auto list{disassembler.disassemble(0)};
+        auto list{disassembler.disassemble(cpu.PC, 100)};
 
         for (auto [i, instruction] : std::views::enumerate(list))
         {

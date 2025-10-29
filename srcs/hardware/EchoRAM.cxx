@@ -4,7 +4,7 @@
 
 EchoRAM::EchoRAM(Addressable& ram) : content(ram) {}
 
-uint8_t EchoRAM::read(const uint16_t address)
+uint8_t EchoRAM::read(const uint16_t address) const
 {
     return content.read(address);
 }

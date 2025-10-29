@@ -269,7 +269,7 @@ Cartridge::Cartridge(const std::filesystem::path& path)
     }
 }
 
-uint8_t Cartridge::read(const uint16_t address)
+uint8_t Cartridge::read(const uint16_t address) const
 {
     return content[address];
 }

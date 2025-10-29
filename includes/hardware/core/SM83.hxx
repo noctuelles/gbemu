@@ -77,13 +77,13 @@ class SM83 final : public Component
         using InstructionDump          = std::pair<uint16_t, std::vector<uint8_t>>;
         using DisassembledInstructions = std::map<InstructionDump, std::string>;
 
-        explicit Disassembler(std::span<uint8_t> memory);
+        explicit Disassembler(const Addressable& addressable);
 
-        [[nodiscard]] auto disassemble(uint16_t start, std::optional<uint16_t> stop = {},
-                                       std::optional<uint16_t> base_addr = {}) const -> DisassembledInstructions;
+        [[nodiscard]] auto disassemble(uint16_t startingAddress, std::size_t nbrOfInstructions,
+                                       std::optional<uint16_t> baseAddress = {}) const -> DisassembledInstructions;
 
       private:
-        const std::span<uint8_t> memory;
+        const Addressable& addressable;
 
         enum class AddressingMode
         {
@@ -101,8 +101,8 @@ class SM83 final : public Component
 
         using InstructionLookup = std::array<Instruction, 0x100>;
 
-        static const InstructionLookup instruction_lookup;
-        static const InstructionLookup prefixed_instruction_lookup;
+        static const InstructionLookup instructionLookup;
+        static const InstructionLookup prefixedInstructionLookup;
     };
 
     struct View
@@ -131,7 +131,7 @@ class SM83 final : public Component
     SM83(Addressable& bus, const std::function<void()>& on_machine_cycle);
 
     void                           write(uint16_t address, uint8_t value) override;
-    [[nodiscard]] uint8_t          read(uint16_t address) override;
+    [[nodiscard]] uint8_t          read(uint16_t address) const override;
     [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
 
     void tick() override;

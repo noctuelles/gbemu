@@ -27,7 +27,7 @@ TEST(Disassembler, BootRomDisassembly)
 
     const SM83::Disassembler disassembler{boot_rom};
 
-    const auto disassembly_output = disassembler.disassemble(0x0, 0x100);
+    const auto disassembly_output = disassembler.disassemble(0x0, TODO);
 
     for (const auto& [addr, inst] : disassembly_output)
     {
