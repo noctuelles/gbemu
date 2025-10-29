@@ -13,7 +13,8 @@
 #include <iostream>
 #include <utility>
 
-SM83::SM83(Addressable& bus, const std::function<void()>& on_machine_cycle) : machine_cycle(on_machine_cycle), bus(bus)
+SM83::SM83(Addressable& bus, const std::function<void()>& on_machine_cycle)
+    : onMachineCycleCb(on_machine_cycle), bus(bus)
 {
     A  = 0x01;
     F  = 0xB0;
@@ -68,37 +69,91 @@ void SM83::tick()
     {
         case State::NORMAL:
         {
-            if (request_ime != 0)
+            if (requestIme != 0)
             {
-                request_ime -= 1;
-                if (request_ime == 0)
+                requestIme -= 1;
+                if (requestIme == 0)
                 {
                     IME = true;
                 }
             }
 
-            fetch_instruction();
-            decode_execute_instruction();
+            fetchInstruction();
+            decodeExecuteInstruction();
 
             instruction_buffer.clear();
             break;
         }
         case State::STOPPED:
         case State::HALTED:
-            machine_cycle();
+            onMachineCycleCb();
             if ((IE & IF) != 0)
             {
                 state = State::NORMAL;
             }
             break;
         case State::HALTED_BUG:
-            fetch_instruction();
+            fetchInstruction();
             PC--;
-            decode_execute_instruction();
+            decodeExecuteInstruction();
             break;
     }
 
     interrupts();
+}
+
+void SM83::applyView(const View& view)
+{
+    A = view.registers.A;
+    F = view.registers.F;
+    B = view.registers.B;
+    C = view.registers.C;
+    D = view.registers.D;
+    E = view.registers.E;
+    H = view.registers.H;
+    L = view.registers.L;
+
+    AF(view.registers.AF);
+    BC(view.registers.BC);
+    DE(view.registers.DE);
+    HL(view.registers.HL);
+
+    SP = view.registers.SP;
+    PC = view.registers.PC;
+}
+
+SM83::View SM83::getView() const
+{
+    View view{};
+
+    view.registers.A = A;
+    view.registers.F = F;
+    view.registers.B = B;
+    view.registers.C = C;
+    view.registers.D = D;
+    view.registers.E = E;
+    view.registers.H = H;
+    view.registers.L = L;
+
+    view.registers.AF = AF();
+    view.registers.BC = BC();
+    view.registers.DE = DE();
+    view.registers.HL = HL();
+
+    view.registers.SP = SP;
+    view.registers.PC = PC;
+
+    return view;
+}
+
+void SM83::attachDebugger(IDebugger& debugger)
+{
+    this->debugger = &debugger;
+}
+
+void SM83::detachDebugger()
+{
+    debugger = nullptr;
 }
 
 void SM83::print_state()
@@ -109,15 +164,20 @@ void SM83::print_state()
     std::print(std::cout, "{:<85s} - ", formatted_state);
 }
 
-void SM83::fetch_instruction()
+void SM83::fetchInstruction()
 {
+    if (debugger)
+    {
+        debugger->onInstructionFetched();
+    }
+
     IR = fetch_memory(PC++);
     instruction_buffer.push_back(IR);
 }
 
 uint8_t SM83::fetch_memory(const uint16_t address) const
 {
-    machine_cycle();
+    onMachineCycleCb();
     return bus.read(address);
 }
 
@@ -130,7 +190,7 @@ uint8_t SM83::fetch_operand()
 
 void SM83::write_memory(const uint16_t address, const uint8_t value) const
 {
-    machine_cycle();
+    onMachineCycleCb();
     return bus.write(address, value);
 }
 
@@ -205,7 +265,7 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 
     lhs_lsb = add(lhs_lsb, rhs);
 
-    machine_cycle();
+    onMachineCycleCb();
 
     if (get_flag(Flags::Carry) && !sign)
     {
@@ -218,7 +278,7 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 
     set_flag(Flags::Zero, false);
 
-    machine_cycle();
+    onMachineCycleCb();
 
     return utils::to_word(lhs_msb, lhs_lsb);
 }
@@ -427,7 +487,7 @@ void SM83::jr()
     const auto e8{static_cast<int8_t>(fetch_operand())};
 
     PC += e8;
-    machine_cycle();
+    onMachineCycleCb();
 }
 
 void SM83::jp()
@@ -436,7 +496,7 @@ void SM83::jp()
     const auto msb{fetch_operand()};
 
     PC = utils::to_word(msb, lsb);
-    machine_cycle();
+    onMachineCycleCb();
 }
 
 void SM83::call()
@@ -467,12 +527,12 @@ void SM83::ret()
     const auto msb{fetch_memory(SP++)};
 
     PC = utils::to_word(msb, lsb);
-    machine_cycle();
+    onMachineCycleCb();
 }
 
 void SM83::ret_cc(const Conditionals conditional)
 {
-    machine_cycle();
+    onMachineCycleCb();
     if (is_condition_met(conditional))
     {
         ret();
@@ -512,7 +572,7 @@ void SM83::rst(const ResetVector rst_vector)
 
 void SM83::push(const uint8_t msb, const uint8_t lsb)
 {
-    machine_cycle();
+    onMachineCycleCb();
     write_memory(--SP, msb);
     write_memory(--SP, lsb);
 }
@@ -590,11 +650,11 @@ void SM83::interrupts()
     interrupt_vector = 0x40 + bit_zero_count * 8;
     IF &= ~(1 << bit_zero_count);
 
-    machine_cycle();
-    machine_cycle();
+    onMachineCycleCb();
+    onMachineCycleCb();
     write_memory(--SP, utils::word_msb(PC));
     write_memory(--SP, utils::word_lsb(PC));
-    machine_cycle();
+    onMachineCycleCb();
 
     PC = interrupt_vector;
 }

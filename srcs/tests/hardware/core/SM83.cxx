@@ -17,14 +17,14 @@ namespace Test
         this->cpu.reset();
     }
 
-    void SM83::execute_instruction(std::initializer_list<uint8_t> instruction) const
+    void SM83::executeInstruction(std::initializer_list<uint8_t> instruction) const
     {
         for (const auto& byte : instruction)
         {
             address_space->write(cpu->PC, byte);
         }
 
-        cpu->fetch_instruction();
-        cpu->decode_execute_instruction();
+        cpu->fetchInstruction();
+        cpu->decodeExecuteInstruction();
     }
 }  // namespace Test

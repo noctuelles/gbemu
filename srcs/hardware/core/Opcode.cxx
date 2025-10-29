@@ -19,7 +19,7 @@
  *                     Pass `true` to activate instructions from the extended set (0xCB prefixed),
  *                     otherwise pass `false` to execute standard instructions.
  */
-void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
+void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
 {
     if (!extended_set)
     {
@@ -665,8 +665,8 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 jp_cc(Conditionals::Z);
                 break;
             case 0xCB:
-                fetch_instruction();
-                decode_execute_instruction(true);
+                fetchInstruction();
+                decodeExecuteInstruction(true);
                 break;
             case 0xCC:
                 call_cc(Conditionals::Z);
@@ -769,7 +769,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 break;
             case 0xF3:
                 this->IME         = false;
-                this->request_ime = 0;
+                this->requestIme = 0;
                 break;
             case 0xF5:
                 push(A, F);
@@ -785,7 +785,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 break;
             case 0xF9:
                 SP = HL();
-                machine_cycle();
+                onMachineCycleCb();
                 break;
             case 0xFA:
             {
@@ -795,7 +795,7 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
             }
             break;
             case 0xFB:
-                this->request_ime = 1;
+                this->requestIme = 1;
                 break;
             case 0xFE:
                 (void) sub(A, fetch_operand());
@@ -806,6 +806,11 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
             [[unlikely]] default:
                 throw std::runtime_error(std::format("Illegal opcode: {:02X}", IR));
         };
+
+        if (debugger)
+        {
+            debugger->onInstructionExecuted();
+        }
     }
     else
     {
@@ -1587,4 +1592,5 @@ void SM83::decode_execute_instruction(const bool extended_set)  // NOLINT
                 throw std::runtime_error(std::format("Opcode not implemented {:02X}", IR));
         };
     }
+
 }

@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "IDebugger.hxx"
 #include "hardware/Addressable.hxx"
 
 namespace Test
@@ -104,6 +105,29 @@ class SM83 final : public Component
         static const InstructionLookup prefixed_instruction_lookup;
     };
 
+    struct View
+    {
+        struct Registers
+        {
+            uint8_t A{};
+            uint8_t F{};
+            uint8_t B{};
+            uint8_t C{};
+            uint8_t D{};
+            uint8_t E{};
+            uint8_t H{};
+            uint8_t L{};
+
+            uint16_t AF{};
+            uint16_t BC{};
+            uint16_t DE{};
+            uint16_t HL{};
+
+            uint16_t SP{};
+            uint16_t PC{};
+        } registers;
+    };
+
     SM83(Addressable& bus, const std::function<void()>& on_machine_cycle);
 
     void                           write(uint16_t address, uint8_t value) override;
@@ -112,18 +136,24 @@ class SM83 final : public Component
 
     void tick() override;
 
+    void               applyView(const View& view);
+    [[nodiscard]] View getView() const;
+
+    void attachDebugger(IDebugger& debugger);
+    void detachDebugger();
+
     void print_state();
 
   private:
     /**
      * @brief Load an instruction into the IR register.
      */
-    void fetch_instruction();
+    void fetchInstruction();
 
     /**
      * @brief Execute the instruction stored in the IR register.
      */
-    void decode_execute_instruction(bool extended_set = false);
+    void decodeExecuteInstruction(bool extended_set = false);
 
     [[nodiscard]] uint8_t fetch_memory(uint16_t address) const;
     [[nodiscard]] uint8_t fetch_operand();
@@ -260,6 +290,8 @@ class SM83 final : public Component
     [[nodiscard]] uint8_t get_interrupt_request() const;
     void                  interrupts();
 
+    View takeView() const;
+
     uint8_t  A{};
     uint8_t  F{};
     uint8_t  B{};
@@ -289,7 +321,9 @@ class SM83 final : public Component
     /**
      * @brief Callback function when a machine cycle is executed by the CPU.
      */
-    std::function<void()> machine_cycle;
+    std::function<void()> onMachineCycleCb;
+
+    IDebugger* debugger{nullptr};
 
     /**
      * @brief State of the CPU.
@@ -305,7 +339,7 @@ class SM83 final : public Component
      */
     bool IME{};
 
-    uint8_t request_ime{};
+    uint8_t requestIme{};
 
     Addressable& bus;
 

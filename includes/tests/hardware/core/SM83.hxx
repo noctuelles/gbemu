@@ -27,7 +27,7 @@ namespace Test
          * @brief Execute an instruction
          * @param instruction Instruction to be executed by the CPU.
          */
-        void execute_instruction(std::initializer_list<uint8_t> instruction) const;
+        void executeInstruction(std::initializer_list<uint8_t> instruction) const;
     };
 }  // namespace Test
 

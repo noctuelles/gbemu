@@ -19,7 +19,7 @@ class Bus final : public Addressable
     void attach(Addressable& addressable);
 
   private:
-    std::array<Addressable *, 0xFFFF> memory_map{};
+    std::array<Addressable *, 0x10000> memory_map{};
 };
 
 #endif  // BUS_HXX

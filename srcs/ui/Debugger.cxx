@@ -101,8 +101,14 @@ void Debugger::render()
                                   ICON_FK_CIRCLE, nullptr);
             }
 
+            std::string byte_dump{};
+            for (const auto byte : instruction.first.second)
+            {
+                byte_dump += std::string{std::format("{:02X} ", byte)};
+            }
+
             ImGui::SameLine();
-            ImGui::Text("$%04X     %s", instruction.first.first, instruction.second.c_str());
+            ImGui::Text("$%04X %15s %30s", instruction.first.first, byte_dump.c_str(), instruction.second.c_str());
 
             if (selectedIndex == i)
             {
@@ -197,6 +203,12 @@ void Debugger::render()
 void Debugger::setDisabled(bool _disabled)
 {
     this->disabled = _disabled;
+}
+
+void Debugger::onInstructionFetched() {}
+
+void Debugger::onInstructionExecuted()
+{
 }
 
 void Debugger::ImGuiTextRegister(const std::string& regName, const uint16_t value, bool sixteenBitsRegister) const
