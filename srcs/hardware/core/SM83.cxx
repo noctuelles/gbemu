@@ -41,7 +41,7 @@ void SM83::write(const uint16_t address, const uint8_t value)
             IF = 0xE0 | value;
             break;
         default:
-            throw std::logic_error("Invalid SM83 Write");
+            throw std::logic_error(std::format("Invalid SM83 Write"));
     }
 }
 
@@ -54,6 +54,7 @@ uint8_t SM83::read(const uint16_t address) const
         case MemoryMap::IORegisters::IF:
             return 0xE0 | IF;
         default:
+            std::cout << "Invalid SM83 Read" << std::endl;
             throw std::logic_error("Invalid SM83 Write");
     }
 }
@@ -146,9 +147,10 @@ SM83::View SM83::getView() const
     return view;
 }
 
-void SM83::attachDebugger(IDebugger& debugger)
+void SM83::attachDebugger(IDebugger<View>& debugger)
 {
     this->debugger = &debugger;
+    this->debugger->onCpuInitialization(getView());
 }
 
 void SM83::detachDebugger()
@@ -168,7 +170,7 @@ void SM83::fetchInstruction()
 {
     if (debugger)
     {
-        debugger->onInstructionFetched();
+        debugger->onCpuInstructionFetched(getView());
     }
 
     IR = fetch_memory(PC++);

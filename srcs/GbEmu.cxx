@@ -22,6 +22,8 @@ GbEmu::GbEmu()
 
     configureImGui();
 
+    cpu.attachDebugger(debugger);
+
     bus.attach(cpu);
     bus.attach(timer);
     bus.attach(ram);

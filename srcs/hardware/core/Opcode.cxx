@@ -4,8 +4,8 @@
 
 #include <format>
 
-#include "hardware/core/SM83.hxx"
 #include "Utils.hxx"
+#include "hardware/core/SM83.hxx"
 
 /**
  * Executes decode, and execute cycle for a SM83 instruction.
@@ -768,7 +768,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 A = fetch_memory(0xFF00 | C);
                 break;
             case 0xF3:
-                this->IME         = false;
+                this->IME        = false;
                 this->requestIme = 0;
                 break;
             case 0xF5:
@@ -809,7 +809,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
 
         if (debugger)
         {
-            debugger->onInstructionExecuted();
+            debugger->onCpuInstructionExecuted(getView());
         }
     }
     else
@@ -1592,5 +1592,4 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 throw std::runtime_error(std::format("Opcode not implemented {:02X}", IR));
         };
     }
-
 }

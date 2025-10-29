@@ -136,15 +136,16 @@ class SM83 final : public Component
 
     void tick() override;
 
-    void               applyView(const View& view);
-    [[nodiscard]] View getView() const;
+    void applyView(const View& view);
 
-    void attachDebugger(IDebugger& debugger);
+    void attachDebugger(IDebugger<View>& debugger);
     void detachDebugger();
 
     void print_state();
 
   private:
+    [[nodiscard]] View getView() const;
+
     /**
      * @brief Load an instruction into the IR register.
      */
@@ -323,7 +324,7 @@ class SM83 final : public Component
      */
     std::function<void()> onMachineCycleCb;
 
-    IDebugger* debugger{nullptr};
+    IDebugger<View>* debugger{nullptr};
 
     /**
      * @brief State of the CPU.
@@ -345,7 +346,6 @@ class SM83 final : public Component
 
     friend class MooneyeAcceptance;
     friend class Test::SM83;
-    friend class Debugger;
 };
 
 #endif

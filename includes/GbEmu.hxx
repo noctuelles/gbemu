@@ -45,7 +45,7 @@ class GbEmu
     Timer   timer;
     FakeRAM ram{};
 
-    Debugger                 debugger{cpu};
+    Debugger                 debugger{bus};
     AddressSpaceMemoryEditor addressSpaceMemoryEditor{bus};
 };
 

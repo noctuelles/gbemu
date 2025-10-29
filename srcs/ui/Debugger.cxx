@@ -6,12 +6,13 @@
 
 #include <format>
 #include <ranges>
+#include <utility>
 #include <vector>
 
 #include "imgui.h"
 #include "ui/ForkAwesomeFont.hxx"
 
-Debugger::Debugger(SM83& cpu) : cpu(cpu), instructions(10, {false, "$1000:", "LD A, A"}) {}
+Debugger::Debugger(Addressable& bus) : bus(bus), disassembler(bus) {}
 
 void Debugger::render()
 {
@@ -49,8 +50,8 @@ void Debugger::render()
 
         if (ImGui::Button(ICON_FK_ARROW_DOWN))
         {
-            cpu.tick();
         }
+
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Step in");
@@ -74,9 +75,7 @@ void Debugger::render()
         ImGui::SeparatorText("Instructions List");
         ImGui::Spacing();
 
-        SM83::Disassembler disassembler{cpu.bus};
-
-        auto list{disassembler.disassemble(cpu.PC, 100)};
+        auto list{disassembler.disassemble(cpuView.registers.PC, 100)};
 
         for (auto [i, instruction] : std::views::enumerate(list))
         {
@@ -134,31 +133,31 @@ void Debugger::render()
         ImGui::SeparatorText("CPU Registers");
         ImGui::Spacing();
 
-        ImGuiTextRegister("A", cpu.A);
+        ImGuiTextRegister("A", cpuView.registers.A);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("AF", cpu.AF(), true);
+        ImGuiTextRegister("AF", cpuView.registers.AF, true);
 
-        ImGuiTextRegister("B", cpu.B);
+        ImGuiTextRegister("B", cpuView.registers.B);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("BC", cpu.BC(), true);
+        ImGuiTextRegister("BC", cpuView.registers.BC, true);
 
-        ImGuiTextRegister("C", cpu.C);
+        ImGuiTextRegister("C", cpuView.registers.C);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("DE", cpu.DE(), true);
+        ImGuiTextRegister("DE", cpuView.registers.DE, true);
 
-        ImGuiTextRegister("D", cpu.D);
+        ImGuiTextRegister("D", cpuView.registers.D);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("HL", cpu.HL(), true);
+        ImGuiTextRegister("HL", cpuView.registers.HL, true);
 
-        ImGuiTextRegister("E", cpu.E);
+        ImGuiTextRegister("E", cpuView.registers.E);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("SP", cpu.SP, true);
+        ImGuiTextRegister("SP", cpuView.registers.SP, true);
 
-        ImGuiTextRegister("H", cpu.H);
+        ImGuiTextRegister("H", cpuView.registers.H);
         ImGui::SameLine(0, 20);
-        ImGuiTextRegister("PC", cpu.PC, true);
+        ImGuiTextRegister("PC", cpuView.registers.PC, true);
 
-        ImGuiTextRegister("L", cpu.L);
+        ImGuiTextRegister("L", cpuView.registers.L);
 
         ImGui::Spacing();
         ImGui::SeparatorText("CPU Flags");
@@ -167,26 +166,27 @@ void Debugger::render()
         const auto     spacing{ImGui::GetContentRegionAvail().x / 4.f};
         constexpr auto green{ImVec4(0, 1, 0, 1)};
         constexpr auto red{ImVec4(1, 0, 0, 1)};
+        auto getFlag = [this](const SM83::Flags flag) { return cpuView.registers.F & std::to_underlying(flag); };
 
-        ImGui::TextColored(cpu.get_flag(SM83::Flags::Zero) ? green : red, "Z");
+        ImGui::TextColored(getFlag(SM83::Flags::Zero) ? green : red, "Z");
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Zero flag");
         }
         ImGui::SameLine(0, spacing);
-        ImGui::TextColored(cpu.get_flag(SM83::Flags::Subtract) ? green : red, "N");
+        ImGui::TextColored(getFlag(SM83::Flags::Subtract) ? green : red, "N");
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Substraction flag (BCD)");
         }
         ImGui::SameLine(0, spacing);
-        ImGui::TextColored(cpu.get_flag(SM83::Flags::HalfCarry) ? green : red, "H");
+        ImGui::TextColored(getFlag(SM83::Flags::HalfCarry) ? green : red, "H");
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Half Carry flag (BCD)");
         }
         ImGui::SameLine(0, spacing);
-        ImGui::TextColored(cpu.get_flag(SM83::Flags::Carry) ? green : red, "C");
+        ImGui::TextColored(getFlag(SM83::Flags::Carry) ? green : red, "C");
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Carry flag");
@@ -202,10 +202,19 @@ void Debugger::setDisabled(bool _disabled)
     this->disabled = _disabled;
 }
 
-void Debugger::onInstructionFetched() {}
-
-void Debugger::onInstructionExecuted()
+void Debugger::onCpuInitialization(SM83::View view)
 {
+    cpuView = view;
+}
+
+void Debugger::onCpuInstructionFetched(SM83::View view)
+{
+    (void) view;
+}
+
+void Debugger::onCpuInstructionExecuted(SM83::View view)
+{
+    cpuView = view;
 }
 
 void Debugger::ImGuiTextRegister(const std::string& regName, const uint16_t value, bool sixteenBitsRegister) const

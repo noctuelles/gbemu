@@ -6,34 +6,37 @@
 #define GBEMU_DEBUGGER_HXX
 
 #include <cstdint>
+#include <set>
 #include <string>
-#include <vector>
 
-#include "../IDebugger.hxx"
+#include "IDebugger.hxx"
 #include "hardware/core/SM83.hxx"
 
-class Debugger final : public IDebugger
+class Debugger final : public IDebugger<SM83::View>
 {
   public:
-    explicit Debugger(SM83& cpu);
+    explicit Debugger(Addressable& bus);
 
     void render();
     void setDisabled(bool _disabled);
 
-    void onInstructionFetched() override;
-    void onInstructionExecuted() override;
+    void onCpuInitialization(SM83::View view) override;
+    void onCpuInstructionFetched(SM83::View view) override;
+    void onCpuInstructionExecuted(SM83::View view) override;
 
   private:
     void ImGuiTextRegister(const std::string& regName, uint16_t value, bool sixteenBitsRegister = false) const;
 
-    SM83& cpu;
+    Addressable&       bus;
+    SM83::Disassembler disassembler;
+    SM83::View         cpuView{};
 
     int  selectedIndex{};
     bool showValueAsHexadecimal{true};
     bool showValueAsDecimal{false};
     bool disabled{false};
 
-    std::vector<std::tuple<bool, const char*, std::string>> instructions;
+    std::set<uint16_t> breakpoints;
 };
 
 #endif  // GBEMU_DEBUGGER_HXX
