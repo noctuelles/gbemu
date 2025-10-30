@@ -38,4 +38,11 @@ namespace MemoryMap
     constexpr uint16_t IE{0xFFFF};
 }  // namespace MemoryMap
 
+enum class EmulationState
+{
+    NORMAL,
+    HALTED,
+    SINGLE_CPU_TICK,
+};
+
 #endif  // COMMON_HXX

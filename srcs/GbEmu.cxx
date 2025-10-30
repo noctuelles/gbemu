@@ -45,7 +45,7 @@ GbEmu::GbEmu()
         0xfe, 0x23, 0x7d, 0xfe, 0x34, 0x20, 0xf5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xfb, 0x86, 0x20, 0xfe,
         0x3e, 0x01, 0xe0, 0x50};
 
-    auto addr{0x0100};
+    auto addr{0x0};
     for (const auto& byte : boot_rom)
     {
         ram.write(addr++, byte);
@@ -62,7 +62,10 @@ GbEmu::~GbEmu()
     SDL_Quit();
 }
 
-void GbEmu::onCpuMachineCycle() {}
+void GbEmu::onCpuMachineCycle()
+{
+    timer.tick();
+}
 
 void GbEmu::loop()
 {
@@ -73,14 +76,11 @@ void GbEmu::loop()
     {
         /* Emulator */
 
-        switch (emulationState)
+        switch (debugger.getEmulationState())
         {
+            case EmulationState::SINGLE_CPU_TICK:
             case EmulationState::NORMAL:
                 cpu.tick();
-                break;
-            case EmulationState::SINGLE_CPU_TICK:
-                cpu.tick();
-                emulationState = EmulationState::HALTED;
                 break;
             case EmulationState::HALTED:
                 break;

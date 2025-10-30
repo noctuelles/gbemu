@@ -6,9 +6,9 @@
 #define GBEMU_GBEMU_HXX
 
 #include "SDL.hxx"
-#include "hardware/WorkRAM.hxx"
 #include "hardware/Bus.hxx"
 #include "hardware/Timer.hxx"
+#include "hardware/WorkRAM.hxx"
 #include "hardware/core/SM83.hxx"
 #include "ui/AddressSpaceMemoryEditor.hxx"
 #include "ui/Debugger.hxx"
@@ -22,13 +22,6 @@ class GbEmu
     void loop();
 
   private:
-    enum class EmulationState
-    {
-        NORMAL,
-        HALTED,
-        SINGLE_CPU_TICK,
-    };
-
     void configureSDL();
     void configureImGui();
 
@@ -36,7 +29,6 @@ class GbEmu
 
     WrappedSDLWindow   window;
     WrappedSDLRenderer renderer;
-    EmulationState     emulationState{EmulationState::HALTED};
     bool               mainLoopRunning{true};
 
     Bus bus{};

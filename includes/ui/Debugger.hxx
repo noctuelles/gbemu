@@ -9,6 +9,7 @@
 #include <set>
 #include <string>
 
+#include "Common.hxx"
 #include "IDebugger.hxx"
 #include "hardware/core/SM83.hxx"
 
@@ -20,6 +21,8 @@ class Debugger final : public IDebugger<SM83::View>
     void render();
     void setDisabled(bool _disabled);
 
+    [[nodiscard]] EmulationState getEmulationState() const;
+
     void onCpuInitialization(SM83::View view) override;
     void onCpuInstructionFetched(SM83::View view) override;
     void onCpuInstructionExecuted(SM83::View view) override;
@@ -30,6 +33,7 @@ class Debugger final : public IDebugger<SM83::View>
     Addressable&       bus;
     SM83::Disassembler disassembler;
     SM83::View         cpuView{};
+    EmulationState     emulationState{EmulationState::HALTED};
 
     int  selectedIndex{};
     bool showValueAsHexadecimal{true};

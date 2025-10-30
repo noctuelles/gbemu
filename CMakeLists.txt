@@ -95,7 +95,6 @@ add_executable(gbemu
         includes/GbEmu.hxx
         includes/SDL.hxx
         srcs/GbEmu.cxx
-        srcs/GbEmu.hxx
 )
 
 target_link_libraries(

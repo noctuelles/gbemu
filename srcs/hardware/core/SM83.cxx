@@ -25,7 +25,7 @@ SM83::SM83(Addressable& bus, const std::function<void()>& on_machine_cycle)
     H  = 0x01;
     L  = 0x4D;
     SP = 0xFFFE;
-    PC = 0x0100;
+    PC = 0x0000;
 
     instruction_buffer.reserve(16);
 }

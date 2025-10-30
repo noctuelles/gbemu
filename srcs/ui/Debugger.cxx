@@ -16,6 +16,11 @@ Debugger::Debugger(Addressable& bus) : bus(bus), disassembler(bus) {}
 
 void Debugger::render()
 {
+    if (emulationState == EmulationState::SINGLE_CPU_TICK)
+    {
+        emulationState = EmulationState::HALTED;
+    }
+
     ImGui::Begin("Debugger", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize);
     ImGui::BeginDisabled(disabled);
 
@@ -40,7 +45,11 @@ void Debugger::render()
 
     ImGui::BeginGroup();
     {
-        ImGui::Button(ICON_FK_PLAY);
+        if (ImGui::Button(ICON_FK_PLAY))
+        {
+            emulationState = EmulationState::NORMAL;
+        }
+
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Continue");
@@ -50,8 +59,8 @@ void Debugger::render()
 
         if (ImGui::Button(ICON_FK_ARROW_DOWN))
         {
+            emulationState = EmulationState::SINGLE_CPU_TICK;
         }
-
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Step in");
@@ -68,29 +77,35 @@ void Debugger::render()
     ImGui::EndGroup();
 
     {
-        const auto availableWidth{ImGui::GetContentRegionAvail().x};
+        auto availableWidth{ImGui::GetContentRegionAvail().x};
 
         ImGui::BeginChild("##instructionList", ImVec2(availableWidth * 0.75f, 0), true);
 
         ImGui::SeparatorText("Instructions List");
         ImGui::Spacing();
 
-        auto list{disassembler.disassemble(cpuView.registers.PC, 100)};
-
-        for (auto [i, instruction] : std::views::enumerate(list))
+        for (auto list{disassembler.disassemble(0, 256)};
+             auto [i, instruction] : std::views::enumerate(list))
         {
-            auto breakpointActive = false;
+            const auto isAddressInBreakpoints{breakpoints.contains(instruction.first.first)};
 
             ImGui::PushID(i);
             if (ImGui::InvisibleButton("##hoverBtn", ImVec2(18, 18)))
             {
-                breakpointActive = !breakpointActive;
+                if (isAddressInBreakpoints)
+                {
+                    breakpoints.erase(instruction.first.first);
+                }
+                else
+                {
+                    breakpoints.insert(instruction.first.first);
+                }
             }
 
-            if (ImGui::IsItemHovered() || breakpointActive)
+            if (ImGui::IsItemHovered() || isAddressInBreakpoints)
             {
                 const auto pos{ImGui::GetItemRectMin()};
-                const auto opacity{breakpointActive ? 1.0f : 0.5f};
+                const auto opacity{isAddressInBreakpoints ? 1.f : 0.5f};
                 auto       drawList{ImGui::GetWindowDrawList()};
 
                 drawList->AddText(ImVec2(pos.x + 4.5f, pos.y + 2.5f), IM_COL32(255, 0, 0, 255 * opacity),
@@ -106,7 +121,7 @@ void Debugger::render()
             ImGui::SameLine();
             ImGui::Text("$%04X %15s %30s", instruction.first.first, byte_dump.c_str(), instruction.second.c_str());
 
-            if (selectedIndex == i)
+            if (cpuView.registers.PC == instruction.first.first)
             {
                 auto       drawList = ImGui::GetWindowDrawList();
                 const auto style    = ImGui::GetStyle();
@@ -119,6 +134,8 @@ void Debugger::render()
 
                 drawList->AddRectFilled(pMin, pMax,
                                         IM_COL32(color.x * 255.f, color.y * 255.f, color.z * 255.f, color.w * 255.f));
+
+                ImGui::SetScrollHereY();
             }
 
             ImGui::PopID();
@@ -202,6 +219,11 @@ void Debugger::setDisabled(bool _disabled)
     this->disabled = _disabled;
 }
 
+EmulationState Debugger::getEmulationState() const
+{
+    return emulationState;
+}
+
 void Debugger::onCpuInitialization(SM83::View view)
 {
     cpuView = view;
@@ -215,6 +237,11 @@ void Debugger::onCpuInstructionFetched(SM83::View view)
 void Debugger::onCpuInstructionExecuted(SM83::View view)
 {
     cpuView = view;
+
+    if (breakpoints.contains(cpuView.registers.PC))
+    {
+        emulationState = EmulationState::HALTED;
+    }
 }
 
 void Debugger::ImGuiTextRegister(const std::string& regName, const uint16_t value, bool sixteenBitsRegister) const
