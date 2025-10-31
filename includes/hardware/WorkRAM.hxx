@@ -32,13 +32,13 @@ class FixedSizeRAM : public Addressable
 class WorkRAM final : public FixedSizeRAM<8192>
 {
   public:
-    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
+    [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 };
 
 class FakeRAM final : public FixedSizeRAM<0x10000>
 {
   public:
-    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
+    [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 };
 
 #endif  // WORKRAM_HXX

@@ -279,7 +279,7 @@ void Cartridge::write(const uint16_t address, uint8_t value)
     content[address] = value;
 }
 
-Addressable::AddressableRange Cartridge::get_addressable_range() const noexcept
+Addressable::AddressableRange Cartridge::getAddressableRange() const noexcept
 {
     return {std::make_pair(0x0000, 0x7FFF)};
 }

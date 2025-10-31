@@ -525,7 +525,7 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::prefixedInstruct
     {"SET 7, A"}      // 0xFF
 }};
 
-SM83::Disassembler::Disassembler(const Addressable& addressable) : addressable(addressable) {}
+SM83::Disassembler::Disassembler(std::span<const uint8_t> memory) : memory(memory) {}
 
 auto SM83::Disassembler::disassemble(const uint16_t startingAddress, std::size_t nbrOfInstructions,
                                      const std::optional<uint16_t> baseAddress) const -> DisassembledInstructions
@@ -540,7 +540,7 @@ auto SM83::Disassembler::disassemble(const uint16_t startingAddress, std::size_t
         Instruction                           instruction;
         const auto                            read_memory = [this, &currentAddress, &instruction_dump]
         {
-            const auto byte{addressable.read(currentAddress++)};
+            const auto byte{memory[currentAddress++]};
             instruction_dump.second.push_back(byte);
 
             return byte;

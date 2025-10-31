@@ -121,7 +121,7 @@ uint8_t Timer::read(const uint16_t address) const
             throw std::logic_error(std::format("Invalid timer read at 0x{:04X}", address));
     };
 }
-Addressable::AddressableRange Timer::get_addressable_range() const noexcept
+Addressable::AddressableRange Timer::getAddressableRange() const noexcept
 {
     return {MemoryMap::IORegisters::DIV, MemoryMap::IORegisters::TIMA, MemoryMap::IORegisters::TMA,
             MemoryMap::IORegisters::TAC};

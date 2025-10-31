@@ -23,7 +23,7 @@ struct FakeRAM final : Addressable
         content[address] = value;
     }
 
-    [[nodiscard]] AddressableRange get_addressable_range() const override
+    [[nodiscard]] AddressableRange getAddressableRange() const override
     {
         return {std::make_pair(0x0000, 0xFFFF)};
     }

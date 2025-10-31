@@ -806,11 +806,6 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
             [[unlikely]] default:
                 throw std::runtime_error(std::format("Illegal opcode: {:02X}", IR));
         };
-
-        if (debugger)
-        {
-            debugger->onCpuInstructionExecuted(getView());
-        }
     }
     else
     {

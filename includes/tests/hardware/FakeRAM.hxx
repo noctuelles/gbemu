@@ -13,7 +13,7 @@ struct FakeRAM final : Addressable
 {
     uint8_t                        read(uint16_t address) override;
     void                           write(uint16_t address, uint8_t value) override;
-    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
+    [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 
     std::array<uint8_t, 0xFFFF> content{};
 };

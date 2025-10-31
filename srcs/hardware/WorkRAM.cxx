@@ -6,12 +6,12 @@
 
 #include "Common.hxx"
 
-Addressable::AddressableRange WorkRAM::get_addressable_range() const noexcept
+Addressable::AddressableRange WorkRAM::getAddressableRange() const noexcept
 {
     return {MemoryMap::WORK_RAM};
 }
 
-Addressable::AddressableRange FakeRAM::get_addressable_range() const noexcept
+Addressable::AddressableRange FakeRAM::getAddressableRange() const noexcept
 {
     return {std::make_pair(0x0000, 0xFFFF)};
 }

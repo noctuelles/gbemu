@@ -19,7 +19,7 @@ struct Addressable
     [[nodiscard]] virtual uint8_t read(uint16_t address) const           = 0;
     virtual void                  write(uint16_t address, uint8_t value) = 0;
 
-    [[nodiscard]] virtual AddressableRange get_addressable_range() const noexcept = 0;
+    [[nodiscard]] virtual AddressableRange getAddressableRange() const noexcept = 0;
 };
 
 struct Ticking

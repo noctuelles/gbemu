@@ -5,12 +5,10 @@
 #ifndef GBEMU_GBEMU_HXX
 #define GBEMU_GBEMU_HXX
 
+#include <thread>
+
+#include "Emulator.hxx"
 #include "SDL.hxx"
-#include "hardware/Bus.hxx"
-#include "hardware/Timer.hxx"
-#include "hardware/WorkRAM.hxx"
-#include "hardware/core/SM83.hxx"
-#include "ui/AddressSpaceMemoryEditor.hxx"
 #include "ui/Debugger.hxx"
 
 class GbEmu
@@ -19,26 +17,25 @@ class GbEmu
     GbEmu();
     ~GbEmu();
 
+    void pushEvent(const Emulator::Event& event);
+
     void loop();
 
   private:
+    utils::ThreadSafeQueue<Emulator::Event> eventQueue;
+
     void configureSDL();
     void configureImGui();
 
-    void onCpuMachineCycle();
-
     WrappedSDLWindow   window;
     WrappedSDLRenderer renderer;
-    bool               mainLoopRunning{true};
 
-    Bus bus{};
+    Emulator     emu;
+    std::jthread emuThread;
 
-    SM83    cpu;
-    Timer   timer;
-    FakeRAM ram{};
+    Debugger debugger;
 
-    Debugger                 debugger{bus};
-    AddressSpaceMemoryEditor addressSpaceMemoryEditor{bus};
+    bool mainLoopRunning{true};
 };
 
 #endif  // GBEMU_GBEMU_HXX

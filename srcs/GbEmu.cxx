@@ -4,6 +4,7 @@
 
 #include "GbEmu.hxx"
 
+#include "Emulator.hxx"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
 #include "ui/ForkAwesomeFont.hxx"
@@ -12,8 +13,8 @@ GbEmu::GbEmu()
     : window("gbemu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1300, 800,
              SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE),
       renderer(window, -1, 0),
-      cpu(bus, [this] { onCpuMachineCycle(); }),
-      timer(bus)
+      emu(*this),
+      emuThread(std::ref(emu))
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
@@ -21,12 +22,6 @@ GbEmu::GbEmu()
     }
 
     configureImGui();
-
-    cpu.attachDebugger(debugger);
-
-    bus.attach(cpu);
-    bus.attach(timer);
-    bus.attach(ram);
 
     std::vector<uint8_t> boot_rom{
         0x31, 0xfe, 0xff, 0xaf, 0x21, 0xff, 0x9f, 0x32, 0xcb, 0x7c, 0x20, 0xfb, 0x21, 0x26, 0xff, 0x0e, 0x11, 0x3e,
@@ -44,12 +39,6 @@ GbEmu::GbEmu()
         0x3c, 0x42, 0xb9, 0xa5, 0xb9, 0xa5, 0x42, 0x3c, 0x21, 0x04, 0x01, 0x11, 0xa8, 0x00, 0x1a, 0x13, 0xbe, 0x20,
         0xfe, 0x23, 0x7d, 0xfe, 0x34, 0x20, 0xf5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xfb, 0x86, 0x20, 0xfe,
         0x3e, 0x01, 0xe0, 0x50};
-
-    auto addr{0x0};
-    for (const auto& byte : boot_rom)
-    {
-        ram.write(addr++, byte);
-    }
 }
 
 GbEmu::~GbEmu()
@@ -62,9 +51,9 @@ GbEmu::~GbEmu()
     SDL_Quit();
 }
 
-void GbEmu::onCpuMachineCycle()
+void GbEmu::pushEvent(const Emulator::Event& event)
 {
-    timer.tick();
+    eventQueue.push(event);
 }
 
 void GbEmu::loop()
@@ -74,19 +63,18 @@ void GbEmu::loop()
 
     while (mainLoopRunning)
     {
-        /* Emulator */
+        auto emuEvent{eventQueue.try_pop()};
 
-        switch (debugger.getEmulationState())
+        if (emuEvent.has_value())
         {
-            case EmulationState::SINGLE_CPU_TICK:
-            case EmulationState::NORMAL:
-                cpu.tick();
-                break;
-            case EmulationState::HALTED:
-                break;
+            switch (emuEvent.value().type)
+            {
+                case Emulator::Event::Type::Paused:
+                    debugger.setCpuView(emuEvent.value().view);
+                    debugger.setAddressSpace(emuEvent.value().addressSpace);
+                    break;
+            }
         }
-
-        /* Graphics */
 
         while (SDL_PollEvent(&event))
         {
@@ -103,8 +91,7 @@ void GbEmu::loop()
         ImGui::NewFrame();
         ImGui::DockSpaceOverViewport();
 
-        debugger.render();
-        addressSpaceMemoryEditor.render();
+        auto command{debugger.render()};
 
         ImGui::Render();
 
@@ -112,6 +99,11 @@ void GbEmu::loop()
         SDL_RenderClear(renderer);
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
         SDL_RenderPresent(renderer);
+
+        if (command.has_value())
+        {
+            emu.pushCommand(command.value());
+        }
     }
 }
 

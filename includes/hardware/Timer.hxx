@@ -22,7 +22,7 @@ class Timer final : public Component
 
     void    write(uint16_t address, uint8_t value) override;
     uint8_t read(uint16_t address) const override;
-    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
+    [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
     void    tick() override;
 
   private:

@@ -50,7 +50,7 @@ class Cartridge final : public Addressable
 
     uint8_t                        read(uint16_t address) const override;
     void                           write(uint16_t address, uint8_t value) override;
-    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
+    [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 
     [[nodiscard]] const std::string_view& get_title() const;
     [[nodiscard]] const std::string_view& get_licensee() const;

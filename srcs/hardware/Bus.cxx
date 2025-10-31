@@ -6,9 +6,14 @@
 
 #include <utility>
 
-Addressable::AddressableRange Bus::get_addressable_range() const noexcept
+Addressable::AddressableRange Bus::getAddressableRange() const noexcept
 {
     return {std::make_pair(0x0000, 0xFFFF)};
+}
+
+std::span<const uint8_t, 0x10000> Bus::getAddressSpace() const noexcept
+{
+    return {addressSpace};
 }
 
 /**
@@ -23,7 +28,7 @@ Addressable::AddressableRange Bus::get_addressable_range() const noexcept
  */
 void Bus::attach(Addressable& addressable)
 {
-    for (const auto& range : addressable.get_addressable_range())
+    for (const auto& range : addressable.getAddressableRange())
     {
         if (const auto memoryLocation{std::get_if<uint16_t>(&range)}; memoryLocation)
         {
@@ -53,6 +58,7 @@ void Bus::write(const uint16_t address, const uint8_t value)
     }
 
     memory_map[address]->write(address, value);
+    addressSpace[address] = value;
 }
 
 uint8_t Bus::read(const uint16_t address) const

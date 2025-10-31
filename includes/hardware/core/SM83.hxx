@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "IDebugger.hxx"
 #include "hardware/Addressable.hxx"
 
 namespace Test
@@ -77,13 +76,13 @@ class SM83 final : public Component
         using InstructionDump          = std::pair<uint16_t, std::vector<uint8_t>>;
         using DisassembledInstructions = std::map<InstructionDump, std::string>;
 
-        explicit Disassembler(const Addressable& addressable);
+        explicit Disassembler(std::span<const uint8_t> memory);
 
         [[nodiscard]] auto disassemble(uint16_t startingAddress, std::size_t nbrOfInstructions,
                                        std::optional<uint16_t> baseAddress = {}) const -> DisassembledInstructions;
 
       private:
-        const Addressable& addressable;
+        std::span<const uint8_t> memory;
 
         enum class AddressingMode
         {
@@ -132,20 +131,16 @@ class SM83 final : public Component
 
     void                           write(uint16_t address, uint8_t value) override;
     [[nodiscard]] uint8_t          read(uint16_t address) const override;
-    [[nodiscard]] AddressableRange get_addressable_range() const noexcept override;
+    [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 
     void tick() override;
 
-    void applyView(const View& view);
-
-    void attachDebugger(IDebugger<View>& debugger);
-    void detachDebugger();
+    void               applyView(const View& view);
+    [[nodiscard]] View getView() const;
 
     void print_state();
 
   private:
-    [[nodiscard]] View getView() const;
-
     /**
      * @brief Load an instruction into the IR register.
      */
@@ -291,8 +286,6 @@ class SM83 final : public Component
     [[nodiscard]] uint8_t get_interrupt_request() const;
     void                  interrupts();
 
-    View takeView() const;
-
     uint8_t  A{};
     uint8_t  F{};
     uint8_t  B{};
@@ -323,8 +316,6 @@ class SM83 final : public Component
      * @brief Callback function when a machine cycle is executed by the CPU.
      */
     std::function<void()> onMachineCycleCb;
-
-    IDebugger<View>* debugger{nullptr};
 
     /**
      * @brief State of the CPU.

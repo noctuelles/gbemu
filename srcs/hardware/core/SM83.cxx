@@ -59,7 +59,7 @@ uint8_t SM83::read(const uint16_t address) const
     }
 }
 
-Addressable::AddressableRange SM83::get_addressable_range() const noexcept
+Addressable::AddressableRange SM83::getAddressableRange() const noexcept
 {
     return {MemoryMap::IE, MemoryMap::IORegisters::IF};
 }
@@ -147,17 +147,6 @@ SM83::View SM83::getView() const
     return view;
 }
 
-void SM83::attachDebugger(IDebugger<View>& debugger)
-{
-    this->debugger = &debugger;
-    this->debugger->onCpuInitialization(getView());
-}
-
-void SM83::detachDebugger()
-{
-    debugger = nullptr;
-}
-
 void SM83::print_state()
 {
     std::string formatted_state{std::format(
@@ -168,11 +157,6 @@ void SM83::print_state()
 
 void SM83::fetchInstruction()
 {
-    if (debugger)
-    {
-        debugger->onCpuInstructionFetched(getView());
-    }
-
     IR = fetch_memory(PC++);
     instruction_buffer.push_back(IR);
 }

@@ -5,35 +5,27 @@
 #ifndef GBEMU_DEBUGGER_HXX
 #define GBEMU_DEBUGGER_HXX
 
-#include <cstdint>
-#include <set>
 #include <string>
 
-#include "Common.hxx"
-#include "IDebugger.hxx"
+#include "Emulator.hxx"
 #include "hardware/core/SM83.hxx"
 
-class Debugger final : public IDebugger<SM83::View>
+class Debugger
 {
   public:
-    explicit Debugger(Addressable& bus);
+    Debugger();
 
-    void render();
-    void setDisabled(bool _disabled);
+    std::optional<Emulator::Command> render();
+    void                             setDisabled(bool _disabled);
 
-    [[nodiscard]] EmulationState getEmulationState() const;
-
-    void onCpuInitialization(SM83::View view) override;
-    void onCpuInstructionFetched(SM83::View view) override;
-    void onCpuInstructionExecuted(SM83::View view) override;
+    void setCpuView(SM83::View view);
+    void setAddressSpace(std::span<const uint8_t, 0x10000> addressSpace);
 
   private:
     void ImGuiTextRegister(const std::string& regName, uint16_t value, bool sixteenBitsRegister = false) const;
 
-    Addressable&       bus;
-    SM83::Disassembler disassembler;
-    SM83::View         cpuView{};
-    EmulationState     emulationState{EmulationState::HALTED};
+    std::optional<SM83::View>                        cpuView{};
+    std::optional<std::span<const uint8_t, 0x10000>> addressSpace{};
 
     int  selectedIndex{};
     bool showValueAsHexadecimal{true};

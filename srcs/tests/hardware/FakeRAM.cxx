@@ -14,7 +14,7 @@ void FakeRAM::write(const uint16_t address, const uint8_t value) override
     content[address] = value;
 }
 
-[[nodiscard]] Addressable::AddressableRange FakeRAM::get_addressable_range() const noexcept override
+[[nodiscard]] Addressable::AddressableRange FakeRAM::getAddressableRange() const noexcept override
 {
     return {std::make_pair(0x0000, 0xFFFF)};
 }
