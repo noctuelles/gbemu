@@ -5,27 +5,30 @@
 #ifndef GBEMU_MEMORYEDITOR_HXX
 #define GBEMU_MEMORYEDITOR_HXX
 
-#include <array>
+#include <optional>
+#include <span>
 
-#include "hardware/Addressable.hxx"
+#include "Emulator.hxx"
 #include "imgui.h"
 #include "imgui_memory_editor/imgui_memory_editor.h"
 
 class AddressSpaceMemoryEditor
 {
   public:
-    explicit AddressSpaceMemoryEditor(Addressable& bus);
+    explicit AddressSpaceMemoryEditor();
 
-    void render();
+    std::optional<Emulator::Command> render();
+
+    void setAddressSpace(std::span<const uint8_t, 0x10000> addressSpace);
 
   private:
-    Addressable& bus;
-    MemoryEditor editor{};
+    MemoryEditor                     editor{};
+    std::optional<Emulator::Command> cmd{};
 
     static ImU8 readFn(const ImU8* mem, size_t offset, void* user_data);
     static void writeFn(ImU8* mem, size_t offset, ImU8 d, void* user_data);
 
-    std::array<uint8_t, 0x10000> addressSpace{};
+    std::optional<std::span<const uint8_t, 0x10000>> addressSpace{};
 };
 
 #endif  // GBEMU_MEMORYEDITOR_HXX

@@ -70,10 +70,18 @@ void Emulator::operator()()
                 case Command::Type::RemoveBreakpoint:
                     breakpoints.erase(std::get<Command::Breakpoint>(cmd.value().payload).address);
                     break;
+                case Command::Type::WriteAddressSpace:
+                {
+                    const auto [address, byte] = std::get<Command::WriteAddressSpace>(cmd.value().payload);
+                    bus.write(address, byte);
+                }
+                break;
                 case Command::Type::Step:
                     paused         = false;
                     requestedPause = true;
                     break;
+                case Command::Type::Exit:
+                    return;
             }
         }
 

@@ -17,7 +17,8 @@ Debugger::Debugger() {}
 std::optional<Emulator::Command> Debugger::render()
 {
     std::optional<Emulator::Command> ret{std::nullopt};
-    ImGui::Begin("Debugger", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize);
+
+    ImGui::Begin("Debugger", nullptr, ImGuiWindowFlags_MenuBar);
     ImGui::BeginDisabled(disabled);
 
     if (ImGui::BeginMenuBar())
@@ -44,6 +45,7 @@ std::optional<Emulator::Command> Debugger::render()
         if (ImGui::Button(ICON_FK_PLAY))
         {
             ret = Emulator::Command(Emulator::Command::Type::Continue, {});
+            setDisabled(true);
         }
         if (ImGui::IsItemHovered())
         {
@@ -68,22 +70,35 @@ std::optional<Emulator::Command> Debugger::render()
         {
             ImGui::SetTooltip("Step over");
         }
+
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FK_LIST_OL))
+        {
+            setScrollToCurrentInstruction();
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Go to program counter");
+        }
     }
     ImGui::EndGroup();
 
+    auto availableWidth{ImGui::GetContentRegionAvail()};
+
+    if (ImGui::BeginChild("##instructionListArea", ImVec2(availableWidth.x * 0.75f, availableWidth.y * 0.95f),
+                          ImGuiChildFlags_None))
     {
-        auto availableWidth{ImGui::GetContentRegionAvail().x};
-
-        ImGui::BeginChild("##instructionList", ImVec2(availableWidth * 0.75f, 0), true);
-
         ImGui::SeparatorText("Instructions List");
         ImGui::Spacing();
+
+        ImGui::BeginChild("##instructionList");
 
         if (addressSpace.has_value())
         {
             const SM83::Disassembler disassembler{addressSpace.value()};
 
-            for (auto list{disassembler.disassemble(0, 256)}; auto [i, instruction] : std::views::enumerate(list))
+            for (auto list{disassembler.disassemble(disassemblyStartAddressValue, nbrOfInstructionsToDisassemble)};
+                 auto [i, instruction] : std::views::enumerate(list))
             {
                 const auto isAddressInBreakpoints{breakpoints.contains(instruction.first.first)};
 
@@ -93,12 +108,14 @@ std::optional<Emulator::Command> Debugger::render()
                     if (isAddressInBreakpoints)
                     {
                         breakpoints.erase(instruction.first.first);
+
                         ret = Emulator::Command(Emulator::Command::Type::RemoveBreakpoint,
                                                 Emulator::Command::Breakpoint{instruction.first.first});
                     }
                     else
                     {
                         breakpoints.insert(instruction.first.first);
+
                         ret = Emulator::Command(Emulator::Command::Type::SetBreakpoint,
                                                 Emulator::Command::Breakpoint{instruction.first.first});
                     }
@@ -139,6 +156,12 @@ std::optional<Emulator::Command> Debugger::render()
                         drawList->AddRectFilled(pMin, pMax,
                                                 IM_COL32(color.x * 255.f, color.y * 255.f, color.z * 255.f,
                                                          color.w * 255.f));
+
+                        if (scrollToCurrentInstruction)
+                        {
+                            ImGui::SetScrollHereY();
+                            scrollToCurrentInstruction = false;
+                        }
                     }
                 }
                 ImGui::PopID();
@@ -146,10 +169,11 @@ std::optional<Emulator::Command> Debugger::render()
         }
         ImGui::EndChild();
     }
+    ImGui::EndChild();
 
     ImGui::SameLine();
 
-    ImGui::BeginChild("##registers", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_None);
+    ImGui::BeginChild("##registers", ImVec2(0, availableWidth.y * 0.95f), ImGuiChildFlags_None, ImGuiWindowFlags_None);
     if (cpuView.has_value())
     {
         const auto& registers{cpuView.value().registers};
@@ -215,8 +239,39 @@ std::optional<Emulator::Command> Debugger::render()
         {
             ImGui::SetTooltip("Carry flag");
         }
+
+        ImGui::Spacing();
+        ImGui::SeparatorText("Stack");
+        ImGui::Spacing();
     }
     ImGui::EndChild();
+    ImGui::Separator();
+
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    const auto glyphSize{ImGui::CalcTextSize("F")};
+    ImGui::SetNextItemWidth(5 * glyphSize.x + style.FramePadding.x * 2.0f);
+    if (ImGui::InputText("Address", disassemblyStartAddressStr.data(),
+                         disassemblyStartAddressStr.size(),
+                         ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        std::from_chars(disassemblyStartAddressStr.data(),
+                        disassemblyStartAddressStr.data() + disassemblyStartAddressStr.size(),
+                        disassemblyStartAddressValue, 16);
+    }
+    ImGui::SameLine(0, 15);
+    ImGui::SetNextItemWidth(9 * glyphSize.x + style.FramePadding.x * 2.0f);
+    if (ImGui::InputInt("Nbr", &nbrOfInstructionsToDisassemble, 1, 100))
+    {
+        if (nbrOfInstructionsToDisassemble < 1)
+        {
+            nbrOfInstructionsToDisassemble = 1;
+        }
+        else if (nbrOfInstructionsToDisassemble > 256)
+        {
+            nbrOfInstructionsToDisassemble = 256;
+        }
+    }
 
     ImGui::EndDisabled();
     ImGui::End();
@@ -236,6 +291,11 @@ void Debugger::setCpuView(SM83::View view)
 void Debugger::setAddressSpace(std::span<const uint8_t, 0x10000> addressSpace)
 {
     this->addressSpace = addressSpace;
+}
+
+void Debugger::setScrollToCurrentInstruction()
+{
+    scrollToCurrentInstruction = true;
 }
 
 void Debugger::ImGuiTextRegister(const std::string& regName, const uint16_t value, bool sixteenBitsRegister) const

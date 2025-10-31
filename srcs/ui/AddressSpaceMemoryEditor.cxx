@@ -7,7 +7,7 @@
 #include <iostream>
 #include <ostream>
 
-AddressSpaceMemoryEditor::AddressSpaceMemoryEditor(Addressable& bus) : bus(bus)
+AddressSpaceMemoryEditor::AddressSpaceMemoryEditor()
 {
     editor.ReadFn   = readFn;
     editor.WriteFn  = writeFn;
@@ -15,9 +15,21 @@ AddressSpaceMemoryEditor::AddressSpaceMemoryEditor(Addressable& bus) : bus(bus)
     editor.UserData = this;
 }
 
-void AddressSpaceMemoryEditor::render()
+std::optional<Emulator::Command> AddressSpaceMemoryEditor::render()
 {
-    editor.DrawWindow("Address Space", addressSpace.data(), addressSpace.size());
+    cmd = std::nullopt;
+
+    if (addressSpace.has_value())
+    {
+        editor.DrawWindow("Address Space", nullptr, addressSpace.value().size());
+    }
+
+    return cmd;
+}
+
+void AddressSpaceMemoryEditor::setAddressSpace(std::span<const uint8_t, 65536> addressSpace)
+{
+    this->addressSpace = addressSpace;
 }
 
 ImU8 AddressSpaceMemoryEditor::readFn(const ImU8* mem, const size_t offset, void* user_data)
@@ -25,7 +37,7 @@ ImU8 AddressSpaceMemoryEditor::readFn(const ImU8* mem, const size_t offset, void
     auto thisPtr{static_cast<AddressSpaceMemoryEditor*>(user_data)};
     (void) mem;
 
-    return thisPtr->bus.read(offset);
+    return thisPtr->addressSpace.value()[offset];
 }
 
 void AddressSpaceMemoryEditor::writeFn(ImU8* mem, const size_t offset, const ImU8 d, void* user_data)
@@ -33,5 +45,6 @@ void AddressSpaceMemoryEditor::writeFn(ImU8* mem, const size_t offset, const ImU
     auto thisPtr{static_cast<AddressSpaceMemoryEditor*>(user_data)};
     (void) mem;
 
-    thisPtr->bus.write(offset, d);
+    thisPtr->cmd =
+        Emulator::Command(Emulator::Command::Type::WriteAddressSpace, Emulator::Command::WriteAddressSpace(offset, d));
 }

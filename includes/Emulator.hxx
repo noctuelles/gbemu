@@ -27,16 +27,24 @@ class Emulator
             uint16_t address;
         };
 
+        struct WriteAddressSpace
+        {
+            uint16_t address;
+            uint8_t  byte;
+        };
+
         enum class Type
         {
             Continue,
             Step,
             SetBreakpoint,
             RemoveBreakpoint,
+            WriteAddressSpace,
+            Exit
         };
 
-        Type                                     type;
-        std::variant<std::monostate, Breakpoint> payload;
+        Type                                                        type;
+        std::variant<std::monostate, Breakpoint, WriteAddressSpace> payload;
     };
 
     struct Event

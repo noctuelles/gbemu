@@ -9,6 +9,7 @@
 
 #include "Emulator.hxx"
 #include "SDL.hxx"
+#include "ui/AddressSpaceMemoryEditor.hxx"
 #include "ui/Debugger.hxx"
 
 class GbEmu
@@ -34,6 +35,7 @@ class GbEmu
     std::jthread emuThread;
 
     Debugger debugger;
+    AddressSpaceMemoryEditor memEditor;
 
     bool mainLoopRunning{true};
 };
