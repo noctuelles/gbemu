@@ -16,6 +16,8 @@
 class GbEmu;
 class Emulator
 {
+    using Breakpoints = std::set<uint16_t>;
+
     static const std::array<uint8_t, 0x100> BOOT_ROM;
     static constexpr uint16_t               BOOT_ROM_START_ADDRESS{0x0000};
 
@@ -52,6 +54,8 @@ class Emulator
         enum class Type
         {
             Paused,
+            BreakpointSet,
+            BreakpointRemoved,
         };
 
         Type type;
@@ -60,7 +64,7 @@ class Emulator
         std::span<const uint8_t, 0x10000> addressSpace;
     };
 
-    explicit Emulator(GbEmu& gbEmu);
+    explicit Emulator(utils::ThreadSafeQueue<Event>& eventQueue);
 
     void pushCommand(const Command& cmd);
     void operator()();
@@ -69,9 +73,8 @@ class Emulator
     void onCpuMachineCycle();
     void pushEvent(Event::Type type) const;
 
-    GbEmu& gbEmu;
-
     utils::ThreadSafeQueue<Command> cmdQueue;
+    utils::ThreadSafeQueue<Event>&  uiEventQueue;
 
     bool running{true};
     bool paused{true};
@@ -82,7 +85,7 @@ class Emulator
     Timer   timer;
     FakeRAM ram;
 
-    std::set<uint16_t> breakpoints;
+    Breakpoints breakpoints;
 };
 
 #endif  // GBEMU_EMULATOR_HXX

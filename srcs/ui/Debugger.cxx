@@ -93,79 +93,70 @@ std::optional<Emulator::Command> Debugger::render()
 
         ImGui::BeginChild("##instructionList");
 
-        if (addressSpace.has_value())
+        for (auto [i, instruction] : std::views::enumerate(disassembledInstructions))
         {
-            const SM83::Disassembler disassembler{addressSpace.value()};
+            const auto isAddressInBreakpoints{breakpoints.contains(instruction.first.first)};
 
-            for (auto list{disassembler.disassemble(disassemblyStartAddressValue, nbrOfInstructionsToDisassemble)};
-                 auto [i, instruction] : std::views::enumerate(list))
+            ImGui::PushID(i);
+            if (ImGui::InvisibleButton("##hoverBtn", ImVec2(18, 18)))
             {
-                const auto isAddressInBreakpoints{breakpoints.contains(instruction.first.first)};
-
-                ImGui::PushID(i);
-                if (ImGui::InvisibleButton("##hoverBtn", ImVec2(18, 18)))
+                if (isAddressInBreakpoints)
                 {
-                    if (isAddressInBreakpoints)
-                    {
-                        breakpoints.erase(instruction.first.first);
+                    breakpoints.erase(instruction.first.first);
 
-                        ret = Emulator::Command(Emulator::Command::Type::RemoveBreakpoint,
-                                                Emulator::Command::Breakpoint{instruction.first.first});
-                    }
-                    else
-                    {
-                        breakpoints.insert(instruction.first.first);
-
-                        ret = Emulator::Command(Emulator::Command::Type::SetBreakpoint,
-                                                Emulator::Command::Breakpoint{instruction.first.first});
-                    }
+                    ret = Emulator::Command(Emulator::Command::Type::RemoveBreakpoint,
+                                            Emulator::Command::Breakpoint{instruction.first.first});
                 }
-
-                if (ImGui::IsItemHovered() || isAddressInBreakpoints)
+                else
                 {
-                    const auto pos{ImGui::GetItemRectMin()};
-                    const auto opacity{isAddressInBreakpoints ? 1.f : 0.5f};
-                    auto       drawList{ImGui::GetWindowDrawList()};
+                    breakpoints.insert(instruction.first.first);
 
-                    drawList->AddText(ImVec2(pos.x + 4.5f, pos.y + 2.5f), IM_COL32(255, 0, 0, 255 * opacity),
-                                      ICON_FK_CIRCLE, nullptr);
+                    ret = Emulator::Command(Emulator::Command::Type::SetBreakpoint,
+                                            Emulator::Command::Breakpoint{instruction.first.first});
                 }
-
-                std::string byte_dump{};
-                for (const auto byte : instruction.first.second)
-                {
-                    byte_dump += std::string{std::format("{:02X} ", byte)};
-                }
-
-                ImGui::SameLine();
-                ImGui::Text("$%04X %15s %30s", instruction.first.first, byte_dump.c_str(), instruction.second.c_str());
-
-                if (cpuView.has_value())
-                {
-                    if (const auto& registers{cpuView.value().registers}; registers.PC == instruction.first.first)
-                    {
-                        auto*      drawList = ImGui::GetWindowDrawList();
-                        const auto style    = ImGui::GetStyle();
-                        const auto color    = ImGui::GetStyleColorVec4(ImGuiCol_Header);
-
-                        auto pMin{ImVec2(ImGui::GetItemRectMin().x - style.FramePadding.x,
-                                         ImGui::GetItemRectMin().y - style.FramePadding.y)};
-                        auto pMax{ImVec2(ImGui::GetItemRectMax().x + style.FramePadding.x,
-                                         ImGui::GetItemRectMax().y + style.FramePadding.y)};
-
-                        drawList->AddRectFilled(pMin, pMax,
-                                                IM_COL32(color.x * 255.f, color.y * 255.f, color.z * 255.f,
-                                                         color.w * 255.f));
-
-                        if (scrollToCurrentInstruction)
-                        {
-                            ImGui::SetScrollHereY();
-                            scrollToCurrentInstruction = false;
-                        }
-                    }
-                }
-                ImGui::PopID();
             }
+
+            if (ImGui::IsItemHovered() || isAddressInBreakpoints)
+            {
+                const auto pos{ImGui::GetItemRectMin()};
+                const auto opacity{isAddressInBreakpoints ? 1.f : 0.5f};
+                auto       drawList{ImGui::GetWindowDrawList()};
+
+                drawList->AddText(ImVec2(pos.x + 4.5f, pos.y + 2.5f), IM_COL32(255, 0, 0, 255 * opacity),
+                                  ICON_FK_CIRCLE, nullptr);
+            }
+
+            std::string byte_dump{};
+            for (const auto byte : instruction.first.second)
+            {
+                byte_dump += std::string{std::format("{:02X} ", byte)};
+            }
+
+            ImGui::SameLine();
+            ImGui::Text("$%04X %15s %30s", instruction.first.first, byte_dump.c_str(), instruction.second.c_str());
+
+            if (const auto& registers{cpuView.registers}; registers.PC == instruction.first.first)
+            {
+                auto*      drawList = ImGui::GetWindowDrawList();
+                const auto style    = ImGui::GetStyle();
+                const auto color    = ImGui::GetStyleColorVec4(ImGuiCol_Header);
+
+                auto pMin{ImVec2(ImGui::GetItemRectMin().x - style.FramePadding.x,
+                                 ImGui::GetItemRectMin().y - style.FramePadding.y)};
+                auto pMax{ImVec2(ImGui::GetItemRectMax().x + style.FramePadding.x,
+                                 ImGui::GetItemRectMax().y + style.FramePadding.y)};
+
+                drawList->AddRectFilled(pMin, pMax,
+                                        IM_COL32(color.x * 255.f, color.y * 255.f, color.z * 255.f,
+                                                 color.w * 255.f));
+
+                if (scrollToCurrentInstruction)
+                {
+                    ImGui::SetScrollHereY();
+                    scrollToCurrentInstruction = false;
+                }
+            }
+            ImGui::PopID();
         }
         ImGui::EndChild();
     }
@@ -174,75 +165,68 @@ std::optional<Emulator::Command> Debugger::render()
     ImGui::SameLine();
 
     ImGui::BeginChild("##registers", ImVec2(0, availableWidth.y * 0.95f), ImGuiChildFlags_None, ImGuiWindowFlags_None);
-    if (cpuView.has_value())
+    const auto& registers{cpuView.registers};
+
+    ImGui::SeparatorText("CPU Registers");
+    ImGui::Spacing();
+
+    ImGuiTextRegister("A", registers.A);
+    ImGui::SameLine(0, 20);
+    ImGuiTextRegister("AF", registers.AF, true);
+
+    ImGuiTextRegister("B", registers.B);
+    ImGui::SameLine(0, 20);
+    ImGuiTextRegister("BC", registers.BC, true);
+
+    ImGuiTextRegister("C", registers.C);
+    ImGui::SameLine(0, 20);
+    ImGuiTextRegister("DE", registers.DE, true);
+
+    ImGuiTextRegister("D", registers.D);
+    ImGui::SameLine(0, 20);
+    ImGuiTextRegister("HL", registers.HL, true);
+
+    ImGuiTextRegister("E", registers.E);
+    ImGui::SameLine(0, 20);
+    ImGuiTextRegister("SP", registers.SP, true);
+
+    ImGuiTextRegister("H", registers.H);
+    ImGui::SameLine(0, 20);
+    ImGuiTextRegister("PC", registers.PC, true);
+
+    ImGuiTextRegister("L", registers.L);
+
+    ImGui::Spacing();
+    ImGui::SeparatorText("CPU Flags");
+    ImGui::Spacing();
+
+    const auto     spacing{ImGui::GetContentRegionAvail().x / 4.f};
+    constexpr auto green{ImVec4(0, 1, 0, 1)};
+    constexpr auto red{ImVec4(1, 0, 0, 1)};
+    auto           getFlag = [&registers](const SM83::Flags flag) { return registers.F & std::to_underlying(flag); };
+
+    ImGui::TextColored(getFlag(SM83::Flags::Zero) ? green : red, "Z");
+    if (ImGui::IsItemHovered())
     {
-        const auto& registers{cpuView.value().registers};
-
-        ImGui::SeparatorText("CPU Registers");
-        ImGui::Spacing();
-
-        ImGuiTextRegister("A", registers.A);
-        ImGui::SameLine(0, 20);
-        ImGuiTextRegister("AF", registers.AF, true);
-
-        ImGuiTextRegister("B", registers.B);
-        ImGui::SameLine(0, 20);
-        ImGuiTextRegister("BC", registers.BC, true);
-
-        ImGuiTextRegister("C", registers.C);
-        ImGui::SameLine(0, 20);
-        ImGuiTextRegister("DE", registers.DE, true);
-
-        ImGuiTextRegister("D", registers.D);
-        ImGui::SameLine(0, 20);
-        ImGuiTextRegister("HL", registers.HL, true);
-
-        ImGuiTextRegister("E", registers.E);
-        ImGui::SameLine(0, 20);
-        ImGuiTextRegister("SP", registers.SP, true);
-
-        ImGuiTextRegister("H", registers.H);
-        ImGui::SameLine(0, 20);
-        ImGuiTextRegister("PC", registers.PC, true);
-
-        ImGuiTextRegister("L", registers.L);
-
-        ImGui::Spacing();
-        ImGui::SeparatorText("CPU Flags");
-        ImGui::Spacing();
-
-        const auto     spacing{ImGui::GetContentRegionAvail().x / 4.f};
-        constexpr auto green{ImVec4(0, 1, 0, 1)};
-        constexpr auto red{ImVec4(1, 0, 0, 1)};
-        auto getFlag = [&registers](const SM83::Flags flag) { return registers.F & std::to_underlying(flag); };
-
-        ImGui::TextColored(getFlag(SM83::Flags::Zero) ? green : red, "Z");
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Zero flag");
-        }
-        ImGui::SameLine(0, spacing);
-        ImGui::TextColored(getFlag(SM83::Flags::Subtract) ? green : red, "N");
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Substraction flag (BCD)");
-        }
-        ImGui::SameLine(0, spacing);
-        ImGui::TextColored(getFlag(SM83::Flags::HalfCarry) ? green : red, "H");
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Half Carry flag (BCD)");
-        }
-        ImGui::SameLine(0, spacing);
-        ImGui::TextColored(getFlag(SM83::Flags::Carry) ? green : red, "C");
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Carry flag");
-        }
-
-        ImGui::Spacing();
-        ImGui::SeparatorText("Stack");
-        ImGui::Spacing();
+        ImGui::SetTooltip("Zero flag");
+    }
+    ImGui::SameLine(0, spacing);
+    ImGui::TextColored(getFlag(SM83::Flags::Subtract) ? green : red, "N");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Substraction flag (BCD)");
+    }
+    ImGui::SameLine(0, spacing);
+    ImGui::TextColored(getFlag(SM83::Flags::HalfCarry) ? green : red, "H");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Half Carry flag (BCD)");
+    }
+    ImGui::SameLine(0, spacing);
+    ImGui::TextColored(getFlag(SM83::Flags::Carry) ? green : red, "C");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Carry flag");
     }
     ImGui::EndChild();
     ImGui::Separator();
@@ -251,8 +235,7 @@ std::optional<Emulator::Command> Debugger::render()
 
     const auto glyphSize{ImGui::CalcTextSize("F")};
     ImGui::SetNextItemWidth(5 * glyphSize.x + style.FramePadding.x * 2.0f);
-    if (ImGui::InputText("Address", disassemblyStartAddressStr.data(),
-                         disassemblyStartAddressStr.size(),
+    if (ImGui::InputText("Address", disassemblyStartAddressStr.data(), disassemblyStartAddressStr.size(),
                          ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
     {
         std::from_chars(disassemblyStartAddressStr.data(),
@@ -290,7 +273,8 @@ void Debugger::setCpuView(SM83::View view)
 
 void Debugger::setAddressSpace(std::span<const uint8_t, 0x10000> addressSpace)
 {
-    this->addressSpace = addressSpace;
+    const SM83::Disassembler disassembler{addressSpace};
+    disassembledInstructions = disassembler.disassemble(disassemblyStartAddressValue, nbrOfInstructionsToDisassemble);
 }
 
 void Debugger::setScrollToCurrentInstruction()

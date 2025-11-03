@@ -24,7 +24,8 @@ const std::array<uint8_t, 256> Emulator::BOOT_ROM{
     0xa8, 0x00, 0x1a, 0x13, 0xbe, 0x20, 0xfe, 0x23, 0x7d, 0xfe, 0x34, 0x20, 0xf5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05,
     0x20, 0xfb, 0x86, 0x20, 0xfe, 0x3e, 0x01, 0xe0, 0x50};
 
-Emulator::Emulator(GbEmu& gbEmu) : gbEmu(gbEmu), cpu(bus, [this] { onCpuMachineCycle(); }), timer(bus)
+Emulator::Emulator(utils::ThreadSafeQueue<Event>& eventQueue)
+    : uiEventQueue(eventQueue), cpu(bus, [this] { onCpuMachineCycle(); }), timer(bus)
 {
     bus.attach(cpu);
     bus.attach(timer);
@@ -48,7 +49,7 @@ void Emulator::onCpuMachineCycle()
 
 void Emulator::pushEvent(Event::Type type) const
 {
-    gbEmu.pushEvent(Event{type, cpu.getView(), bus.getAddressSpace()});
+    uiEventQueue.push(Event{type, cpu.getView(), bus.getAddressSpace()});
 }
 
 void Emulator::operator()()
@@ -57,8 +58,14 @@ void Emulator::operator()()
 
     while (running)
     {
-        if (auto cmd{cmdQueue.try_pop()}; cmd.has_value())
+        while (true)
         {
+            auto cmd{cmdQueue.try_pop()};
+            if (!cmd.has_value())
+            {
+                break;
+            }
+
             switch (cmd.value().type)
             {
                 case Command::Type::Continue:

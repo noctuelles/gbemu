@@ -23,7 +23,8 @@ class GbEmu
     void loop();
 
   private:
-    utils::ThreadSafeQueue<Emulator::Event> eventQueue;
+    utils::ThreadSafeQueue<Emulator::Event>      eventQueue;
+    std::queue<std::optional<Emulator::Command>> uiCommands;
 
     void configureSDL();
     void configureImGui();
@@ -34,7 +35,7 @@ class GbEmu
     Emulator     emu;
     std::jthread emuThread;
 
-    Debugger debugger;
+    Debugger                 debugger;
     AddressSpaceMemoryEditor memEditor;
 
     bool mainLoopRunning{true};

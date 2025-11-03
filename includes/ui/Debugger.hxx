@@ -25,8 +25,8 @@ class Debugger
   private:
     void ImGuiTextRegister(const std::string& regName, uint16_t value, bool sixteenBitsRegister = false) const;
 
-    std::optional<SM83::View>                        cpuView{};
-    std::optional<std::span<const uint8_t, 0x10000>> addressSpace{};
+    SM83::View                                   cpuView{};
+    SM83::Disassembler::DisassembledInstructions disassembledInstructions{};
 
     uint16_t            disassemblyStartAddressValue{0x0000};
     std::array<char, 5> disassemblyStartAddressStr{"0000"};

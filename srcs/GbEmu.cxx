@@ -13,7 +13,7 @@ GbEmu::GbEmu()
     : window("gbemu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1300, 800,
              SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE),
       renderer(window, -1, 0),
-      emu(*this),
+      emu(eventQueue),
       emuThread(std::ref(emu))
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -41,25 +41,27 @@ void GbEmu::pushEvent(const Emulator::Event& event)
 
 void GbEmu::loop()
 {
-    SDL_Event                        event{};
-    std::optional<Emulator::Command> debuggerCmd{}, memEditorCmd{};
-    auto&                            io = ImGui::GetIO();
+    SDL_Event   event{};
+    const auto& io = ImGui::GetIO();
 
     while (mainLoopRunning)
     {
-        auto emuEvent{eventQueue.try_pop()};
-
-        if (emuEvent.has_value())
+        if (auto emuEvent{eventQueue.try_pop()}; emuEvent.has_value())
         {
             switch (emuEvent.value().type)
             {
                 case Emulator::Event::Type::Paused:
                     debugger.setCpuView(emuEvent.value().view);
                     debugger.setAddressSpace(emuEvent.value().addressSpace);
+
                     debugger.setScrollToCurrentInstruction();
                     debugger.setDisabled(false);
 
                     memEditor.setAddressSpace(emuEvent.value().addressSpace);
+                    break;
+                case Emulator::Event::Type::BreakpointRemoved:
+                case Emulator::Event::Type::BreakpointSet:
+                    /* TODO */
                     break;
             }
         }
@@ -79,8 +81,9 @@ void GbEmu::loop()
         ImGui::NewFrame();
         ImGui::DockSpaceOverViewport();
 
-        debuggerCmd  = debugger.render();
-        memEditorCmd = memEditor.render();
+        uiCommands.emplace(debugger.render());
+        uiCommands.emplace(memEditor.render());
+
         ImGui::ShowDemoWindow();
 
         ImGui::Render();
@@ -90,14 +93,13 @@ void GbEmu::loop()
         ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
         SDL_RenderPresent(renderer);
 
-        if (debuggerCmd.has_value())
+        while (!uiCommands.empty())
         {
-            emu.pushCommand(debuggerCmd.value());
-        }
-
-        if (memEditorCmd.has_value())
-        {
-            emu.pushCommand(memEditorCmd.value());
+            if (uiCommands.front().has_value())
+            {
+                emu.pushCommand(uiCommands.front().value());
+            }
+            uiCommands.pop();
         }
     }
 
