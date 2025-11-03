@@ -40,6 +40,7 @@ Emulator::Emulator(utils::ThreadSafeQueue<Event>& eventQueue)
 void Emulator::pushCommand(const Command& cmd)
 {
     cmdQueue.push(cmd);
+    cmdCv.notify_one();
 }
 
 void Emulator::onCpuMachineCycle()
@@ -94,6 +95,8 @@ void Emulator::operator()()
 
         if (paused)
         {
+            std::unique_lock l{cmdMutex};
+            cmdCv.wait(l);
             continue;
         }
 

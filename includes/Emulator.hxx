@@ -73,6 +73,8 @@ class Emulator
     void onCpuMachineCycle();
     void pushEvent(Event::Type type) const;
 
+    std::condition_variable         cmdCv;
+    std::mutex                      cmdMutex;
     utils::ThreadSafeQueue<Command> cmdQueue;
     utils::ThreadSafeQueue<Event>&  uiEventQueue;
 
