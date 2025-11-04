@@ -19,7 +19,7 @@ class AddressSpaceMemoryEditor
 
     std::optional<Emulator::Command> render();
 
-    void setAddressSpace(std::span<const uint8_t, 0x10000> addressSpace);
+    void setAddressSpace(std::array<uint8_t, 0x10000> addrSpace);
 
   private:
     MemoryEditor                     editor{};
@@ -28,7 +28,7 @@ class AddressSpaceMemoryEditor
     static ImU8 readFn(const ImU8* mem, size_t offset, void* user_data);
     static void writeFn(ImU8* mem, size_t offset, ImU8 d, void* user_data);
 
-    std::optional<std::span<const uint8_t, 0x10000>> addressSpace{};
+    std::array<uint8_t, 0x10000> addressSpace{};
 };
 
 #endif  // GBEMU_MEMORYEDITOR_HXX

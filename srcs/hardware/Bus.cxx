@@ -11,9 +11,16 @@ Addressable::AddressableRange Bus::getAddressableRange() const noexcept
     return {std::make_pair(0x0000, 0xFFFF)};
 }
 
-std::span<const uint8_t, 0x10000> Bus::getAddressSpace() const noexcept
+std::array<uint8_t, 0x10000> Bus::getAddressSpace() const noexcept
 {
-    return {addressSpace};
+    std::array<uint8_t, 0x10000> snapshot{};
+
+    for (auto i = 0ULL; i < memory_map.size(); i++)
+    {
+        snapshot[i] = read(i);
+    }
+
+    return snapshot;
 }
 
 /**
@@ -57,8 +64,12 @@ void Bus::write(const uint16_t address, const uint8_t value)
         throw std::logic_error{std::format("Cannot perform bus write at {:#04x}.", address)};
     }
 
+    if (address == 0xFF50)
+    {
+        bootRomDisabled = value & 0x01;
+    }
+
     memory_map[address]->write(address, value);
-    addressSpace[address] = value;
 }
 
 uint8_t Bus::read(const uint16_t address) const

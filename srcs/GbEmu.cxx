@@ -46,18 +46,19 @@ void GbEmu::loop()
 
     while (mainLoopRunning)
     {
-        if (auto emuEvent{eventQueue.try_pop()}; emuEvent.has_value())
+        if (auto eventPayload{eventQueue.try_pop()}; eventPayload.has_value())
         {
-            switch (emuEvent.value().type)
+            emuEvent = eventPayload.value();
+
+            switch (eventPayload.value().type)
             {
                 case Emulator::Event::Type::Paused:
-                    debugger.setCpuView(emuEvent.value().view);
-                    debugger.setAddressSpace(emuEvent.value().addressSpace);
+
+                    debugger.setCpuView(emuEvent.view);
+                    debugger.setAddressSpace(emuEvent.addressSpace);
 
                     debugger.setScrollToCurrentInstruction();
                     debugger.setDisabled(false);
-
-                    memEditor.setAddressSpace(emuEvent.value().addressSpace);
                     break;
                 case Emulator::Event::Type::BreakpointRemoved:
                 case Emulator::Event::Type::BreakpointSet:
@@ -82,7 +83,6 @@ void GbEmu::loop()
         ImGui::DockSpaceOverViewport();
 
         uiCommands.emplace(debugger.render());
-        uiCommands.emplace(memEditor.render());
 
         ImGui::ShowDemoWindow();
 

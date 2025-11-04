@@ -60,8 +60,8 @@ class Emulator
 
         Type type;
 
-        SM83::View                        view;
-        std::span<const uint8_t, 0x10000> addressSpace;
+        SM83::View                   view;
+        std::array<uint8_t, 0x10000> addressSpace;
     };
 
     explicit Emulator(utils::ThreadSafeQueue<Event>& eventQueue);

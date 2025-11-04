@@ -9,6 +9,8 @@
 
 #include "Emulator.hxx"
 #include "hardware/core/SM83.hxx"
+#include "imgui.h"
+#include "imgui_memory_editor/imgui_memory_editor.h"
 
 class Debugger
 {
@@ -19,7 +21,7 @@ class Debugger
     void                             setDisabled(bool _disabled);
 
     void setCpuView(SM83::View view);
-    void setAddressSpace(std::span<const uint8_t, 0x10000> addressSpace);
+    void setAddressSpace(const std::array<uint8_t, 0x10000>& addressSpace);
     void setScrollToCurrentInstruction();
 
   private:
@@ -31,6 +33,8 @@ class Debugger
     uint16_t            disassemblyStartAddressValue{0x0000};
     std::array<char, 5> disassemblyStartAddressStr{"0000"};
     int                 nbrOfInstructionsToDisassemble{256};
+
+    MemoryEditor                     memEditor{};
 
     int  selectedIndex{};
     bool showValueAsHexadecimal{true};

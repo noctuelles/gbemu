@@ -32,8 +32,9 @@ class GbEmu
     WrappedSDLWindow   window;
     WrappedSDLRenderer renderer;
 
-    Emulator     emu;
-    std::jthread emuThread;
+    Emulator        emu;
+    Emulator::Event emuEvent;
+    std::jthread    emuThread;
 
     Debugger                 debugger;
     AddressSpaceMemoryEditor memEditor;
