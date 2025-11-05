@@ -88,7 +88,7 @@ std::optional<Emulator::Command> Debugger::render()
     }
     ImGui::EndGroup();
 
-    auto optionBarHeight{ImGui::GetFontSize() * 2. + ImGui::GetStyle().FramePadding.y * 2.f};
+    auto optionBarHeight{ImGui::GetFontSize() * 2.f + ImGui::GetStyle().FramePadding.y * 2.f};
 
     auto sizeRegisters{ImGui::CalcTextSize("X: $00XX: $0000")};
     auto constexpr padRegister{30.f};
@@ -261,6 +261,7 @@ std::optional<Emulator::Command> Debugger::render()
     ImGui::BeginChild("##optionBar", ImVec2(0, optionBarHeight), ImGuiChildFlags_None, ImGuiWindowFlags_None);
     {
         const auto glyphSize{ImGui::CalcTextSize("F")};
+
         ImGui::SetNextItemWidth(5 * glyphSize.x + style.FramePadding.x * 2.0f);
         if (ImGui::InputText("Address", disassemblyStartAddressStr.data(), disassemblyStartAddressStr.size(),
                              ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue))
