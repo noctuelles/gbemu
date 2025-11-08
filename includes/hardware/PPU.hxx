@@ -6,6 +6,9 @@
 #define PPU_HXX
 
 #include <array>
+#include <map>
+#include <queue>
+#include <unordered_map>
 #include <utility>
 
 #include "Displayable.hxx"
@@ -13,6 +16,52 @@
 
 class PPU final : public Component
 {
+  private:
+    struct Registers
+    {
+        /**
+         * @brief LCD Control (R/W).
+         */
+        uint8_t LCDC{};
+
+        /**
+         * @brief LCDC Status (R/W).
+         */
+        uint8_t STAT{};
+
+        /**
+         * @brief Background viewport Y position (R/W).
+         */
+        uint8_t SCY{};
+
+        /**
+         * @brief Background viewport X position X (R/W).
+         */
+        uint8_t SCX{};
+
+        /**
+         * @brief LY indicates the current horizontal line, which might be about to be drawn, being drawn, or just been
+         * drawn. LY can hold any value from 0 to 153, with values from 144 to 153 indicating the VBlank period (R).
+         */
+        uint8_t LY{};
+
+        /**
+         * @brief The Game Boy constantly compares the value of the LYC and LY registers. When both values are
+         identical, the “LYC=LY” flag in the STAT register is set, and (if enabled) a STAT interrupt is requested.
+         */
+        uint8_t LYC{};
+        uint8_t DMA{};
+        uint8_t BGP{};
+        uint8_t OBP0{};
+        uint8_t OBP1{};
+        uint8_t WY{};
+        uint8_t WX{};
+    };
+
+    using RegistersMap = std::unordered_map<uint16_t, std::reference_wrapper<uint8_t>>;
+
+    RegistersMap addrToRegister;
+
   public:
     static constexpr std::size_t LCD_HEIGHT{144};
     static constexpr std::size_t LCD_WIDTH{144};
@@ -35,37 +84,16 @@ class PPU final : public Component
         Drawing       = 3,
     };
 
-    enum class LCDControlFlags : uint8_t
+    struct LCDControlFlags
     {
-        /**
-         * @brief LCDC.0 has different meanings depending on Game Boy type and Mode:
-         *
-         * Non-CGB Mode (DMG, SGB and CGB in compatibility mode): BG and Window display
-         * When Bit 0 is cleared, both background and window become blank (white), and the Window Display Bit is ignored
-         in that
-         * case. Only objects may still be displayed (if enabled in Bit 1).
-         * CGB Mode: BG and Window master priority
-         * When Bit 0 is cleared, the background and window lose their priority - the objects will always be displayed
-         * on top of
-         * background and window, independently of the priority flags in OAM and BG Map attributes.
-         *
-         * @ref https://gbdev.io/pandocs/LCDC.html#lcdc0--bg-and-window-enablepriority
-         */
-        BgWindowEnableOrPriority = 0x00,
-
-        /**
-         * @brief This bit toggles whether objects are displayed or not.
-         *
-         * @ref https://gbdev.io/pandocs/LCDC.html#lcdc1--obj-enable
-         */
-        ObjEnable = 0x01,
-
-        /**
-         * @brief This bit controls the size of all objects (1 tile or 2 stacked vertically).
-         *
-         * @see https://gbdev.io/pandocs/LCDC.html#lcdc2--obj-size
-         */
-        ObjSize = 0x02,
+        static constexpr uint8_t BGWindowEnableOrPriority{0x00};
+        static constexpr uint8_t ObjEnable{0x01};
+        static constexpr uint8_t ObjSize{0x02};
+        static constexpr uint8_t BGTileMapSelect{0x04};
+        static constexpr uint8_t BGAndWindowTileDataArea{0x08};
+        static constexpr uint8_t WindowEnable{0x10};
+        static constexpr uint8_t WindowTileMapSelect{0x20};
+        static constexpr uint8_t LCDAndPPUEnable{0x40};
     };
 
     struct OAMEntry
@@ -142,9 +170,49 @@ class PPU final : public Component
         uint8_t priority : 1 {};
     } __attribute__((packed));
 
-    uint8_t read(uint16_t address) const override;
-    void    write(uint16_t address, uint8_t value) override;
-    void    tick() override;
+    struct FIFOEntry
+    {
+        uint8_t color{};
+        uint8_t palette{};
+        bool    backgroundPriority{};
+    };
+
+    class PixelFetcher
+    {
+      public:
+        enum class State : uint8_t
+        {
+            GetTile,
+            GetTileDataLow,
+            GetTileDataHigh,
+            Sleep,
+            Push
+        };
+
+        explicit PixelFetcher(Addressable& bus, Registers& registers);
+
+        void tick();
+        void start();
+
+      private:
+        std::queue<FIFOEntry> backgroundFIFO{};
+
+        uint8_t x{}, y{};
+        uint8_t tileMapNbr{};
+
+        uint16_t tileDataAddress{};
+        uint8_t  tileDataHigh{};
+        uint8_t  tileDataLow{};
+
+        Registers&   registers;
+        Addressable& bus;
+        uint8_t      dots{};
+        State        state{State::GetTile};
+    };
+
+    [[nodiscard]] uint8_t read(uint16_t address) const override;
+    void                  write(uint16_t address, uint8_t value) override;
+    void                  tick() override;
 
   private:
     using OAMArray = std::array<OAMEntry, 40>;
@@ -160,49 +228,21 @@ class PPU final : public Component
 
     std::vector<decltype(curr_oam_entry)> obj_to_draw{};
 
+    Registers    registers{};
+    PixelFetcher pixelFetcher{registers};
+
     uint16_t dots{};
 
     uint8_t x{};
 
-    /**
-     * @brief LCD Control (R/W).
-     */
-    uint8_t LCDC{};
-
-    /**
-     * @brief LCDC Status (R/W).
-     */
-    uint8_t STAT{};
-
-    /**
-     * @brief Background viewport Y position (R/W).
-     */
-    uint8_t SCY{};
-
-    /**
-     * @brief Background viewport X position X (R/W).
-     */
-    uint8_t SCX{};
-
-    /**
-     * @brief LY indicates the current horizontal line, which might be about to be drawn, being drawn, or just been
-     * drawn. LY can hold any value from 0 to 153, with values from 144 to 153 indicating the VBlank period (R).
-     */
-    uint8_t LY{};
-
-    /**
-     * @brief The Game Boy constantly compares the value of the LYC and LY registers. When both values are identical,
-     the “LYC=LY” flag in the STAT register is set, and (if enabled) a STAT interrupt is requested.
-     */
-    uint8_t LYC{};
-    uint8_t DMA{};
-    uint8_t BGP{};
-    uint8_t OBP0{};
-    uint8_t OBP1{};
-    uint8_t WY{};
-    uint8_t WX{};
-
     Mode mode{};
+};
+
+class A
+{
+  public:
+    A();
+    A(const A&) = default;
 };
 
 #endif  // PPU_HXX
