@@ -5,6 +5,7 @@
 #ifndef UTILS_HXX
 #define UTILS_HXX
 
+#include <bitset>
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
@@ -14,6 +15,8 @@
 
 namespace utils
 {
+    using PixelTileRow = std::array<uint8_t, 8>;
+
     template <typename E>
     concept EnumType = std::is_enum_v<E> && std::is_same_v<std::underlying_type_t<E>, uint8_t>;
 
@@ -103,6 +106,25 @@ namespace utils
         std::queue<T>           q{};
         std::condition_variable cv{};
     };
+
+    inline PixelTileRow getPixelsFromTileData(const uint8_t low, const uint8_t high)
+    {
+        PixelTileRow pixels{};
+
+        for (size_t i = 0; i < 8; i++)
+        {
+            const auto pixelLow{static_cast<uint8_t>(low >> (7 - i) & 1)};
+            const auto pixelHigh{static_cast<uint8_t>(high >> (7 - i) & 1)};
+            pixels[i] = pixelLow << 1 | pixelHigh;
+        }
+
+        return pixels;
+    }
+
+    inline PixelTileRow getPixelsFromTileData(const uint16_t tileData)
+    {
+        return getPixelsFromTileData(tileData >> 8, tileData & 0xFF);
+    }
 
 };  // namespace utils
 

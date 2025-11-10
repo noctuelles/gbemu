@@ -24,7 +24,7 @@ std::optional<Emulator::Command> AddressSpaceMemoryEditor::render()
     return cmd;
 }
 
-void AddressSpaceMemoryEditor::setAddressSpace(std::array<uint8_t, 0x10000> addrSpace)
+void AddressSpaceMemoryEditor::setAddressSpace(const std::array<uint8_t, 0x10000>& addrSpace)
 {
     addressSpace = addrSpace;
 }

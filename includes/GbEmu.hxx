@@ -11,6 +11,7 @@
 #include "SDL.hxx"
 #include "ui/AddressSpaceMemoryEditor.hxx"
 #include "ui/Debugger.hxx"
+#include "ui/GraphicsDebugger.hxx"
 
 class GbEmu
 {
@@ -29,8 +30,8 @@ class GbEmu
     void configureSDL();
     void configureImGui();
 
-    WrappedSDLWindow   window;
-    WrappedSDLRenderer renderer;
+    sdl::unique_window   window;
+    sdl::shared_renderer renderer;
 
     Emulator        emu;
     Emulator::Event emuEvent;
@@ -38,6 +39,7 @@ class GbEmu
 
     Debugger                 debugger;
     AddressSpaceMemoryEditor memEditor;
+    GraphicsDebugger         graphicsDebugger;
 
     bool mainLoopRunning{true};
 };

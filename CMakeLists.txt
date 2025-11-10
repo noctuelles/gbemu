@@ -97,6 +97,8 @@ add_executable(gbemu
         srcs/GbEmu.cxx
         srcs/Emulator.cxx
         includes/Emulator.hxx
+        srcs/ui/GraphicsDebugger.cxx
+        includes/ui/GraphicsDebugger.hxx
 )
 
 target_link_libraries(
@@ -110,17 +112,11 @@ add_executable(gbemu_test
         srcs/hardware/core/Disassembler.cxx
         srcs/hardware/core/Opcode.cxx
         srcs/hardware/Timer.cxx
-        srcs/hardware/PPU.cxx
         srcs/hardware/Bus.cxx
         srcs/hardware/Cartridge.cxx
         srcs/Utils.cxx
-        srcs/tests/hardware/core/BlarggInstructions.cxx
-        srcs/tests/hardware/Cartridge.cxx
-        srcs/tests/hardware/core/MooneyeAcceptance.cxx
-        srcs/tests/hardware/core/Disassembler.cxx
-        srcs/tests/hardware/FakeRAM.cxx
-        srcs/tests/hardware/core/SM83.cxx
-        includes/hardware/Displayable.hxx)
+        includes/hardware/Displayable.hxx
+        srcs/tests/Utils.cxx)
 
 target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/roms")
 

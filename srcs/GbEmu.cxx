@@ -10,11 +10,13 @@
 #include "ui/ForkAwesomeFont.hxx"
 
 GbEmu::GbEmu()
-    : window("gbemu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1300, 800,
-             SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE),
-      renderer(window, -1, 0),
+    : window(SDL_CreateWindow("gbemu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1300, 800,
+                              SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE),
+             SDL_DestroyWindow),
+      renderer(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED), SDL_DestroyRenderer),
       emu(eventQueue),
-      emuThread(std::ref(emu))
+      emuThread(std::ref(emu)),
+      graphicsDebugger(renderer)
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
@@ -59,6 +61,11 @@ void GbEmu::loop()
 
                     debugger.setScrollToCurrentInstruction();
                     debugger.setDisabled(false);
+
+                    memEditor.setAddressSpace(emuEvent.addressSpace);
+
+                    graphicsDebugger.update(emuEvent.addressSpace);
+
                     break;
                 case Emulator::Event::Type::BreakpointRemoved:
                 case Emulator::Event::Type::BreakpointSet:
@@ -83,15 +90,15 @@ void GbEmu::loop()
         ImGui::DockSpaceOverViewport();
 
         uiCommands.emplace(debugger.render());
-
-        ImGui::ShowDemoWindow();
+        memEditor.render();
+        graphicsDebugger.render();
 
         ImGui::Render();
 
-        SDL_RenderSetScale(renderer, io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
-        SDL_RenderClear(renderer);
-        ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
-        SDL_RenderPresent(renderer);
+        SDL_RenderSetScale(renderer.get(), io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
+        SDL_RenderClear(renderer.get());
+        ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer.get());
+        SDL_RenderPresent(renderer.get());
 
         while (!uiCommands.empty())
         {
@@ -118,8 +125,8 @@ void GbEmu::configureImGui()
 
     ImGui::CreateContext();
 
-    ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
-    ImGui_ImplSDLRenderer2_Init(renderer);
+    ImGui_ImplSDL2_InitForSDLRenderer(window.get(), renderer.get());
+    ImGui_ImplSDLRenderer2_Init(renderer.get());
 
     ImGuiIO& io = ImGui::GetIO();
 

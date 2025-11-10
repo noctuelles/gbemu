@@ -19,7 +19,7 @@ class AddressSpaceMemoryEditor
 
     std::optional<Emulator::Command> render();
 
-    void setAddressSpace(std::array<uint8_t, 0x10000> addrSpace);
+    void setAddressSpace(const std::array<uint8_t, 0x10000>& addrSpace);
 
   private:
     MemoryEditor                     editor{};
