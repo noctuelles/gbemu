@@ -210,6 +210,8 @@ class PPU final : public Component
         State        state{State::GetTile};
     };
 
+    static std::array<uint8_t, 8> getPixelsFromTileData(const uint8_t low, const uint8_t high);
+
     [[nodiscard]] uint8_t read(uint16_t address) const override;
     void                  write(uint16_t address, uint8_t value) override;
     void                  tick() override;
@@ -229,7 +231,7 @@ class PPU final : public Component
     std::vector<decltype(curr_oam_entry)> obj_to_draw{};
 
     Registers    registers{};
-    PixelFetcher pixelFetcher{registers};
+    PixelFetcher pixelFetcher{bus, registers};
 
     uint16_t dots{};
 

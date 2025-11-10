@@ -24,6 +24,20 @@ PPU::PPU(Addressable& bus, Displayable& display) : bus(bus), display(display)
     };
 }
 
+std::array<uint8_t, 8> getPixelsFromTileData(const uint8_t low, const uint8_t high)
+{
+    std::array<uint8_t, 8> pixels{};
+
+    for (size_t i = 0; i < 8; i++)
+    {
+        const auto pixelLow{static_cast<uint8_t>(low >> (7 - i) & 1)};
+        const auto pixelHigh{static_cast<uint8_t>(high >> (7 - i) & 1)};
+        pixels[i] = pixelLow << 1 | pixelHigh;
+    }
+
+    return pixels;
+}
+
 PPU::PixelFetcher::PixelFetcher(Addressable& bus, Registers& registers) : registers(registers), bus(bus) {}
 
 void PPU::PixelFetcher::tick()
@@ -43,7 +57,7 @@ void PPU::PixelFetcher::tick()
                 {
                     constexpr uint16_t tileAddress{0x9800};
                     tileOffset += registers.SCX >> 3 & 0x1F;
-                    tileOffset += 32 * ((registers.LY + registers.SCY & 0xFF) >> 3);
+                    tileOffset += 32 * (((registers.LY + registers.SCY) & 0xFF) >> 3);
 
                     tileMapNbr = bus.read(tileAddress + tileOffset);
                 }
@@ -63,7 +77,7 @@ void PPU::PixelFetcher::tick()
                     tileDataAddress = 0x8000;
                 }
 
-                tileDataAddress = tileDataAddress + 2 * (registers.LY + registers.SCY & 0xF);
+                tileDataAddress = tileDataAddress + 2 * ((registers.LY + registers.SCY) & 0xF);
                 tileDataLow     = bus.read(tileDataAddress);
                 state           = State::GetTileDataHigh;
             }
