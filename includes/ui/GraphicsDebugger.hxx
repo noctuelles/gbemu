@@ -11,9 +11,6 @@
 #include "SDL.hxx"
 #include "Utils.hxx"
 
-using RGB = std::tuple<uint8_t, uint8_t, uint8_t>;
-
-using Palette      = std::array<RGB, 3>;
 using TileData     = std::array<uint8_t, 16>;
 using TileDataSpan = std::span<const uint8_t, 16>;
 
@@ -51,6 +48,8 @@ class TileGrid
     [[nodiscard]] size_t getRows() const;
 
     void setLineColor(const RGB& color);
+    void setColorPalette(const ColorPalette& colorPalette);
+    void setPaletteRegister(uint8_t paletteRegister);
 
     [[nodiscard]] sdl::unique_texture getTexture() const;
 
@@ -58,14 +57,14 @@ class TileGrid
     void _drawSeparationLines() const noexcept;
 
     sdl::shared_renderer _sdlRenderer;
-
-    uint32_t     _lineColor{};
-    const size_t _lineSize;
-    const size_t _col;
-    const size_t _row;
-
-    sdl::unique_surface _surface;
-    std::span<uint32_t> _surfacePixels;
+    uint32_t             _lineColor{};
+    const size_t         _lineSize;
+    const size_t         _col;
+    const size_t         _row;
+    ColorPalette         _colorPalette;
+    uint8_t              _paletteRegister;
+    sdl::unique_surface  _surface;
+    std::span<uint32_t>  _surfacePixels;
 };
 
 class GraphicsDebugger

@@ -13,6 +13,9 @@
 
 #include "Common.hxx"
 
+using RGB          = std::tuple<uint8_t, uint8_t, uint8_t>;
+using ColorPalette = std::array<RGB, 4>;
+
 namespace utils
 {
     template <typename E>
@@ -127,6 +130,13 @@ namespace utils
       private:
         std::array<Row, 8> _data;
     };
+
+    inline const RGB& getPixelColorFromPalette(const std::bitset<2>& colorIndex, const uint8_t paletteRegister,
+                                               const ColorPalette& colorPalette)
+    {
+        return colorPalette[paletteRegister >> (2 * static_cast<uint8_t>(colorIndex.to_ulong())) & 0b11];
+    }
+
 }  // namespace utils
 
 #endif  // UTILS_HXX

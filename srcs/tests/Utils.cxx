@@ -2,6 +2,13 @@
 
 #include "gtest/gtest.h"
 
+static constexpr ColorPalette gColorPalette{
+    RGB{0xFF, 0xFF, 0xFF},
+    RGB{0xAA, 0xAA, 0xAA},
+    RGB{0x55, 0x55, 0x55},
+    RGB{0x00, 0x00, 0x00},
+};
+
 TEST(TileTest, Test)
 {
     /**
@@ -83,4 +90,28 @@ TEST(TileTest, Test)
     ASSERT_EQ(tile[7][5], std::bitset<2>{0b11});
     ASSERT_EQ(tile[7][6], std::bitset<2>{0b10});
     ASSERT_EQ(tile[7][7], std::bitset<2>{0b00});
+}
+
+TEST(getPixelColorFromPalette, BootromPaletteRegister)
+{
+    using namespace utils;
+
+    constexpr uint8_t bootromPalette{0b11111100};
+
+    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b00), bootromPalette, gColorPalette), gColorPalette[0]);
+    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b01), bootromPalette, gColorPalette), gColorPalette[3]);
+    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b10), bootromPalette, gColorPalette), gColorPalette[3]);
+    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b11), bootromPalette, gColorPalette), gColorPalette[3]);
+}
+
+TEST(getPixelColorFromPalette, IdentityPaletteRegister)
+{
+    using namespace utils;
+
+    constexpr uint8_t bootromPalette{0b11100100};
+
+    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b00), bootromPalette, gColorPalette), gColorPalette[0]);
+    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b01), bootromPalette, gColorPalette), gColorPalette[1]);
+    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b10), bootromPalette, gColorPalette), gColorPalette[2]);
+    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b11), bootromPalette, gColorPalette), gColorPalette[3]);
 }

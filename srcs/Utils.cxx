@@ -13,10 +13,10 @@ Tile::Row::Row(const uint8_t low, const uint8_t high)
     const std::bitset<8> lowBits{low};
     const std::bitset<8> highBits{high};
 
-    for (size_t i = 0; i < 8; i++)
+    for (size_t i = 8; i > 0; i--)
     {
-        _data[i * 2]     = lowBits[i];
-        _data[i * 2 + 1] = highBits[i];
+        _data[(7 - (i - 1)) * 2]     = lowBits[i - 1];
+        _data[(7 - (i - 1)) * 2 + 1] = highBits[i - 1];
     }
 }
 
