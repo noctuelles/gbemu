@@ -12,7 +12,7 @@
 #include "imgui.h"
 
 TileGrid::TileGrid(sdl::shared_renderer renderer, const size_t col, const size_t row, const size_t lineSize,
-                   const uint32_t lineColor)
+                   const RGB& lineColor)
     : _sdlRenderer(std::move(renderer)),
       _lineSize(lineSize),
       _col(col),
@@ -22,55 +22,22 @@ TileGrid::TileGrid(sdl::shared_renderer renderer, const size_t col, const size_t
                                               SDL_PIXELFORMAT_RGBA32),
                SDL_FreeSurface)
 {
-    SDL_Rect rect{};
-    int      x{};
-    int      y{};
-
     if (!_surface)
     {
-        throw std::runtime_error(SDL_GetError());
+        throw sdl::exception{"SDL_CreateRGBSurfaceWithFormat"};
     }
 
     _surfacePixels =
         std::span{static_cast<uint32_t*>(_surface->pixels), static_cast<long unsigned int>(_surface->w * _surface->h)};
 
-    while (x < _surface->w)
-    {
-        rect.x = x;
-        rect.y = 0;
-        rect.w = 1;
-        rect.h = _surface->h;
-
-        SDL_FillRect(_surface.get(), &rect, lineColor);
-
-        x += static_cast<int>(lineSize);
-        x += TILE_SIZE;
-    }
-
-    while (y < _surface->h)
-    {
-        rect.x = 0;
-        rect.y = y;
-        rect.w = _surface->w;
-        rect.h = 1;
-
-        SDL_FillRect(_surface.get(), &rect, lineColor);
-
-        y += static_cast<int>(lineSize);
-        y += TILE_SIZE;
-    }
+    setLineColor(lineColor);
 }
 
-void TileGrid::setTile(const TileDataSpan& tileData, size_t x, size_t y)
+void TileGrid::setTile(const utils::Tile& tile, const size_t x, const size_t y)
 {
-    if (x >= _col)
+    if (x >= _col || y >= _row)
     {
-        throw OutOfBounds{};
-    }
-
-    if (y >= _row)
-    {
-        throw OutOfBounds{};
+        throw OutOfBounds{x, y, _col, _row};
     }
 
     const size_t baseOffsetX{x * TILE_SIZE + (x + 1) * _lineSize};
@@ -78,11 +45,30 @@ void TileGrid::setTile(const TileDataSpan& tileData, size_t x, size_t y)
 
     SDL_LockSurface(_surface.get());
 
-    for (size_t i = 0; i < tileData.size(); i += 2)
+    for (size_t i = 0; i < TILE_SIZE; i++)
     {
-        const auto tileDataLow{tileData[i]};
-        const auto tileDataHigh{tileData[i + 1]};
-        const auto pixels{utils::getPixelsFromTileData(tileDataLow, tileDataHigh)};
+        for (size_t j = 0; j < TILE_SIZE; j++)
+        {
+            const auto colorIndex{tile[i][j]};
+
+            switch (colorIndex.to_ulong())
+            {
+                case 0b00:
+                    break;
+                case 0b01:
+                    break;
+                case 0b10:
+                    break;
+                case 0b11:
+                    break;
+
+                [[unlikely]]
+                default:
+                    break;
+            }
+
+            const auto& pixels{utils::getPixelsFromTileData(colorIndex, colorIndex)};
+        }
 
         for (const auto [pixelX, pixelValue] : std::views::enumerate(pixels))
         {
@@ -109,12 +95,12 @@ void TileGrid::clearTile(size_t x, size_t y)
     setTile(data, x, y);
 }
 
-size_t TileGrid::getSizeX() const
+size_t TileGrid::getPixelWidth() const
 {
     return _surface->w;
 }
 
-size_t TileGrid::getSizeY() const
+size_t TileGrid::getPixelHeigh() const
 {
     return _surface->h;
 }
@@ -129,6 +115,13 @@ size_t TileGrid::getRows() const
     return _row;
 }
 
+void TileGrid::setLineColor(const RGB& color)
+{
+    _lineColor = SDL_MapRGBA(_surface->format, std::get<0>(color), std::get<1>(color), std::get<2>(color), 0xFF);
+
+    _drawSeparationLines();
+}
+
 [[nodiscard]] sdl::unique_texture TileGrid::getTexture() const
 {
     sdl::unique_texture texture{SDL_CreateTextureFromSurface(_sdlRenderer.get(), _surface.get()), SDL_DestroyTexture};
@@ -141,6 +134,39 @@ size_t TileGrid::getRows() const
     return texture;
 }
 
+void TileGrid::_drawSeparationLines() const noexcept
+{
+    SDL_Rect rect{};
+    int      x{};
+    int      y{};
+
+    while (x < _surface->w)
+    {
+        rect.x = x;
+        rect.y = 0;
+        rect.w = 1;
+        rect.h = _surface->h;
+
+        SDL_FillRect(_surface.get(), &rect, _lineColor);
+
+        x += static_cast<int>(_lineSize);
+        x += TILE_SIZE;
+    }
+
+    while (y < _surface->h)
+    {
+        rect.x = 0;
+        rect.y = y;
+        rect.w = _surface->w;
+        rect.h = 1;
+
+        SDL_FillRect(_surface.get(), &rect, _lineColor);
+
+        y += static_cast<int>(_lineSize);
+        y += TILE_SIZE;
+    }
+}
+
 void GraphicsDebugger::render()
 {
     ImGui::Begin("GraphicsDebugger", nullptr,
@@ -148,14 +174,14 @@ void GraphicsDebugger::render()
     if (_backgroundTexture)
     {
         ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(_backgroundTexture.get())),
-                     ImVec2(static_cast<float>(_backgroundGrid.getSizeX() * 3),
-                            static_cast<float>(_backgroundGrid.getSizeY() * 3)));
+                     ImVec2(static_cast<float>(_backgroundGrid.getPixelWidth() * 2),
+                            static_cast<float>(_backgroundGrid.getPixelHeigh() * 2)));
     }
     ImGui::End();
 }
 
 GraphicsDebugger::GraphicsDebugger(sdl::shared_renderer renderer)
-    : _sdlRenderer(renderer), _backgroundGrid(renderer, 16, 24, 1, 0xFFD3D3D3)
+    : _sdlRenderer(renderer), _backgroundGrid(renderer, 16, 24)
 {
 }
 

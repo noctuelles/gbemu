@@ -15,8 +15,6 @@
 
 namespace utils
 {
-    using PixelTileRow = std::array<uint8_t, 8>;
-
     template <typename E>
     concept EnumType = std::is_enum_v<E> && std::is_same_v<std::underlying_type_t<E>, uint8_t>;
 
@@ -107,25 +105,28 @@ namespace utils
         std::condition_variable cv{};
     };
 
-    inline PixelTileRow getPixelsFromTileData(const uint8_t low, const uint8_t high)
+    class Tile
     {
-        PixelTileRow pixels{};
-
-        for (size_t i = 0; i < 8; i++)
+      public:
+        class Row
         {
-            const auto pixelLow{static_cast<uint8_t>(low >> (7 - i) & 1)};
-            const auto pixelHigh{static_cast<uint8_t>(high >> (7 - i) & 1)};
-            pixels[i] = pixelLow << 1 | pixelHigh;
-        }
+          public:
+            Row() = default;
+            Row(uint8_t low, uint8_t high);
 
-        return pixels;
-    }
+            std::bitset<2> operator[](size_t i) const noexcept;
 
-    inline PixelTileRow getPixelsFromTileData(const uint16_t tileData)
-    {
-        return getPixelsFromTileData(tileData >> 8, tileData & 0xFF);
-    }
+          private:
+            std::bitset<16> _data{};
+        };
 
-};  // namespace utils
+        explicit Tile(std::span<const uint8_t, 16> data);
+
+        const Row& operator[](size_t i) const noexcept;
+
+      private:
+        std::array<Row, 8> _data;
+    };
+}  // namespace utils
 
 #endif  // UTILS_HXX

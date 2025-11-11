@@ -22,6 +22,17 @@ namespace sdl
     using unique_renderer = unique_ptr<SDL_Renderer>;
     using unique_window   = unique_ptr<SDL_Window>;
     using shared_renderer = std::shared_ptr<SDL_Renderer>;
+
+    class exception final : public std::runtime_error
+    {
+      public:
+        exception() : std::runtime_error(SDL_GetError()) {}
+        explicit exception(const std::string& fn)
+            : std::runtime_error(std::format("{}: {}", fn, std::string{SDL_GetError()}))
+        {
+        }
+    };
+
 };  // namespace sdl
 
 template <typename T, auto Init, auto Release, typename... InitArgs>
