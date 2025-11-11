@@ -73,7 +73,10 @@ class GraphicsDebugger
     sdl::shared_renderer _sdlRenderer;
 
     TileGrid            _backgroundGrid;
+    TileGrid            _tileMapGrid;
+
     sdl::unique_texture _backgroundTexture;
+    sdl::unique_texture _tileMapTexture;
 };
 
 #endif  // GBEMU_GRAPHICS_HXX

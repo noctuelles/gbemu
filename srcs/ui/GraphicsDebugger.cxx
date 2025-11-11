@@ -106,7 +106,7 @@ void TileGrid::setPaletteRegister(const uint8_t paletteRegister)
 
     if (!texture)
     {
-        throw std::runtime_error(SDL_GetError());
+        throw sdl::exception{"SDL_CreateTextureFromSurface"};
     }
 
     return texture;
@@ -149,17 +149,73 @@ void GraphicsDebugger::render()
 {
     ImGui::Begin("GraphicsDebugger", nullptr,
                  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoResize);
-    if (_backgroundTexture)
+    if (ImGui::BeginTabBar("##graphicsDebuggerTabs", ImGuiTabBarFlags_None))
     {
-        ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(_backgroundTexture.get())),
-                     ImVec2(static_cast<float>(_backgroundGrid.getPixelWidth() * 2),
-                            static_cast<float>(_backgroundGrid.getPixelHeigh() * 2)));
+        if (ImGui::BeginTabItem("VRAM"))
+        {
+            auto optionBarHeight{ImGui::GetFontSize() * 2.f + ImGui::GetStyle().FramePadding.y * 2.f};
+            auto availableSpace{ImGui::GetContentRegionAvail()};
+
+            ImGui::BeginChild("##vramGrid", ImVec2(availableSpace.x, availableSpace.y - optionBarHeight),
+                              ImGuiChildFlags_None, ImGuiWindowFlags_None);
+            {
+                if (_backgroundTexture)
+                {
+                    ImGui::Spacing();
+                    ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(_backgroundTexture.get())),
+                                 ImVec2(_backgroundGrid.getPixelWidth() * 2.f, _backgroundGrid.getPixelHeigh() * 2.f));
+                }
+            }
+            ImGui::EndChild();
+            ImGui::Spacing();
+            ImGui::Separator();
+
+            ImGui::BeginChild("##vramOptions", ImVec2(0, optionBarHeight), ImGuiChildFlags_None, ImGuiWindowFlags_None);
+            {
+                if (ImGui::Button("Options"))
+                {
+                    ImGui::OpenPopup("vramOptionsPopup");
+                }
+                if (ImGui::BeginPopup("vramOptionsPopup"))
+                {
+                    ImGui::Text("Hi");
+                    ImGui::EndPopup();
+                }
+            }
+            ImGui::EndChild();
+
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Tile Maps"))
+        {
+            if (_tileMapTexture)
+            {
+                ImGui::Spacing();
+                ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(_tileMapTexture.get())),
+                             ImVec2(_tileMapGrid.getPixelWidth() * 2.f, _tileMapGrid.getPixelHeigh() * 2.f));
+            }
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Sprites"))
+        {
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Palette"))
+        {
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
     }
+
     ImGui::End();
 }
 
 GraphicsDebugger::GraphicsDebugger(sdl::shared_renderer renderer)
-    : _sdlRenderer(renderer), _backgroundGrid(renderer, 8, 16)
+    : _sdlRenderer(renderer), _backgroundGrid(renderer, 16, 24), _tileMapGrid(renderer, 32, 32)
 {
     constexpr Graphics::ColorPalette colorPalette{
         Graphics::RGB{0xFF, 0xFF, 0xFF},
@@ -170,24 +226,43 @@ GraphicsDebugger::GraphicsDebugger(sdl::shared_renderer renderer)
 
     _backgroundGrid.setColorPalette(colorPalette);
     _backgroundGrid.setPaletteRegister(0b11111100);
+
+    _tileMapGrid.setColorPalette(colorPalette);
+    _tileMapGrid.setPaletteRegister(0b11111100);
 }
 
 void GraphicsDebugger::update(const std::array<uint8_t, 65536>& videoRam)
 {
     uint16_t baseAddress{0x8000};
+    uint16_t baseAddressTileMap{0x9800};
 
     for (size_t tileY = 0; tileY < _backgroundGrid.getRows(); tileY++)
     {
         for (size_t tileX = 0; tileX < _backgroundGrid.getCols(); tileX++)
         {
             const Graphics::Tile::DataSpan data{&videoRam[baseAddress], 16};
-            const auto                     tile{Graphics::Tile{data}};
 
-            _backgroundGrid.setTile(tile, tileX, tileY);
+            _backgroundGrid.setTile(Graphics::Tile{data}, tileX, tileY);
 
             baseAddress += 0x10;
         }
     }
 
+    baseAddress = 0x8000;
+
+    for (size_t tileY = 0; tileY < _tileMapGrid.getRows(); tileY++)
+    {
+        for (size_t tileX = 0; tileX < _tileMapGrid.getCols(); tileX++)
+        {
+            const auto                     index{videoRam[baseAddressTileMap]};
+            const Graphics::Tile::DataSpan data{&videoRam[baseAddress + index * 0x10], 16};
+
+            _tileMapGrid.setTile(Graphics::Tile{data}, tileX, tileY);
+
+            baseAddressTileMap += 1;
+        }
+    }
+
     _backgroundTexture = _backgroundGrid.getTexture();
+    _tileMapTexture    = _tileMapGrid.getTexture();
 }

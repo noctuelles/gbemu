@@ -104,10 +104,10 @@ TEST(getPixelColorFromPalette, BootromPaletteRegister)
 
     constexpr uint8_t bootromPalette{0b11111100};
 
-    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b00), bootromPalette, gColorPalette), gColorPalette[0]);
-    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b01), bootromPalette, gColorPalette), gColorPalette[3]);
-    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b10), bootromPalette, gColorPalette), gColorPalette[3]);
-    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b11), bootromPalette, gColorPalette), gColorPalette[3]);
+    ASSERT_EQ(getPixelColorFromPalette(Tile::ColorIndex(0b00), bootromPalette, gColorPalette), gColorPalette[0]);
+    ASSERT_EQ(getPixelColorFromPalette(Tile::ColorIndex(0b01), bootromPalette, gColorPalette), gColorPalette[3]);
+    ASSERT_EQ(getPixelColorFromPalette(Tile::ColorIndex(0b10), bootromPalette, gColorPalette), gColorPalette[3]);
+    ASSERT_EQ(getPixelColorFromPalette(Tile::ColorIndex(0b11), bootromPalette, gColorPalette), gColorPalette[3]);
 }
 
 TEST(getPixelColorFromPalette, IdentityPaletteRegister)
@@ -116,8 +116,8 @@ TEST(getPixelColorFromPalette, IdentityPaletteRegister)
 
     constexpr uint8_t identityPalette{0b11100100};
 
-    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b00), identityPalette, gColorPalette), gColorPalette[0]);
-    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b01), identityPalette, gColorPalette), gColorPalette[1]);
-    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b10), identityPalette, gColorPalette), gColorPalette[2]);
-    ASSERT_EQ(getPixelColorFromPalette(std::bitset<2>(0b11), identityPalette, gColorPalette), gColorPalette[3]);
+    ASSERT_EQ(getPixelColorFromPalette(Tile::ColorIndex(0b00), identityPalette, gColorPalette), gColorPalette[0]);
+    ASSERT_EQ(getPixelColorFromPalette(Tile::ColorIndex(0b01), identityPalette, gColorPalette), gColorPalette[1]);
+    ASSERT_EQ(getPixelColorFromPalette(Tile::ColorIndex(0b10), identityPalette, gColorPalette), gColorPalette[2]);
+    ASSERT_EQ(getPixelColorFromPalette(Tile::ColorIndex(0b11), identityPalette, gColorPalette), gColorPalette[3]);
 }
