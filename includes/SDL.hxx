@@ -33,6 +33,27 @@ namespace sdl
         }
     };
 
+    class surface_lockguard
+    {
+      public:
+        explicit surface_lockguard(SDL_Surface* surface) : _surf(surface)
+        {
+            if (SDL_MUSTLOCK(_surf))
+            {
+                SDL_LockSurface(_surf);
+            }
+        }
+        ~surface_lockguard()
+        {
+            if (SDL_MUSTLOCK(_surf))
+            {
+                SDL_UnlockSurface(_surf);
+            }
+        }
+
+      private:
+        SDL_Surface* _surf;
+    };
 };  // namespace sdl
 
 template <typename T, auto Init, auto Release, typename... InitArgs>

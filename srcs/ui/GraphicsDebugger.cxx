@@ -4,15 +4,14 @@
 
 #include "ui/GraphicsDebugger.hxx"
 
-#include <numeric>
 #include <ranges>
 #include <utility>
 
-#include "Utils.hxx"
+#include "graphics/Tile.hxx"
 #include "imgui.h"
 
 TileGrid::TileGrid(sdl::shared_renderer renderer, const size_t col, const size_t row, const size_t lineSize,
-                   const RGB& lineColor)
+                   const Graphics::RGB& lineColor)
     : _sdlRenderer(std::move(renderer)),
       _lineSize(lineSize),
       _col(col),
@@ -33,7 +32,7 @@ TileGrid::TileGrid(sdl::shared_renderer renderer, const size_t col, const size_t
     setLineColor(lineColor);
 }
 
-void TileGrid::setTile(const utils::Tile& tile, const size_t x, const size_t y)
+void TileGrid::setTile(const Graphics::Tile& tile, const size_t x, const size_t y)
 {
     if (x >= _col || y >= _row)
     {
@@ -43,21 +42,19 @@ void TileGrid::setTile(const utils::Tile& tile, const size_t x, const size_t y)
     const size_t baseOffsetX{x * TILE_SIZE + (x + 1) * _lineSize};
     size_t       baseOffsetY{y * TILE_SIZE + (y + 1) * _lineSize};
 
-    SDL_LockSurface(_surface.get());
+    sdl::surface_lockguard lock{_surface.get()};
 
     for (size_t i = 0; i < TILE_SIZE; i++)
     {
         for (size_t j = 0; j < TILE_SIZE; j++)
         {
-            const auto color{utils::getPixelColorFromPalette(tile[i][j], _paletteRegister, _colorPalette)};
+            const auto color{Graphics::getPixelColorFromPalette(tile[i][j], _paletteRegister, _colorPalette)};
             _surfacePixels[baseOffsetY * _surface->w + baseOffsetX + j] =
                 SDL_MapRGBA(_surface->format, std::get<0>(color), std::get<1>(color), std::get<2>(color), 0xFF);
         }
 
         baseOffsetY += 1;
     }
-
-    SDL_UnlockSurface(_surface.get());
 }
 
 void TileGrid::clearTile(size_t x, size_t y)
@@ -86,14 +83,14 @@ size_t TileGrid::getRows() const
     return _row;
 }
 
-void TileGrid::setLineColor(const RGB& color)
+void TileGrid::setLineColor(const Graphics::RGB& color)
 {
     _lineColor = SDL_MapRGBA(_surface->format, std::get<0>(color), std::get<1>(color), std::get<2>(color), 0xFF);
 
     _drawSeparationLines();
 }
 
-void TileGrid::setColorPalette(const ColorPalette& colorPalette)
+void TileGrid::setColorPalette(const Graphics::ColorPalette& colorPalette)
 {
     _colorPalette = colorPalette;
 }
@@ -162,13 +159,13 @@ void GraphicsDebugger::render()
 }
 
 GraphicsDebugger::GraphicsDebugger(sdl::shared_renderer renderer)
-    : _sdlRenderer(renderer), _backgroundGrid(renderer, 16, 24)
+    : _sdlRenderer(renderer), _backgroundGrid(renderer, 8, 16)
 {
-    constexpr ColorPalette colorPalette{
-        RGB{0xFF, 0xFF, 0xFF},
-        RGB{0xAA, 0xAA, 0xAA},
-        RGB{0x55, 0x55, 0x55},
-        RGB{0x00, 0x00, 0x00},
+    constexpr Graphics::ColorPalette colorPalette{
+        Graphics::RGB{0xFF, 0xFF, 0xFF},
+        Graphics::RGB{0xAA, 0xAA, 0xAA},
+        Graphics::RGB{0x55, 0x55, 0x55},
+        Graphics::RGB{0x00, 0x00, 0x00},
     };
 
     _backgroundGrid.setColorPalette(colorPalette);
@@ -177,17 +174,14 @@ GraphicsDebugger::GraphicsDebugger(sdl::shared_renderer renderer)
 
 void GraphicsDebugger::update(const std::array<uint8_t, 65536>& videoRam)
 {
-    (void) videoRam;
-
     uint16_t baseAddress{0x8000};
-    (void) baseAddress;
 
     for (size_t tileY = 0; tileY < _backgroundGrid.getRows(); tileY++)
     {
         for (size_t tileX = 0; tileX < _backgroundGrid.getCols(); tileX++)
         {
-            TileDataSpan data{&videoRam[baseAddress], 16};
-            const auto   tile{utils::Tile{data}};
+            const Graphics::Tile::DataSpan data{&videoRam[baseAddress], 16};
+            const auto                     tile{Graphics::Tile{data}};
 
             _backgroundGrid.setTile(tile, tileX, tileY);
 

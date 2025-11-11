@@ -5,14 +5,8 @@
 #ifndef GBEMU_GRAPHICS_HXX
 #define GBEMU_GRAPHICS_HXX
 
-#include <array>
-#include <cstdint>
-
 #include "SDL.hxx"
-#include "Utils.hxx"
-
-using TileData     = std::array<uint8_t, 16>;
-using TileDataSpan = std::span<const uint8_t, 16>;
+#include "graphics/Tile.hxx"
 
 class TileGrid
 {
@@ -37,9 +31,9 @@ class TileGrid
     };
 
     TileGrid(sdl::shared_renderer renderer, size_t col, size_t row, size_t lineSize = 1,
-             const RGB& lineColor = {0xD3, 0xD3, 0xD3});
+             const Graphics::RGB& lineColor = {0xD3, 0xD3, 0xD3});
 
-    void setTile(const utils::Tile& tile, size_t x, size_t y);
+    void setTile(const Graphics::Tile& tile, size_t x, size_t y);
     void clearTile(size_t x, size_t y);
 
     [[nodiscard]] size_t getPixelWidth() const;
@@ -47,8 +41,8 @@ class TileGrid
     [[nodiscard]] size_t getCols() const;
     [[nodiscard]] size_t getRows() const;
 
-    void setLineColor(const RGB& color);
-    void setColorPalette(const ColorPalette& colorPalette);
+    void setLineColor(const Graphics::RGB& color);
+    void setColorPalette(const Graphics::ColorPalette& colorPalette);
     void setPaletteRegister(uint8_t paletteRegister);
 
     [[nodiscard]] sdl::unique_texture getTexture() const;
@@ -56,15 +50,15 @@ class TileGrid
   private:
     void _drawSeparationLines() const noexcept;
 
-    sdl::shared_renderer _sdlRenderer;
-    uint32_t             _lineColor{};
-    const size_t         _lineSize;
-    const size_t         _col;
-    const size_t         _row;
-    ColorPalette         _colorPalette;
-    uint8_t              _paletteRegister;
-    sdl::unique_surface  _surface;
-    std::span<uint32_t>  _surfacePixels;
+    sdl::shared_renderer   _sdlRenderer;
+    uint32_t               _lineColor{};
+    const size_t           _lineSize;
+    const size_t           _col;
+    const size_t           _row;
+    Graphics::ColorPalette _colorPalette;
+    uint8_t                _paletteRegister;
+    sdl::unique_surface    _surface;
+    std::span<uint32_t>    _surfacePixels;
 };
 
 class GraphicsDebugger

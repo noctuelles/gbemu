@@ -48,6 +48,7 @@ set(IMGUI_FILES
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer2.cpp
         includes/IDebugger.hxx
+        includes/graphics/Tile.hxx
 )
 
 add_library(imgui STATIC ${IMGUI_FILES})
@@ -71,7 +72,6 @@ add_executable(gbemu
         srcs/main.cxx
         srcs/hardware/Bus.cxx
         srcs/hardware/Cartridge.cxx
-        srcs/Utils.cxx
         includes/hardware/Cartridge.hxx
         includes/tests/hardware/core/SM83.hxx
         includes/Common.hxx
@@ -99,6 +99,8 @@ add_executable(gbemu
         includes/Emulator.hxx
         srcs/ui/GraphicsDebugger.cxx
         includes/ui/GraphicsDebugger.hxx
+        includes/graphics/Tile.hxx
+        srcs/graphics/Tile.cxx
 )
 
 target_link_libraries(
@@ -114,9 +116,10 @@ add_executable(gbemu_test
         srcs/hardware/Timer.cxx
         srcs/hardware/Bus.cxx
         srcs/hardware/Cartridge.cxx
-        srcs/Utils.cxx
         includes/hardware/Displayable.hxx
-        srcs/tests/Utils.cxx)
+        srcs/graphics/Tile.cxx
+        srcs/tests/graphics/Tile.cxx
+        srcs/tests/graphics/Tile.cxx)
 
 target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/roms")
 
