@@ -11,7 +11,7 @@
 
 PPU::PPU(Addressable& bus, Displayable& display) : bus(bus), display(display)
 {
-    obj_to_draw.reserve(10);
+    objsToDraw.reserve(10);
 
     transition(Mode::OAMScan);
 
@@ -116,21 +116,26 @@ uint8_t PPU::read(const uint16_t address) const
 {
     if (utils::address_in(address, MemoryMap::VIDEO_RAM))
     {
+        if (!_videoRamAccessible)
+        {
+            return 0xFF;
+        }
+
         if ((registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 1)
         {
             return 0xFF;
         }
 
-        return video_ram[address - 0x8000];
+        return _videoRam[address - 0x8000];
     }
     if (utils::address_in(address, MemoryMap::OAM))
     {
-        if (mode == Mode::OAMScan)
+        if (!_oamAccessible)
         {
             return 0xFF;
         }
 
-        return reinterpret_cast<const uint8_t*>(oam_entries.data())[address - MemoryMap::OAM.first];
+        return reinterpret_cast<const uint8_t*>(_oamEntries.data())[address - MemoryMap::OAM.first];
     }
 
     if (const auto it = addrToRegister.find(address); it != addrToRegister.end())
@@ -145,16 +150,21 @@ void PPU::write(const uint16_t address, const uint8_t value)
 {
     if (utils::address_in(address, MemoryMap::VIDEO_RAM))
     {
-        video_ram[address - 0x8000] = value;
-    }
-    else if (utils::address_in(address, MemoryMap::OAM))
-    {
-        if (mode == Mode::OAMScan)
+        if (!_videoRamAccessible)
         {
             return;
         }
 
-        reinterpret_cast<uint8_t*>(oam_entries.data())[address - MemoryMap::OAM.first] = value;
+        _videoRam[address - 0x8000] = value;
+    }
+    else if (utils::address_in(address, MemoryMap::OAM))
+    {
+        if (!_oamAccessible)
+        {
+            return;
+        }
+
+        reinterpret_cast<uint8_t*>(_oamEntries.data())[address - MemoryMap::OAM.first] = value;
     }
 
     if (const auto it = addrToRegister.find(address); it != addrToRegister.end())
@@ -172,6 +182,9 @@ void PPU::tick()
     switch (mode)
     {
         case Mode::OAMScan:
+            _videoRamAccessible = true;
+            _oamAccessible      = false;
+
             if (dots % 2 == 0 && dots != 0)
             {
                 /**
@@ -183,15 +196,15 @@ void PPU::tick()
                  * will hide it, but it will still count towards the limit, possibly causing another object later in OAM
                  * not to be drawn.
                  */
-                if (const uint8_t obj_height = (registers.LCDC & LCDControlFlags::ObjSize) != 0 ? 16 : 8;
-                    registers.LY >= curr_oam_entry->y && registers.LY < curr_oam_entry->y + obj_height)
+                if (const uint8_t objHeight = (registers.LCDC & LCDControlFlags::ObjSize) != 0 ? 16 : 8;
+                    registers.LY >= _currentOamEntry->y && registers.LY < _currentOamEntry->y + objHeight)
                 {
-                    if (obj_to_draw.size() < 10)
+                    if (objsToDraw.size() < 10)
                     {
-                        obj_to_draw.push_back(curr_oam_entry);
+                        objsToDraw.push_back(_currentOamEntry);
                     }
                 }
-                curr_oam_entry += 1;
+                _currentOamEntry += 1;
             }
 
             if (dots == 80)
@@ -201,7 +214,11 @@ void PPU::tick()
             }
             break;
         case Mode::Drawing:
-            /* TODO */
+            /* Minimum length : 172 dots. */
+
+            _videoRamAccessible = false;
+            _oamAccessible      = false;
+
             pixelFetcher.tick();
 
             x += 1;
@@ -211,7 +228,9 @@ void PPU::tick()
             }
             break;
         case Mode::HorizontalBlank:
-            /* Idle... */
+            _videoRamAccessible = true;
+            _oamAccessible      = true;
+
             if (dots == 456)
             {
                 dots = 0;
@@ -228,7 +247,8 @@ void PPU::tick()
             }
             break;
         case Mode::VerticalBlank:
-            /* Idle... */
+            _videoRamAccessible = true;
+            _oamAccessible      = true;
 
             if (dots == 456)
             {
@@ -250,8 +270,8 @@ void PPU::transition(const Mode transition_to)
 {
     if (this->mode != Mode::OAMScan && transition_to == Mode::OAMScan)
     {
-        obj_to_draw.clear();
-        curr_oam_entry = oam_entries.cbegin();
+        objsToDraw.clear();
+        _currentOamEntry = _oamEntries.cbegin();
     }
 
     this->mode = transition_to;

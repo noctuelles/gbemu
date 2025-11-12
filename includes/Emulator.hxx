@@ -18,7 +18,7 @@ class Emulator
 {
     using Breakpoints = std::set<uint16_t>;
 
-    static const std::array<uint8_t, 0x100 + 50> BOOT_ROM;
+    static const std::array<uint8_t, 0x100 + 52> BOOT_ROM;
     static constexpr uint16_t               BOOT_ROM_START_ADDRESS{0x0000};
 
   public:

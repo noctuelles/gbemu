@@ -10,15 +10,15 @@
 #include "graphics/Tile.hxx"
 #include "imgui.h"
 
-TileGrid::TileGrid(sdl::shared_renderer renderer, const size_t col, const size_t row, const size_t lineSize,
-                   const Graphics::RGB& lineColor)
+TileGrid::TileGrid(sdl::shared_renderer renderer, const size_t col, const size_t row, const bool showGrid,
+                   const size_t lineSize, const Graphics::RGB& lineColor)
     : _sdlRenderer(std::move(renderer)),
+      _showGrid(showGrid),
       _lineSize(lineSize),
       _col(col),
       _row(row),
-      _surface(SDL_CreateRGBSurfaceWithFormat(0, static_cast<int>(col * TILE_SIZE + (col + 1) * lineSize),
-                                              static_cast<int>(row * TILE_SIZE + (row + 1) * lineSize), 32,
-                                              SDL_PIXELFORMAT_RGBA32),
+      _surface(SDL_CreateRGBSurfaceWithFormat(0, static_cast<int>(_calculatePixelWidth()),
+                                              static_cast<int>(_calculatePixelHeigh()), 32, SDL_PIXELFORMAT_RGBA32),
                SDL_FreeSurface)
 {
     if (!_surface)
@@ -39,8 +39,14 @@ void TileGrid::setTile(const Graphics::Tile& tile, const size_t x, const size_t 
         throw OutOfBounds{x, y, _col, _row};
     }
 
-    const size_t baseOffsetX{x * TILE_SIZE + (x + 1) * _lineSize};
-    size_t       baseOffsetY{y * TILE_SIZE + (y + 1) * _lineSize};
+    size_t baseOffsetX{x * TILE_SIZE};
+    size_t baseOffsetY{y * TILE_SIZE};
+
+    if (_showGrid)
+    {
+        baseOffsetX += (x + 1) * _lineSize;
+        baseOffsetY += (y + 1) * _lineSize;
+    }
 
     sdl::surface_lockguard lock{_surface.get()};
 
@@ -83,19 +89,19 @@ size_t TileGrid::getRows() const
     return _row;
 }
 
-void TileGrid::setLineColor(const Graphics::RGB& color)
+void TileGrid::setLineColor(const Graphics::RGB& color) noexcept
 {
     _lineColor = SDL_MapRGBA(_surface->format, std::get<0>(color), std::get<1>(color), std::get<2>(color), 0xFF);
 
-    _drawSeparationLines();
+    _drawGridLines();
 }
 
-void TileGrid::setColorPalette(const Graphics::ColorPalette& colorPalette)
+void TileGrid::setColorPalette(const Graphics::ColorPalette& colorPalette) noexcept
 {
     _colorPalette = colorPalette;
 }
 
-void TileGrid::setPaletteRegister(const uint8_t paletteRegister)
+void TileGrid::setPaletteRegister(const uint8_t paletteRegister) noexcept
 {
     _paletteRegister = paletteRegister;
 }
@@ -112,11 +118,16 @@ void TileGrid::setPaletteRegister(const uint8_t paletteRegister)
     return texture;
 }
 
-void TileGrid::_drawSeparationLines() const noexcept
+void TileGrid::_drawGridLines() const noexcept
 {
     SDL_Rect rect{};
     int      x{};
     int      y{};
+
+    if (!_showGrid)
+    {
+        return;
+    }
 
     while (x < _surface->w)
     {
@@ -143,6 +154,30 @@ void TileGrid::_drawSeparationLines() const noexcept
         y += static_cast<int>(_lineSize);
         y += TILE_SIZE;
     }
+}
+
+size_t TileGrid::_calculatePixelWidth() const noexcept
+{
+    size_t pixelWidth{_col * TILE_SIZE};
+
+    if (_showGrid)
+    {
+        pixelWidth += (_col + 1) * _lineSize;
+    }
+
+    return pixelWidth;
+}
+
+size_t TileGrid::_calculatePixelHeigh() const noexcept
+{
+    size_t pixelHeigh{_row * TILE_SIZE};
+
+    if (_showGrid)
+    {
+        pixelHeigh += (_row + 1) * _lineSize;
+    }
+
+    return pixelHeigh;
 }
 
 void GraphicsDebugger::render()
@@ -193,7 +228,7 @@ void GraphicsDebugger::render()
             {
                 ImGui::Spacing();
                 ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(_tileMapTexture.get())),
-                             ImVec2(_tileMapGrid.getPixelWidth() * 2.f, _tileMapGrid.getPixelHeigh() * 2.f));
+                             ImVec2(_tileMapGrid.getPixelWidth() * 1.f, _tileMapGrid.getPixelHeigh() * 1.f));
             }
             ImGui::EndTabItem();
         }

@@ -30,7 +30,7 @@ class TileGrid
         size_t _rows;
     };
 
-    TileGrid(sdl::shared_renderer renderer, size_t col, size_t row, size_t lineSize = 1,
+    TileGrid(sdl::shared_renderer renderer, size_t col, size_t row, bool showGrid = false, size_t lineSize = 1,
              const Graphics::RGB& lineColor = {0xD3, 0xD3, 0xD3});
 
     void setTile(const Graphics::Tile& tile, size_t x, size_t y);
@@ -41,16 +41,19 @@ class TileGrid
     [[nodiscard]] size_t getCols() const;
     [[nodiscard]] size_t getRows() const;
 
-    void setLineColor(const Graphics::RGB& color);
-    void setColorPalette(const Graphics::ColorPalette& colorPalette);
-    void setPaletteRegister(uint8_t paletteRegister);
+    void setLineColor(const Graphics::RGB& color) noexcept;
+    void setColorPalette(const Graphics::ColorPalette& colorPalette) noexcept;
+    void setPaletteRegister(uint8_t paletteRegister) noexcept;
 
     [[nodiscard]] sdl::unique_texture getTexture() const;
 
   private:
-    void _drawSeparationLines() const noexcept;
+    void   _drawGridLines() const noexcept;
+    size_t _calculatePixelWidth() const noexcept;
+    size_t _calculatePixelHeigh() const noexcept;
 
     sdl::shared_renderer   _sdlRenderer;
+    bool                   _showGrid;
     uint32_t               _lineColor{};
     const size_t           _lineSize;
     const size_t           _col;
@@ -72,8 +75,8 @@ class GraphicsDebugger
   private:
     sdl::shared_renderer _sdlRenderer;
 
-    TileGrid            _backgroundGrid;
-    TileGrid            _tileMapGrid;
+    TileGrid _backgroundGrid;
+    TileGrid _tileMapGrid;
 
     sdl::unique_texture _backgroundTexture;
     sdl::unique_texture _tileMapTexture;

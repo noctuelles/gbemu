@@ -101,6 +101,7 @@ add_executable(gbemu
         includes/ui/GraphicsDebugger.hxx
         includes/graphics/Tile.hxx
         srcs/graphics/Tile.cxx
+        includes/ui/Display.hxx
 )
 
 target_link_libraries(

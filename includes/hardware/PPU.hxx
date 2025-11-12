@@ -224,11 +224,13 @@ class PPU final : public Component
     Addressable& bus;
     Displayable& display;
 
-    std::array<uint8_t, 0x2000> video_ram{};
-    OAMArray                    oam_entries{};
-    OAMArray::const_iterator    curr_oam_entry{};
+    bool                        _videoRamAccessible{true};
+    std::array<uint8_t, 0x2000> _videoRam{};
+    bool                        _oamAccessible{true};
+    OAMArray                    _oamEntries{};
+    OAMArray::const_iterator    _currentOamEntry{};
 
-    std::vector<decltype(curr_oam_entry)> obj_to_draw{};
+    std::vector<decltype(_currentOamEntry)> objsToDraw{};
 
     Registers    registers{};
     PixelFetcher pixelFetcher{bus, registers};
