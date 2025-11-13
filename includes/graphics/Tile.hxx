@@ -41,11 +41,18 @@ namespace Graphics
         std::array<Row, 8> _data;
     };
 
+    inline Tile::ColorIndex getRealColorIndexFromPaletteRegister(const Tile::ColorIndex& colorIndex,
+                                                                 const uint8_t           paletteRegister)
+    {
+        return paletteRegister >> (2 * static_cast<uint8_t>(colorIndex.to_ulong())) & 0b11;
+    }
+
     inline const RGB& getPixelColorFromPalette(const Tile::ColorIndex& colorIndex, const uint8_t paletteRegister,
                                                const ColorPalette& colorPalette)
     {
-        return colorPalette[paletteRegister >> (2 * static_cast<uint8_t>(colorIndex.to_ulong())) & 0b11];
+        return colorPalette[getRealColorIndexFromPaletteRegister(colorIndex, paletteRegister).to_ulong()];
     }
+
 }  // namespace Graphics
 
 #endif  // GBEMU_TILE_HXX

@@ -67,6 +67,12 @@ namespace utils
             cv.notify_one();
         }
 
+        bool empty()
+        {
+            std::scoped_lock lock{m};
+            return q.empty();
+        }
+
         T pop()
         {
             std::unique_lock l{m};

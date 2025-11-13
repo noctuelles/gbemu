@@ -30,7 +30,7 @@ class TileGrid
         size_t _rows;
     };
 
-    TileGrid(sdl::shared_renderer renderer, size_t col, size_t row, bool showGrid = false, size_t lineSize = 1,
+    TileGrid(sdl::shared_renderer renderer, size_t col, size_t row, bool showGrid = true, size_t lineSize = 1,
              const Graphics::RGB& lineColor = {0xD3, 0xD3, 0xD3});
 
     void setTile(const Graphics::Tile& tile, size_t x, size_t y);

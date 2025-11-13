@@ -228,7 +228,7 @@ void GraphicsDebugger::render()
             {
                 ImGui::Spacing();
                 ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(_tileMapTexture.get())),
-                             ImVec2(_tileMapGrid.getPixelWidth() * 1.f, _tileMapGrid.getPixelHeigh() * 1.f));
+                             ImVec2(_tileMapGrid.getPixelWidth() * 2.f, _tileMapGrid.getPixelHeigh() * 2.f));
             }
             ImGui::EndTabItem();
         }

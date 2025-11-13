@@ -6,12 +6,13 @@
 #define PPU_HXX
 
 #include <array>
-#include <map>
+#include <bitset>
+#include <functional>
 #include <queue>
 #include <unordered_map>
-#include <utility>
 
 #include "Displayable.hxx"
+#include "graphics/Framebuffer.hxx"
 #include "hardware/Addressable.hxx"
 
 class PPU final : public Component
@@ -63,11 +64,13 @@ class PPU final : public Component
     RegistersMap addrToRegister;
 
   public:
+    using OnFramebufferReadyCallback = std::function<void()>;
+
     static constexpr std::size_t LCD_HEIGHT{144};
     static constexpr std::size_t LCD_WIDTH{144};
     static constexpr std::size_t VERTICAL_BLANK_SCANLINE{10};
 
-    explicit PPU(Addressable& bus, Displayable& display);
+    PPU(Addressable& bus, Graphics::Framebuffer& framebuffer, OnFramebufferReadyCallback onFramebufferReady);
 
     enum class Mode
     {
@@ -86,14 +89,14 @@ class PPU final : public Component
 
     struct LCDControlFlags
     {
-        static constexpr uint8_t BGWindowEnableOrPriority{0x00};
-        static constexpr uint8_t ObjEnable{0x01};
-        static constexpr uint8_t ObjSize{0x02};
-        static constexpr uint8_t BGTileMapSelect{0x04};
-        static constexpr uint8_t BGAndWindowTileDataArea{0x08};
-        static constexpr uint8_t WindowEnable{0x10};
-        static constexpr uint8_t WindowTileMapSelect{0x20};
-        static constexpr uint8_t LCDAndPPUEnable{0x40};
+        static constexpr uint8_t BGWindowEnableOrPriority{0x01};
+        static constexpr uint8_t ObjEnable{0x02};
+        static constexpr uint8_t ObjSize{0x04};
+        static constexpr uint8_t BGTileMapSelect{0x08};
+        static constexpr uint8_t BGAndWindowTileDataArea{0x10};
+        static constexpr uint8_t WindowEnable{0x20};
+        static constexpr uint8_t WindowTileMapSelect{0x40};
+        static constexpr uint8_t LCDAndPPUEnable{0x80};
     };
 
     struct OAMEntry
@@ -172,10 +175,16 @@ class PPU final : public Component
 
     struct FIFOEntry
     {
-        uint8_t color{};
-        uint8_t palette{};
-        bool    backgroundPriority{};
+        /**
+         * @brief Color index ignoring palette.
+         */
+        std::bitset<2> colorIndex{};
+        uint8_t        palette{};
+        bool           backgroundPriority{};
     };
+
+    using OAMArray = std::array<OAMEntry, 40>;
+    using VideoRAM = std::array<uint8_t, 0x2000>;
 
     class PixelFetcher
     {
@@ -189,55 +198,59 @@ class PPU final : public Component
             Push
         };
 
-        explicit PixelFetcher(Addressable& bus, Registers& registers);
+        PixelFetcher(std::queue<FIFOEntry>& backgroundFIFO, const VideoRAM& videoRam, Registers& registers);
 
         void tick();
         void start();
 
       private:
-        std::queue<FIFOEntry> backgroundFIFO{};
+        std::queue<FIFOEntry>& _backgroundFIFO;
 
-        uint8_t x{}, y{};
-        uint8_t tileMapNbr{};
+        uint8_t _x{}, _y{};
+        uint8_t _tileMapNbr{};
 
-        uint16_t tileDataAddress{};
-        uint8_t  tileDataHigh{};
-        uint8_t  tileDataLow{};
+        uint16_t _tileDataAddress{};
+        uint8_t  _tileDataHigh{};
+        uint8_t  _tileDataLow{};
 
-        Registers&   registers;
-        Addressable& bus;
-        uint8_t      dots{};
-        State        state{State::GetTile};
+        Registers&      _registers;
+        const VideoRAM& _videoRam;
+        size_t          _dots;
+
+        State _state{State::GetTile};
     };
-
-    static std::array<uint8_t, 8> getPixelsFromTileData(const uint8_t low, const uint8_t high);
 
     [[nodiscard]] uint8_t read(uint16_t address) const override;
     void                  write(uint16_t address, uint8_t value) override;
     void                  tick() override;
 
+    AddressableRange getAddressableRange() const noexcept override;
+
   private:
-    using OAMArray = std::array<OAMEntry, 40>;
+    void transition(Mode transitionTo);
 
-    void transition(Mode transition_to);
+    Addressable&           _bus;
+    Graphics::Framebuffer& _framebuffer;
 
-    Addressable& bus;
-    Displayable& display;
+    std::queue<FIFOEntry> _backgroundFIFO{};
+    std::queue<FIFOEntry> _spriteFIFO{};
 
-    bool                        _videoRamAccessible{true};
-    std::array<uint8_t, 0x2000> _videoRam{};
-    bool                        _oamAccessible{true};
-    OAMArray                    _oamEntries{};
-    OAMArray::const_iterator    _currentOamEntry{};
+    bool                     _videoRamAccessible{true};
+    VideoRAM                 _videoRam{};
+    bool                     _oamAccessible{true};
+    OAMArray                 _oamEntries{};
+    OAMArray::const_iterator _currentOamEntry{};
 
     std::vector<decltype(_currentOamEntry)> objsToDraw{};
 
     Registers    registers{};
-    PixelFetcher pixelFetcher{bus, registers};
+    PixelFetcher pixelFetcher{_backgroundFIFO, _videoRam, registers};
 
-    uint16_t dots{};
+    uint16_t _dots{};
+    uint8_t  _pixelsToDiscard{};
+    uint8_t  _x{};
 
-    uint8_t x{};
+    OnFramebufferReadyCallback _onFramebufferReadyCallback;
 
     Mode mode{};
 };

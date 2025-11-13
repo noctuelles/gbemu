@@ -11,6 +11,7 @@
 #include "SDL.hxx"
 #include "ui/AddressSpaceMemoryEditor.hxx"
 #include "ui/Debugger.hxx"
+#include "ui/Display.hxx"
 #include "ui/GraphicsDebugger.hxx"
 
 class GbEmu
@@ -37,6 +38,7 @@ class GbEmu
     Emulator::Event emuEvent;
     std::jthread    emuThread;
 
+    Display                  display;
     Debugger                 debugger;
     AddressSpaceMemoryEditor memEditor;
     GraphicsDebugger         graphicsDebugger;

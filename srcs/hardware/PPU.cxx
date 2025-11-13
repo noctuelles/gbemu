@@ -5,11 +5,14 @@
 
 #include <Utils.hxx>
 #include <cassert>
+#include <iostream>
 #include <stdexcept>
 
 #include "Utils.hxx"
+#include "graphics/Tile.hxx"
 
-PPU::PPU(Addressable& bus, Displayable& display) : bus(bus), display(display)
+PPU::PPU(Addressable& bus, Graphics::Framebuffer& framebuffer, OnFramebufferReadyCallback onFramebufferReadyCallback)
+    : _bus(bus), _framebuffer(framebuffer), _onFramebufferReadyCallback{std::move(onFramebufferReadyCallback)}
 {
     objsToDraw.reserve(10);
 
@@ -24,102 +27,104 @@ PPU::PPU(Addressable& bus, Displayable& display) : bus(bus), display(display)
     };
 }
 
-std::array<uint8_t, 8> getPixelsFromTileData(const uint8_t low, const uint8_t high)
+PPU::PixelFetcher::PixelFetcher(std::queue<FIFOEntry>& backgroundFifo, const VideoRAM& videoRam, Registers& registers)
+    : _backgroundFIFO(backgroundFifo), _registers(registers), _videoRam{videoRam}, _dots(0)
 {
-    std::array<uint8_t, 8> pixels{};
-
-    for (size_t i = 0; i < 8; i++)
-    {
-        const auto pixelLow{static_cast<uint8_t>(low >> (7 - i) & 1)};
-        const auto pixelHigh{static_cast<uint8_t>(high >> (7 - i) & 1)};
-        pixels[i] = pixelLow << 1 | pixelHigh;
-    }
-
-    return pixels;
 }
-
-PPU::PixelFetcher::PixelFetcher(Addressable& bus, Registers& registers) : registers(registers), bus(bus) {}
 
 void PPU::PixelFetcher::tick()
 {
     constexpr auto isBackground{true};
 
     /* Just rendering background tiles. */
-    switch (state)
+    switch (_state)
     {
         case State::GetTile:
             /* Get tile number. */
-            if (dots == 2)
+            if (_dots == 2)
             {
-                size_t tileOffset{x};
-
                 if (isBackground)
                 {
-                    constexpr uint16_t tileAddress{0x9800};
-                    tileOffset += registers.SCX >> 3 & 0x1F;
-                    tileOffset += 32 * (((registers.LY + registers.SCY) & 0xFF) >> 3);
+                    size_t tileOffset{};
+                    /* The background tile map is a 32x32 tile grid. */
 
-                    tileMapNbr = bus.read(tileAddress + tileOffset);
+                    tileOffset = ((_registers.SCX / 8) + _x) & 0x1F;
+                    tileOffset += 32 * (((_registers.LY + _registers.SCY) & 0xFF) / 8);
+
+                    _tileMapNbr = _videoRam[0x1800 + tileOffset];
                 }
 
-                state = State::GetTileDataLow;
+                _state = State::GetTileDataLow;
             }
             break;
         case State::GetTileDataLow:
-            if (dots == 4)
+            if (_dots == 4)
             {
-                if ((registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea) == 0)
+                if ((_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea) == 0)
                 {
-                    tileDataAddress = 0x8800;
+                    _tileDataAddress = 0x800;
                 }
                 else
                 {
-                    tileDataAddress = 0x8000;
+                    _tileDataAddress = 0;
                 }
 
-                tileDataAddress = tileDataAddress + 2 * ((registers.LY + registers.SCY) & 0xF);
-                tileDataLow     = bus.read(tileDataAddress);
-                state           = State::GetTileDataHigh;
+                /* Select tile. */
+                _tileDataAddress += _tileMapNbr * 16;
+                /* Select the proper tile row. The column scrolling is done when a pixel is popped out of the fifo. */
+                _tileDataAddress += 2 * ((_registers.LY + _registers.SCY) % 8);
+                _tileDataLow = _videoRam[_tileDataAddress];
+
+                _state = State::GetTileDataHigh;
             }
             break;
         case State::GetTileDataHigh:
-            if (dots == 6)
+            if (_dots == 6)
             {
-                tileDataHigh = bus.read(tileDataAddress + 1);
-                state        = State::Sleep;
+                _tileDataHigh = _videoRam[_tileDataAddress + 1];
+                _state        = State::Sleep;
             }
             break;
         case State::Sleep:
-            if (dots == 8)
+            if (_dots == 8)
             {
-                state = State::Push;
+                _state = State::Push;
             }
             break;
         case State::Push:
-            /* Attempted every dot until it succeed. */
-            state = State::GetTile;
-            dots  = 0;
+            if (_backgroundFIFO.empty())
+            {
+                const Graphics::Tile::Row row{_tileDataLow, _tileDataHigh};
+
+                /* If the tile is flipped horizontally? */
+                for (size_t i{0}; i < 8; ++i)
+                {
+                    _backgroundFIFO.emplace(FIFOEntry{row[i], 0, false});
+                }
+
+                _state = State::GetTile;
+                _dots  = 0;
+                _x += 1;
+            }
             break;
-    };
-    dots += 1;
+    }
+
+    _dots += 1;
 }
 
 void PPU::PixelFetcher::start()
 {
-    while (!backgroundFIFO.empty())
-    {
-        backgroundFIFO.pop();
-    }
+    _x = 0;
 }
 
 uint8_t PPU::read(const uint16_t address) const
 {
     if (utils::address_in(address, MemoryMap::VIDEO_RAM))
     {
-        if (!_videoRamAccessible)
-        {
-            return 0xFF;
-        }
+        // if (!_videoRamAccessible)
+        // {
+        //     return 0xFF;
+        // }
 
         if ((registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 1)
         {
@@ -130,10 +135,10 @@ uint8_t PPU::read(const uint16_t address) const
     }
     if (utils::address_in(address, MemoryMap::OAM))
     {
-        if (!_oamAccessible)
-        {
-            return 0xFF;
-        }
+        // if (!_oamAccessible)
+        // {
+        //     return 0xFF;
+        // }
 
         return reinterpret_cast<const uint8_t*>(_oamEntries.data())[address - MemoryMap::OAM.first];
     }
@@ -166,18 +171,24 @@ void PPU::write(const uint16_t address, const uint8_t value)
 
         reinterpret_cast<uint8_t*>(_oamEntries.data())[address - MemoryMap::OAM.first] = value;
     }
-
-    if (const auto it = addrToRegister.find(address); it != addrToRegister.end())
+    else if (const auto it = addrToRegister.find(address); it != addrToRegister.end())
     {
         it->second.get() = value;
     }
-
-    throw std::logic_error{"Invalid PPU Write"};
+    else
+    {
+        throw std::logic_error{"Invalid PPU Write"};
+    }
 }
 
 void PPU::tick()
 {
     using namespace utils;
+
+    if ((registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 0)
+    {
+        return;
+    }
 
     switch (mode)
     {
@@ -185,7 +196,7 @@ void PPU::tick()
             _videoRamAccessible = true;
             _oamAccessible      = false;
 
-            if (dots % 2 == 0 && dots != 0)
+            if (_dots % 2 == 0 && _dots != 0)
             {
                 /**
                  * During each scanline’s OAM scan, the PPU compares LY (using LCDC bit 2 to determine their size) to
@@ -207,11 +218,11 @@ void PPU::tick()
                 _currentOamEntry += 1;
             }
 
-            if (dots == 80)
+            if (_dots == 80)
             {
-                pixelFetcher.start();
                 transition(Mode::Drawing);
             }
+
             break;
         case Mode::Drawing:
             /* Minimum length : 172 dots. */
@@ -221,8 +232,26 @@ void PPU::tick()
 
             pixelFetcher.tick();
 
-            x += 1;
-            if (x == 160)
+            if (!_backgroundFIFO.empty())
+            {
+                if (_pixelsToDiscard)
+                {
+                    _pixelsToDiscard -= 1;
+                    abort();
+                }
+                else
+                {
+                    const auto& backgroundPixel{_backgroundFIFO.front()};
+
+                    _framebuffer[registers.LY][_x] =
+                        Graphics::getRealColorIndexFromPaletteRegister(backgroundPixel.colorIndex, registers.BGP);
+                    _x += 1;
+                }
+
+                _backgroundFIFO.pop();
+            }
+
+            if (_x == 160)
             {
                 transition(Mode::HorizontalBlank);
             }
@@ -231,9 +260,9 @@ void PPU::tick()
             _videoRamAccessible = true;
             _oamAccessible      = true;
 
-            if (dots == 456)
+            if (_dots == 456)
             {
-                dots = 0;
+                _dots = 0;
                 registers.LY += 1;
 
                 if (registers.LY == Displayable::HEIGHT)
@@ -250,29 +279,58 @@ void PPU::tick()
             _videoRamAccessible = true;
             _oamAccessible      = true;
 
-            if (dots == 456)
+            if (_dots == 456)
             {
-                dots = 0;
+                _dots = 0;
                 registers.LY += 1;
 
-                if (registers.LY == Displayable::HEIGHT + 10 - 1)
+                if (registers.LY == 153)
                 {
-                    registers.LY = 0;
                     transition(Mode::OAMScan);
                 }
             }
             break;
     }
 
-    dots += 1;
+    _dots += 1;
 }
-void PPU::transition(const Mode transition_to)
+
+Addressable::AddressableRange PPU::getAddressableRange() const noexcept
 {
-    if (this->mode != Mode::OAMScan && transition_to == Mode::OAMScan)
+    return {MemoryMap::VIDEO_RAM,        MemoryMap::OAM,
+            MemoryMap::IORegisters::SCX, MemoryMap::IORegisters::SCY,
+            MemoryMap::IORegisters::WX,  MemoryMap::IORegisters::WY,
+            MemoryMap::IORegisters::BGP, MemoryMap::IORegisters::LY,
+            MemoryMap::IORegisters::LYC, MemoryMap::IORegisters::STAT,
+            MemoryMap::IORegisters::LCDC};
+}
+
+void PPU::transition(const Mode transitionTo)
+{
+    if (mode != Mode::OAMScan && transitionTo == Mode::OAMScan)
     {
         objsToDraw.clear();
         _currentOamEntry = _oamEntries.cbegin();
     }
 
-    this->mode = transition_to;
+    if (mode == Mode::OAMScan && transitionTo == Mode::Drawing)
+    {
+        decltype(_backgroundFIFO) emptyBackgroundFifo{};
+
+        std::swap(_backgroundFIFO, emptyBackgroundFifo);
+        pixelFetcher.start();
+        _pixelsToDiscard = registers.SCX & 0x7;
+    }
+
+    if (mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
+    {
+        registers.LY = 0;
+    }
+
+    if (mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
+    {
+        _onFramebufferReadyCallback();
+    }
+
+    mode = transitionTo;
 }

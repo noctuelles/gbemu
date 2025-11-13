@@ -8,7 +8,9 @@
 #include <set>
 
 #include "Utils.hxx"
+#include "graphics/Tile.hxx"
 #include "hardware/Bus.hxx"
+#include "hardware/PPU.hxx"
 #include "hardware/Timer.hxx"
 #include "hardware/WorkRAM.hxx"
 #include "hardware/core/SM83.hxx"
@@ -19,7 +21,7 @@ class Emulator
     using Breakpoints = std::set<uint16_t>;
 
     static const std::array<uint8_t, 0x100 + 52> BOOT_ROM;
-    static constexpr uint16_t               BOOT_ROM_START_ADDRESS{0x0000};
+    static constexpr uint16_t                    BOOT_ROM_START_ADDRESS{0x0000};
 
   public:
     struct Command
@@ -56,12 +58,24 @@ class Emulator
             Paused,
             BreakpointSet,
             BreakpointRemoved,
+            FramebufferReady,
         };
 
-        Type type;
+        struct Paused
+        {
+            SM83::View                   view;
+            std::array<uint8_t, 0x10000> addressSpace;
+        };
 
-        SM83::View                   view;
-        std::array<uint8_t, 0x10000> addressSpace;
+        struct FramebufferReady
+        {
+            Graphics::Framebuffer framebuffer;
+        };
+
+        using Payload = std::variant<std::monostate, Paused, FramebufferReady>;
+
+        Type    type;
+        Payload payload;
     };
 
     explicit Emulator(utils::ThreadSafeQueue<Event>& eventQueue);
@@ -71,7 +85,8 @@ class Emulator
 
   private:
     void onCpuMachineCycle();
-    void pushEvent(Event::Type type) const;
+    void onFramebufferReady() const;
+    void pushEvent(Event::Type event, Event::Payload payload) const;
 
     std::condition_variable         cmdCv;
     std::mutex                      cmdMutex;
@@ -82,10 +97,12 @@ class Emulator
     bool paused{true};
     bool requestedPause{false};
 
-    Bus     bus;
-    SM83    cpu;
-    Timer   timer;
-    FakeRAM ram;
+    Bus                   bus;
+    SM83                  cpu;
+    Timer                 timer;
+    PPU                   ppu;
+    FakeRAM               ram;
+    Graphics::Framebuffer framebuffer;
 
     Breakpoints breakpoints;
 };

@@ -4,21 +4,25 @@
 
 #ifndef GBEMU_DISPLAY_HXX
 #define GBEMU_DISPLAY_HXX
+
 #include "SDL.hxx"
+#include "graphics/Framebuffer.hxx"
 
 class Display
 {
   public:
-    using FrameBuffer = std::array<uint8_t, 0x1680>;
+    static constexpr size_t WIDTH  = 160;
+    static constexpr size_t HEIGHT = 144;
 
-    Display(sdl::shared_renderer renderer);
+    explicit Display(sdl::shared_renderer renderer);
 
     void render();
-    void clear();
-    void update(const FrameBuffer& frameBuffer);
+    void update(const Graphics::Framebuffer& frameBuffer);
 
   private:
-    sdl::shared_renderer renderer;
+    sdl::shared_renderer _renderer;
+    sdl::unique_surface  _surface;
+    sdl::unique_texture  _texture;
 };
 
 #endif  // GBEMU_DISPLAY_HXX

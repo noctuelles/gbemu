@@ -4,6 +4,8 @@
 
 #include "GbEmu.hxx"
 
+#include <iostream>
+
 #include "Emulator.hxx"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
@@ -16,6 +18,7 @@ GbEmu::GbEmu()
       renderer(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED), SDL_DestroyRenderer),
       emu(eventQueue),
       emuThread(std::ref(emu)),
+      display(renderer),
       graphicsDebugger(renderer)
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -48,29 +51,40 @@ void GbEmu::loop()
 
     while (mainLoopRunning)
     {
-        if (auto eventPayload{eventQueue.try_pop()}; eventPayload.has_value())
+        while (!eventQueue.empty())
         {
-            emuEvent = eventPayload.value();
-
-            switch (eventPayload.value().type)
+            const auto [type, payload]{eventQueue.pop()};
+            switch (type)
             {
                 case Emulator::Event::Type::Paused:
+                {
+                    const auto [view, addressSpace]{std::get<Emulator::Event::Paused>(payload)};
 
-                    debugger.setCpuView(emuEvent.view);
-                    debugger.setAddressSpace(emuEvent.addressSpace);
+                    debugger.setCpuView(view);
+                    debugger.setAddressSpace(addressSpace);
 
                     debugger.setScrollToCurrentInstruction();
                     debugger.setDisabled(false);
 
-                    memEditor.setAddressSpace(emuEvent.addressSpace);
+                    memEditor.setAddressSpace(addressSpace);
 
-                    graphicsDebugger.update(emuEvent.addressSpace);
+                    graphicsDebugger.update(addressSpace);
 
                     break;
+                }
+
                 case Emulator::Event::Type::BreakpointRemoved:
-                case Emulator::Event::Type::BreakpointSet:
-                    /* TODO */
                     break;
+
+                case Emulator::Event::Type::BreakpointSet:
+                    break;
+
+                case Emulator::Event::Type::FramebufferReady:
+                {
+                    const auto& [framebuffer]{std::get<Emulator::Event::FramebufferReady>(payload)};
+                    display.update(framebuffer);
+                }
+                break;
             }
         }
 
@@ -90,6 +104,7 @@ void GbEmu::loop()
         ImGui::DockSpaceOverViewport();
 
         uiCommands.emplace(debugger.render());
+        display.render();
         memEditor.render();
         graphicsDebugger.render();
 
