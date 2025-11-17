@@ -29,9 +29,9 @@ const std::array<uint8_t, 256 + 52> Emulator::BOOT_ROM{
 
 Emulator::Emulator(utils::ThreadSafeQueue<Event>& eventQueue)
     : uiEventQueue(eventQueue),
-      cpu(bus, [this] { onCpuMachineCycle(); }),
       timer(bus),
-      ppu{bus, framebuffer, [this] { onFramebufferReady(); }}
+      ppu{bus, framebuffer, [this] { onFramebufferReady(); }},
+      cpu(bus, timer, ppu)
 {
     bus.attach(cpu);
     bus.attach(timer);

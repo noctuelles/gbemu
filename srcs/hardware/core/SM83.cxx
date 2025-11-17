@@ -13,8 +13,7 @@
 #include <iostream>
 #include <utility>
 
-SM83::SM83(Addressable& bus, const std::function<void()>& on_machine_cycle)
-    : onMachineCycleCb(on_machine_cycle), bus(bus)
+SM83::SM83(Addressable& bus, Timer& timer, PPU& ppu) : bus(bus), timer(timer), ppu(ppu)
 {
     A  = 0x01;
     F  = 0xB0;
@@ -153,6 +152,16 @@ void SM83::print_state()
         "A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} IE:{:02X} IF:{:02X} IME:{:s}",
         A, F, B, C, D, E, H, L, SP, PC, IE, IF, IME)};
     std::print(std::cout, "{:<85s} - ", formatted_state);
+}
+
+void SM83::onMachineCycleCb() const
+{
+    timer.tick();
+
+    ppu.tick();
+    ppu.tick();
+    ppu.tick();
+    ppu.tick();
 }
 
 void SM83::fetchInstruction()

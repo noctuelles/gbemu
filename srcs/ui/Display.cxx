@@ -10,22 +10,27 @@
 
 Display::Display(sdl::shared_renderer renderer)
     : _renderer{std::move(renderer)},
-      _surface{SDL_CreateRGBSurfaceWithFormat(0, WIDTH, HEIGHT, 32, SDL_PIXELFORMAT_RGBA32), SDL_FreeSurface}
+      _texture(SDL_CreateTexture(_renderer.get(), SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT),
+               SDL_DestroyTexture)
 {
-    if (!_surface)
+    if (!_texture)
     {
-        throw sdl::exception{"SDL_CreateRGBSurfaceWithFormat"};
+        throw sdl::exception{"SDL_CreateTexture"};
+    }
+
+    _format = sdl::unique_format{SDL_AllocFormat(SDL_PIXELFORMAT_RGBA32)};
+
+    if (!_format)
+    {
+        throw sdl::exception{"SDL_AllocFormat"};
     }
 }
 
 void Display::render()
 {
     ImGui::Begin("Display");
-    if (_surface)
-    {
-        ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(_texture.get())),
-                     ImVec2(_surface->w * 2.f, _surface->h * 2.f));
-    }
+    ImGui::Image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(_texture.get())),
+                 ImVec2(WIDTH * 2.f, HEIGHT * 2.f));
     ImGui::End();
 }
 
@@ -37,9 +42,10 @@ void Display::update(const Graphics::Framebuffer& frameBuffer)
         Graphics::RGB{0x55, 0x55, 0x55},
         Graphics::RGB{0x00, 0x00, 0x00},
     };
+    uint32_t* pixels{nullptr};
+    int       pitch{};
 
-    const auto             pixels{static_cast<uint32_t*>(_surface->pixels)};
-    sdl::surface_lockguard lock{_surface.get()};
+    SDL_LockTexture(_texture.get(), nullptr, reinterpret_cast<void**>(&pixels), &pitch);
 
     for (const auto& [y, row] : std::views::enumerate(frameBuffer))
     {
@@ -47,10 +53,9 @@ void Display::update(const Graphics::Framebuffer& frameBuffer)
         {
             const auto& color{colorPalette[line.to_ulong()]};
             pixels[y * WIDTH + x] =
-                SDL_MapRGBA(_surface->format, std::get<0>(color), std::get<1>(color), std::get<2>(color), 0xFF);
+                SDL_MapRGBA(_format.get(), std::get<0>(color), std::get<1>(color), std::get<2>(color), 0xFF);
         }
     }
 
-    sdl::unique_texture texture{SDL_CreateTextureFromSurface(_renderer.get(), _surface.get()), SDL_DestroyTexture};
-    _texture = std::move(texture);
+    SDL_UnlockTexture(_texture.get());
 }

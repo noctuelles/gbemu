@@ -10,6 +10,8 @@
 #include <vector>
 
 #include "hardware/Addressable.hxx"
+#include "hardware/PPU.hxx"
+#include "hardware/Timer.hxx"
 
 namespace Test
 {
@@ -127,7 +129,7 @@ class SM83 final : public Component
         } registers;
     };
 
-    SM83(Addressable& bus, const std::function<void()>& on_machine_cycle);
+    SM83(Addressable& bus, Timer& timer, PPU& ppu);
 
     void                           write(uint16_t address, uint8_t value) override;
     [[nodiscard]] uint8_t          read(uint16_t address) const override;
@@ -141,6 +143,8 @@ class SM83 final : public Component
     void print_state();
 
   private:
+    void onMachineCycleCb() const;
+
     /**
      * @brief Load an instruction into the IR register.
      */
@@ -313,11 +317,6 @@ class SM83 final : public Component
     std::vector<uint8_t> instruction_buffer{};
 
     /**
-     * @brief Callback function when a machine cycle is executed by the CPU.
-     */
-    std::function<void()> onMachineCycleCb;
-
-    /**
      * @brief State of the CPU.
      */
     State state{State::NORMAL};
@@ -334,6 +333,8 @@ class SM83 final : public Component
     uint8_t requestIme{};
 
     Addressable& bus;
+    Timer&     timer;
+    PPU&     ppu;
 
     friend class MooneyeAcceptance;
     friend class Test::SM83;

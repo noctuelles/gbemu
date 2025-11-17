@@ -98,10 +98,10 @@ class Emulator
     bool requestedPause{false};
 
     Bus                   bus;
-    SM83                  cpu;
     Timer                 timer;
     PPU                   ppu;
     FakeRAM               ram;
+    SM83                  cpu;
     Graphics::Framebuffer framebuffer;
 
     Breakpoints breakpoints;

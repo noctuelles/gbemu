@@ -21,8 +21,8 @@ class Display
 
   private:
     sdl::shared_renderer _renderer;
-    sdl::unique_surface  _surface;
     sdl::unique_texture  _texture;
+    sdl::unique_format   _format;
 };
 
 #endif  // GBEMU_DISPLAY_HXX

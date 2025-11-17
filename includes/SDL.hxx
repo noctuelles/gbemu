@@ -21,6 +21,7 @@ namespace sdl
     using unique_texture  = unique_ptr<SDL_Texture>;
     using unique_renderer = unique_ptr<SDL_Renderer>;
     using unique_window   = unique_ptr<SDL_Window>;
+    using unique_format   = unique_ptr<SDL_PixelFormat>;
     using shared_renderer = std::shared_ptr<SDL_Renderer>;
 
     class exception final : public std::runtime_error

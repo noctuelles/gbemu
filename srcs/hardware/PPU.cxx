@@ -48,8 +48,8 @@ void PPU::PixelFetcher::tick()
                     size_t tileOffset{};
                     /* The background tile map is a 32x32 tile grid. */
 
-                    tileOffset = ((_registers.SCX / 8) + _x) & 0x1F;
-                    tileOffset += 32 * (((_registers.LY + _registers.SCY) & 0xFF) / 8);
+                    tileOffset = ((_registers.SCX >> 3) + _x) & 0x1F;
+                    tileOffset += 32 * (((_registers.LY + _registers.SCY) & 0xFF) >> 3);
 
                     _tileMapNbr = _videoRam[0x1800 + tileOffset];
                 }
@@ -60,19 +60,12 @@ void PPU::PixelFetcher::tick()
         case State::GetTileDataLow:
             if (_dots == 4)
             {
-                if ((_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea) == 0)
-                {
-                    _tileDataAddress = 0x800;
-                }
-                else
-                {
-                    _tileDataAddress = 0;
-                }
+                _tileDataAddress = 0;
 
                 /* Select tile. */
                 _tileDataAddress += _tileMapNbr * 16;
                 /* Select the proper tile row. The column scrolling is done when a pixel is popped out of the fifo. */
-                _tileDataAddress += 2 * ((_registers.LY + _registers.SCY) % 8);
+                _tileDataAddress += 2 * ((_registers.LY + _registers.SCY) & 0x7);
                 _tileDataLow = _videoRam[_tileDataAddress];
 
                 _state = State::GetTileDataHigh;
@@ -237,7 +230,6 @@ void PPU::tick()
                 if (_pixelsToDiscard)
                 {
                     _pixelsToDiscard -= 1;
-                    abort();
                 }
                 else
                 {
@@ -253,6 +245,8 @@ void PPU::tick()
 
             if (_x == 160)
             {
+                _x = 0;
+
                 transition(Mode::HorizontalBlank);
             }
             break;
@@ -330,6 +324,11 @@ void PPU::transition(const Mode transitionTo)
     if (mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
     {
         _onFramebufferReadyCallback();
+    }
+
+    if (mode == Mode::Drawing && transitionTo == Mode::HorizontalBlank)
+    {
+        _x = 0;
     }
 
     mode = transitionTo;

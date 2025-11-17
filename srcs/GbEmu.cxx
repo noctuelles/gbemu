@@ -101,12 +101,11 @@ void GbEmu::loop()
         ImGui_ImplSDL2_NewFrame();
 
         ImGui::NewFrame();
-        ImGui::DockSpaceOverViewport();
 
         uiCommands.emplace(debugger.render());
         display.render();
-        memEditor.render();
-        graphicsDebugger.render();
+        //memEditor.render();
+        //graphicsDebugger.render();
 
         ImGui::Render();
 
