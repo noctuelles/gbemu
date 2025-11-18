@@ -115,13 +115,17 @@ add_executable(gbemu_test
         srcs/hardware/core/SM83.cxx
         srcs/hardware/core/Disassembler.cxx
         srcs/hardware/core/Opcode.cxx
+        srcs/hardware/PPU.cxx
         srcs/hardware/Timer.cxx
+        srcs/hardware/WorkRAM.cxx
         srcs/hardware/Bus.cxx
         srcs/hardware/Cartridge.cxx
         includes/hardware/Displayable.hxx
         srcs/graphics/Tile.cxx
         srcs/tests/graphics/Tile.cxx
-        srcs/tests/graphics/Tile.cxx)
+        srcs/tests/graphics/Tile.cxx
+        srcs/tests/hardware/core/MooneyeAcceptance.cxx
+)
 
 target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/roms")
 
