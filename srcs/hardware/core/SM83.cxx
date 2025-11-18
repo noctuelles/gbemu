@@ -13,7 +13,7 @@
 #include <iostream>
 #include <utility>
 
-SM83::SM83(Addressable& bus, Timer& timer, PPU& ppu) : bus(bus), timer(timer), ppu(ppu)
+SM83::SM83(Addressable& bus, Ticking& timer, Ticking& ppu) : bus(bus), timer(timer), ppu(ppu)
 {
     A  = 0x01;
     F  = 0xB0;
@@ -183,7 +183,7 @@ uint8_t SM83::fetch_operand()
     return byte;
 }
 
-void SM83::write_memory(const uint16_t address, const uint8_t value) const
+void SM83::writeMemory(const uint16_t address, const uint8_t value) const
 {
     onMachineCycleCb();
     return bus.write(address, value);
@@ -255,8 +255,8 @@ uint16_t SM83::add(const uint16_t lhs, const uint16_t rhs)
 uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 {
     const auto sign{(rhs & 0x80) != 0};
-    auto       lhs_lsb{utils::word_lsb(lhs)};
-    auto       lhs_msb{utils::word_msb(lhs)};
+    auto       lhs_lsb{utils::wordLsb(lhs)};
+    auto       lhs_msb{utils::wordMsb(lhs)};
 
     lhs_lsb = add(lhs_lsb, rhs);
 
@@ -568,14 +568,14 @@ void SM83::rst(const ResetVector rst_vector)
 void SM83::push(const uint8_t msb, const uint8_t lsb)
 {
     onMachineCycleCb();
-    write_memory(--SP, msb);
-    write_memory(--SP, lsb);
+    writeMemory(--SP, msb);
+    writeMemory(--SP, lsb);
 }
 
 void SM83::push(const uint16_t value)
 {
-    const auto lsb{utils::word_lsb(value)};
-    const auto msb{utils::word_msb(value)};
+    const auto lsb{utils::wordLsb(value)};
+    const auto msb{utils::wordMsb(value)};
 
     push(msb, lsb);
 }
@@ -621,7 +621,7 @@ bool SM83::is_condition_met(const Conditionals conditional) const
     }
 }
 
-uint8_t SM83::get_interrupt_request() const
+uint8_t SM83::getInterruptRequest() const
 {
     return static_cast<uint8_t>(IE & IF & 0x1F);
 }
@@ -633,23 +633,23 @@ void SM83::interrupts()
         return;
     }
 
-    const auto bit_zero_count{std::countr_zero(get_interrupt_request())};
-    uint16_t   interrupt_vector{};
+    const auto bitZeroCount{std::countr_zero(getInterruptRequest())};
+    uint16_t   interruptVector{};
 
-    if (bit_zero_count == 8)
+    if (bitZeroCount == 8)
     {
         return;
     }
 
-    IME              = false;
-    interrupt_vector = 0x40 + bit_zero_count * 8;
-    IF &= ~(1 << bit_zero_count);
+    IME             = false;
+    interruptVector = 0x40 + bitZeroCount * 8;
+    IF &= ~(1 << bitZeroCount);
 
     onMachineCycleCb();
     onMachineCycleCb();
-    write_memory(--SP, utils::word_msb(PC));
-    write_memory(--SP, utils::word_lsb(PC));
+    writeMemory(--SP, utils::wordMsb(PC));
+    writeMemory(--SP, utils::wordLsb(PC));
     onMachineCycleCb();
 
-    PC = interrupt_vector;
+    PC = interruptVector;
 }

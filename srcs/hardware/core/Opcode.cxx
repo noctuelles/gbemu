@@ -32,7 +32,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 B = fetch_operand();
                 break;
             case 0x02:
-                write_memory(BC(), A);
+                writeMemory(BC(), A);
                 break;
             case 0x03:
                 BC(BC() + 1);
@@ -56,8 +56,8 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 const auto msb{fetch_operand()};
                 const auto address{utils::to_word(msb, lsb)};
 
-                write_memory(address, utils::word_lsb(SP));
-                write_memory(address + 1, utils::word_msb(SP));
+                writeMemory(address, utils::wordLsb(SP));
+                writeMemory(address + 1, utils::wordMsb(SP));
             }
             break;
             case 0x09:
@@ -90,7 +90,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 D = fetch_operand();
                 break;
             case 0x12:
-                write_memory(DE(), A);
+                writeMemory(DE(), A);
                 break;
             case 0x13:
                 DE(DE() + 1);
@@ -141,7 +141,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 H = fetch_operand();
                 break;
             case 0x22:
-                write_memory(HL(), A);
+                writeMemory(HL(), A);
                 HL(HL() + 1);
                 break;
             case 0x23:
@@ -194,20 +194,20 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 SP |= fetch_operand() << 8;
                 break;
             case 0x32:
-                write_memory(HL(), A);
+                writeMemory(HL(), A);
                 HL(HL() - 1);
                 break;
             case 0x33:
                 SP += 1;
                 break;
             case 0x34:
-                write_memory(HL(), inc(fetch_memory(HL())));
+                writeMemory(HL(), inc(fetch_memory(HL())));
                 break;
             case 0x35:
-                write_memory(HL(), dec(fetch_memory(HL())));
+                writeMemory(HL(), dec(fetch_memory(HL())));
                 break;
             case 0x36:
-                write_memory(HL(), fetch_operand());
+                writeMemory(HL(), fetch_operand());
                 break;
             case 0x37:
                 set_flag(Flags::Subtract, false);
@@ -380,22 +380,22 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = A;
                 break;
             case 0x70:
-                write_memory(HL(), B);
+                writeMemory(HL(), B);
                 break;
             case 0x71:
-                write_memory(HL(), C);
+                writeMemory(HL(), C);
                 break;
             case 0x72:
-                write_memory(HL(), D);
+                writeMemory(HL(), D);
                 break;
             case 0x73:
-                write_memory(HL(), E);
+                writeMemory(HL(), E);
                 break;
             case 0x74:
-                write_memory(HL(), H);
+                writeMemory(HL(), H);
                 break;
             case 0x75:
-                write_memory(HL(), L);
+                writeMemory(HL(), L);
                 break;
             case 0x76:
                 if (IME)
@@ -414,7 +414,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 }
                 break;
             case 0x77:
-                write_memory(HL(), A);
+                writeMemory(HL(), A);
                 break;
             case 0x78:
                 A = B;
@@ -721,13 +721,13 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 rst(ResetVector::h18);
                 break;
             case 0xE0:
-                write_memory(0xFF00 | fetch_operand(), A);
+                writeMemory(0xFF00 | fetch_operand(), A);
                 break;
             case 0xE1:
                 pop(H, L);
                 break;
             case 0xE2:
-                write_memory(0xFF00 | C, A);
+                writeMemory(0xFF00 | C, A);
                 break;
             case 0xE5:
                 push(H, L);
@@ -748,7 +748,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
             {
                 const auto lsb = fetch_operand();
                 const auto msb = fetch_operand();
-                write_memory(utils::to_word(msb, lsb), A);
+                writeMemory(utils::to_word(msb, lsb), A);
             }
             break;
             case 0xEE:
@@ -830,7 +830,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = rotate_left(L, true);
                 break;
             case 0x06:
-                write_memory(HL(), rotate_left(fetch_memory(HL()), true));
+                writeMemory(HL(), rotate_left(fetch_memory(HL()), true));
                 break;
             case 0x07:
                 A = rotate_left(A, true);
@@ -854,7 +854,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = rotate_right(L, true);
                 break;
             case 0x0E:
-                write_memory(HL(), rotate_right(fetch_memory(HL()), true));
+                writeMemory(HL(), rotate_right(fetch_memory(HL()), true));
                 break;
             case 0x0F:
                 A = rotate_right(A, true);
@@ -878,7 +878,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = rotate_left(L);
                 break;
             case 0x16:
-                write_memory(HL(), rotate_left(fetch_memory(HL())));
+                writeMemory(HL(), rotate_left(fetch_memory(HL())));
                 break;
             case 0x17:
                 A = rotate_left(A);
@@ -902,7 +902,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = rotate_right(L);
                 break;
             case 0x1E:
-                write_memory(HL(), rotate_right(fetch_memory(HL())));
+                writeMemory(HL(), rotate_right(fetch_memory(HL())));
                 break;
             case 0x1F:
                 A = rotate_right(A);
@@ -926,7 +926,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = shift_left(L);
                 break;
             case 0x26:
-                write_memory(HL(), shift_left(fetch_memory(HL())));
+                writeMemory(HL(), shift_left(fetch_memory(HL())));
                 break;
             case 0x27:
                 A = shift_left(A);
@@ -950,7 +950,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = shift_right(L, true);
                 break;
             case 0x2E:
-                write_memory(HL(), shift_right(fetch_memory(HL()), true));
+                writeMemory(HL(), shift_right(fetch_memory(HL()), true));
                 break;
             case 0x2F:
                 A = shift_right(A, true);
@@ -974,7 +974,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = swap(L);
                 break;
             case 0x36:
-                write_memory(HL(), swap(fetch_memory(HL())));
+                writeMemory(HL(), swap(fetch_memory(HL())));
                 break;
             case 0x37:
                 A = swap(A);
@@ -998,7 +998,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = shift_right(L);
                 break;
             case 0x3E:
-                write_memory(HL(), shift_right(fetch_memory(HL())));
+                writeMemory(HL(), shift_right(fetch_memory(HL())));
                 break;
             case 0x3F:
                 A = shift_right(A);
@@ -1215,7 +1215,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = res(L, 0);
                 break;
             case 0x86:
-                write_memory(HL(), res(fetch_memory(HL()), 0));
+                writeMemory(HL(), res(fetch_memory(HL()), 0));
                 break;
             case 0x87:
                 A = res(A, 0);
@@ -1239,7 +1239,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = res(L, 1);
                 break;
             case 0x8E:
-                write_memory(HL(), res(fetch_memory(HL()), 1));
+                writeMemory(HL(), res(fetch_memory(HL()), 1));
                 break;
             case 0x8F:
                 A = res(A, 1);
@@ -1263,7 +1263,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = res(L, 2);
                 break;
             case 0x96:
-                write_memory(HL(), res(fetch_memory(HL()), 2));
+                writeMemory(HL(), res(fetch_memory(HL()), 2));
                 break;
             case 0x97:
                 A = res(A, 2);
@@ -1287,7 +1287,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = res(L, 3);
                 break;
             case 0x9E:
-                write_memory(HL(), res(fetch_memory(HL()), 3));
+                writeMemory(HL(), res(fetch_memory(HL()), 3));
                 break;
             case 0x9F:
                 A = res(A, 3);
@@ -1312,7 +1312,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = res(L, 4);
                 break;
             case 0xA6:
-                write_memory(HL(), res(fetch_memory(HL()), 4));
+                writeMemory(HL(), res(fetch_memory(HL()), 4));
                 break;
             case 0xA7:
                 A = res(A, 4);
@@ -1336,7 +1336,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = res(L, 5);
                 break;
             case 0xAE:
-                write_memory(HL(), res(fetch_memory(HL()), 5));
+                writeMemory(HL(), res(fetch_memory(HL()), 5));
                 break;
             case 0xAF:
                 A = res(A, 5);
@@ -1361,7 +1361,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = res(L, 6);
                 break;
             case 0xB6:
-                write_memory(HL(), res(fetch_memory(HL()), 6));
+                writeMemory(HL(), res(fetch_memory(HL()), 6));
                 break;
             case 0xB7:
                 A = res(A, 6);
@@ -1385,7 +1385,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = res(L, 7);
                 break;
             case 0xBE:
-                write_memory(HL(), res(fetch_memory(HL()), 7));
+                writeMemory(HL(), res(fetch_memory(HL()), 7));
                 break;
             case 0xBF:
                 A = res(A, 7);
@@ -1409,7 +1409,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = set(L, 0);
                 break;
             case 0xC6:
-                write_memory(HL(), set(fetch_memory(HL()), 0));
+                writeMemory(HL(), set(fetch_memory(HL()), 0));
                 break;
             case 0xC7:
                 A = set(A, 0);
@@ -1433,7 +1433,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = set(L, 1);
                 break;
             case 0xCE:
-                write_memory(HL(), set(fetch_memory(HL()), 1));
+                writeMemory(HL(), set(fetch_memory(HL()), 1));
                 break;
             case 0xCF:
                 A = set(A, 1);
@@ -1458,7 +1458,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = set(L, 2);
                 break;
             case 0xD6:
-                write_memory(HL(), set(fetch_memory(HL()), 2));
+                writeMemory(HL(), set(fetch_memory(HL()), 2));
                 break;
             case 0xD7:
                 A = set(A, 2);
@@ -1482,7 +1482,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = set(L, 3);
                 break;
             case 0xDE:
-                write_memory(HL(), set(fetch_memory(HL()), 3));
+                writeMemory(HL(), set(fetch_memory(HL()), 3));
                 break;
             case 0xDF:
                 A = set(A, 3);
@@ -1506,7 +1506,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = set(L, 4);
                 break;
             case 0xE6:
-                write_memory(HL(), set(fetch_memory(HL()), 4));
+                writeMemory(HL(), set(fetch_memory(HL()), 4));
                 break;
             case 0xE7:
                 A = set(A, 4);
@@ -1530,7 +1530,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = set(L, 5);
                 break;
             case 0xEE:
-                write_memory(HL(), set(fetch_memory(HL()), 5));
+                writeMemory(HL(), set(fetch_memory(HL()), 5));
                 break;
             case 0xEF:
                 A = set(A, 5);
@@ -1554,7 +1554,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = set(L, 6);
                 break;
             case 0xF6:
-                write_memory(HL(), set(fetch_memory(HL()), 6));
+                writeMemory(HL(), set(fetch_memory(HL()), 6));
                 break;
             case 0xF7:
                 A = set(A, 6);
@@ -1578,7 +1578,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 L = set(L, 7);
                 break;
             case 0xFE:
-                write_memory(HL(), set(fetch_memory(HL()), 7));
+                writeMemory(HL(), set(fetch_memory(HL()), 7));
                 break;
             case 0xFF:
                 A = set(A, 7);

@@ -49,15 +49,6 @@ class SM83 final : public Component
         h38 = 0x38,
     };
 
-    enum class Interrupts : uint8_t
-    {
-        VBlank = 0x00,
-        LCD    = 0x01,
-        Timer  = 0x04,
-        Serial = 0x08,
-        Joypad = 0x10,
-    };
-
     enum class State
     {
         NORMAL,
@@ -129,7 +120,7 @@ class SM83 final : public Component
         } registers;
     };
 
-    SM83(Addressable& bus, Timer& timer, PPU& ppu);
+    SM83(Addressable& bus, Ticking& timer, Ticking& ppu);
 
     void                           write(uint16_t address, uint8_t value) override;
     [[nodiscard]] uint8_t          read(uint16_t address) const override;
@@ -157,7 +148,7 @@ class SM83 final : public Component
 
     [[nodiscard]] uint8_t fetch_memory(uint16_t address) const;
     [[nodiscard]] uint8_t fetch_operand();
-    void                  write_memory(uint16_t address, uint8_t value) const;
+    void                  writeMemory(uint16_t address, uint8_t value) const;
 
     /**
      * @brief AF register getter.
@@ -287,7 +278,7 @@ class SM83 final : public Component
     void                  set_flag(Flags flag, bool value);
     [[nodiscard]] bool    get_flag(Flags flag) const;
     [[nodiscard]] bool    is_condition_met(Conditionals conditional) const;
-    [[nodiscard]] uint8_t get_interrupt_request() const;
+    [[nodiscard]] uint8_t getInterruptRequest() const;
     void                  interrupts();
 
     uint8_t  A{};
@@ -333,8 +324,8 @@ class SM83 final : public Component
     uint8_t requestIme{};
 
     Addressable& bus;
-    Timer&     timer;
-    PPU&     ppu;
+    Ticking&     timer;
+    Ticking&     ppu;
 
     friend class MooneyeAcceptance;
     friend class Test::SM83;

@@ -4,19 +4,16 @@
 #include "../../includes/hardware/PPU.hxx"
 
 #include <Utils.hxx>
-#include <cassert>
 #include <iostream>
 #include <stdexcept>
 
-#include "Utils.hxx"
 #include "graphics/Tile.hxx"
+#include "hardware/core/SM83.hxx"
 
 PPU::PPU(Addressable& bus, Graphics::Framebuffer& framebuffer, OnFramebufferReadyCallback onFramebufferReadyCallback)
     : _bus(bus), _framebuffer(framebuffer), _onFramebufferReadyCallback{std::move(onFramebufferReadyCallback)}
 {
     objsToDraw.reserve(10);
-
-    transition(Mode::OAMScan);
 
     addrToRegister = {
         {MemoryMap::IORegisters::LY, registers.LY},     {MemoryMap::IORegisters::LYC, registers.LYC},
@@ -62,9 +59,10 @@ void PPU::PixelFetcher::tick()
             {
                 _tileDataAddress = 0;
 
-                /* Select tile. */
+                /* Select the proper tile. */
                 _tileDataAddress += _tileMapNbr * 16;
-                /* Select the proper tile row. The column scrolling is done when a pixel is popped out of the fifo. */
+
+                /* Select the proper row within that tile. There are 2 bytes per row. */
                 _tileDataAddress += 2 * ((_registers.LY + _registers.SCY) & 0x7);
                 _tileDataLow = _videoRam[_tileDataAddress];
 
@@ -180,7 +178,19 @@ void PPU::tick()
 
     if ((registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 0)
     {
+        registers.STAT &= 0xFC;
         return;
+    }
+
+    if (registers.LY == registers.LYC)
+    {
+        registers.STAT |= Status::LYCCompare;
+
+        triggerStatInterrupt((registers.STAT & Status::LYC) != 0);
+    }
+    else
+    {
+        registers.STAT &= ~Status::LYCCompare;
     }
 
     switch (mode)
@@ -227,7 +237,7 @@ void PPU::tick()
 
             if (!_backgroundFIFO.empty())
             {
-                if (_pixelsToDiscard)
+                if (_pixelsToDiscard != 0)
                 {
                     _pixelsToDiscard -= 1;
                 }
@@ -245,8 +255,6 @@ void PPU::tick()
 
             if (_x == 160)
             {
-                _x = 0;
-
                 transition(Mode::HorizontalBlank);
             }
             break;
@@ -301,35 +309,63 @@ Addressable::AddressableRange PPU::getAddressableRange() const noexcept
 
 void PPU::transition(const Mode transitionTo)
 {
+    const auto modeValue{std::to_underlying(mode)};
+
+    /* Clear the first two bits and write the current PPU mode. */
+    registers.STAT = (registers.STAT & 0xFC) | modeValue;
+
+    /* There is no Mode 3 interrupt. */
+    if (transitionTo != Mode::Drawing)
+    {
+        triggerStatInterrupt((registers.STAT & (1 << (2 + modeValue))) != 0);
+    }
+
     if (mode != Mode::OAMScan && transitionTo == Mode::OAMScan)
     {
         objsToDraw.clear();
         _currentOamEntry = _oamEntries.cbegin();
     }
-
     if (mode == Mode::OAMScan && transitionTo == Mode::Drawing)
     {
         decltype(_backgroundFIFO) emptyBackgroundFifo{};
 
         std::swap(_backgroundFIFO, emptyBackgroundFifo);
         pixelFetcher.start();
+
         _pixelsToDiscard = registers.SCX & 0x7;
     }
+    else if (mode == Mode::Drawing && transitionTo == Mode::HorizontalBlank)
+    {
+        _x = 0;
+    }
+    else if (mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
+    {
+        _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | 1 << Interrupts::VBlank);
 
-    if (mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
+        _onFramebufferReadyCallback();
+    }
+    else if (mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
     {
         registers.LY = 0;
     }
 
-    if (mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
-    {
-        _onFramebufferReadyCallback();
-    }
-
-    if (mode == Mode::Drawing && transitionTo == Mode::HorizontalBlank)
-    {
-        _x = 0;
-    }
-
     mode = transitionTo;
+}
+
+void PPU::triggerStatInterrupt(const bool value)
+{
+    if (value && !_irq)
+    {
+        _irq = true;
+        _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) & (1 << Interrupts::LCD));
+    }
+    else
+    {
+        _irq = false;
+    }
+}
+
+void PPU::off()
+{
+    registers.STAT = registers.STAT & 0xFC;
 }

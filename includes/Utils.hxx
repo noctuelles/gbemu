@@ -18,12 +18,12 @@ namespace utils
     template <typename E>
     concept EnumType = std::is_enum_v<E> && std::is_same_v<std::underlying_type_t<E>, uint8_t>;
 
-    constexpr auto word_lsb(const uint16_t x)
+    constexpr auto wordLsb(const uint16_t x)
     {
         return static_cast<uint8_t>(x & 0xFF);
     }
 
-    constexpr auto word_msb(const uint16_t x)
+    constexpr auto wordMsb(const uint16_t x)
     {
         return static_cast<uint8_t>((x & 0xFF00) >> 8);
     }

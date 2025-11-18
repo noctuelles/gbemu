@@ -72,7 +72,17 @@ class PPU final : public Component
 
     PPU(Addressable& bus, Graphics::Framebuffer& framebuffer, OnFramebufferReadyCallback onFramebufferReady);
 
-    enum class Mode
+    struct Status
+    {
+        static constexpr uint8_t PPUMode{0x3};
+        static constexpr uint8_t LYCCompare{1 << 2};
+        static constexpr uint8_t HBlank{1 << 3};
+        static constexpr uint8_t VBlank{1 << 4};
+        static constexpr uint8_t OAMSearch{1 << 5};
+        static constexpr uint8_t LYC{1 << 6};
+    };
+
+    enum class Mode : uint8_t
     {
         /**
          * @brief The PPU has finished drawing a single scanline. VRAM, OAM, CGB palettes are accessible.
@@ -228,6 +238,8 @@ class PPU final : public Component
 
   private:
     void transition(Mode transitionTo);
+    void triggerStatInterrupt(bool value);
+    void off();
 
     Addressable&           _bus;
     Graphics::Framebuffer& _framebuffer;
@@ -235,6 +247,7 @@ class PPU final : public Component
     std::queue<FIFOEntry> _backgroundFIFO{};
     std::queue<FIFOEntry> _spriteFIFO{};
 
+    bool                     _irq{};
     bool                     _videoRamAccessible{true};
     VideoRAM                 _videoRam{};
     bool                     _oamAccessible{true};

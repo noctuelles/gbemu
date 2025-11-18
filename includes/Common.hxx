@@ -8,6 +8,15 @@
 #include <cstdint>
 #include <utility>
 
+namespace Interrupts
+{
+    static constexpr uint8_t VBlank = 0x00;
+    static constexpr uint8_t LCD    = 0x01;
+    static constexpr uint8_t Timer  = 0x04;
+    static constexpr uint8_t Serial = 0x08;
+    static constexpr uint8_t Joypad = 0x10;
+};  // namespace Interrupts
+
 namespace MemoryMap
 {
     using AddressRange = std::pair<uint16_t, uint16_t>;
