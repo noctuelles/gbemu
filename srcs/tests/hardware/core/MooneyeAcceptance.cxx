@@ -106,11 +106,10 @@ TEST_F(MooneyeAcceptance, EiTiming)
 
 TEST_F(MooneyeAcceptance, DiTiming)
 {
-    GTEST_SKIP();
-    ASSERT_NO_THROW(executeROM("di_timing.gb"));
+    ASSERT_NO_THROW(executeROM("di_timing-GS.gb"));
 }
 
-TEST_F(MooneyeAcceptance, IntrerrupTiming)
+TEST_F(MooneyeAcceptance, InterruptTiming)
 {
     ASSERT_NO_THROW(executeROM("intr_timing.gb"));
 }

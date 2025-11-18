@@ -42,11 +42,11 @@ namespace MemoryMap
         constexpr uint16_t IF{0xFF0F};
 
         constexpr uint16_t LCDC{0xFF40};
-        constexpr uint16_t LY{0xFF44};
         constexpr uint16_t LYC{0xFF45};
         constexpr uint16_t STAT{0xFF41};
         constexpr uint16_t SCY{0xFF42};
         constexpr uint16_t SCX{0xFF43};
+        constexpr uint16_t LY{0xFF44};
         constexpr uint16_t WY{0xFF4A};
         constexpr uint16_t WX{0xFF4B};
         constexpr uint16_t BGP{0xFF47};
