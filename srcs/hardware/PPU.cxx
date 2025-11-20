@@ -267,7 +267,7 @@ void PPU::tick()
                 _dots = 0;
                 registers.LY += 1;
 
-                if (registers.LY == Displayable::HEIGHT)
+                if (registers.LY == 144)
                 {
                     transition(Mode::VerticalBlank);
                 }
@@ -286,7 +286,7 @@ void PPU::tick()
                 _dots = 0;
                 registers.LY += 1;
 
-                if (registers.LY == 153)
+                if (registers.LY == 154)
                 {
                     transition(Mode::OAMScan);
                 }
@@ -346,6 +346,7 @@ void PPU::transition(const Mode transitionTo)
     }
     else if (mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
     {
+        _dotsSoFar   = 0;
         registers.LY = 0;
     }
 

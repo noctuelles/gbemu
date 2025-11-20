@@ -34,6 +34,7 @@ class MooneyeAcceptance : public testing::Test
 
         bus->attach(*cpu);
         bus->attach(*timer);
+        bus->attach(*ppu);
         bus->attach(*ram);
     }
 
@@ -60,8 +61,20 @@ class MooneyeAcceptance : public testing::Test
             ram->write(i, byte);
         }
 
+        cpu->A = 0x01;
+        cpu->C = 0x13;
+        cpu->E = 0xD8;
+        cpu->H = 0x01;
+        cpu->L = 0x4D;
         cpu->SP = 0xFFFE;
         cpu->PC = 0x0100;
+
+        cpu->IF = 0xE1;
+
+        ppu->registers.LCDC = 0x91;
+        ppu->registers.STAT = 0x85;
+
+        timer->TAC = 0xF8;
 
         while (true)
         {

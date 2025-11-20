@@ -20,10 +20,10 @@ class Timer final : public Component
     explicit Timer(Addressable& bus);
     ~Timer() override;
 
-    void    write(uint16_t address, uint8_t value) override;
-    uint8_t read(uint16_t address) const override;
+    void                           write(uint16_t address, uint8_t value) override;
+    uint8_t                        read(uint16_t address) const override;
     [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
-    void    tick() override;
+    void                           tick() override;
 
   private:
     void set_system_counter(uint16_t value);
@@ -38,6 +38,8 @@ class Timer final : public Component
 
     State state{State::NORMAL};
     bool  last_bit{};
+
+    friend class MooneyeAcceptance;
 };
 
 #endif  // TIMER_HPP

@@ -134,7 +134,7 @@ class SM83 final : public Component
     void print_state();
 
   private:
-    void onMachineCycleCb() const;
+    void onMachineCycleCb();
 
     /**
      * @brief Load an instruction into the IR register.
@@ -146,9 +146,9 @@ class SM83 final : public Component
      */
     void decodeExecuteInstruction(bool extended_set = false);
 
-    [[nodiscard]] uint8_t fetch_memory(uint16_t address) const;
-    [[nodiscard]] uint8_t fetch_operand();
-    void                  writeMemory(uint16_t address, uint8_t value) const;
+    [[nodiscard]] uint8_t fetchMemory(uint16_t address);
+    [[nodiscard]] uint8_t fetchOperand();
+    void                  writeMemory(uint16_t address, uint8_t value);
 
     /**
      * @brief AF register getter.
@@ -232,7 +232,7 @@ class SM83 final : public Component
 
     [[nodiscard]] uint8_t sub(uint8_t lhs, uint8_t rhs, bool borrow = false);
     [[nodiscard]] uint8_t bitwise_and(uint8_t lhs, uint8_t rhs);
-    [[nodiscard]] uint8_t bitwise_or(uint8_t lhs, uint8_t rhs);
+    [[nodiscard]] uint8_t bitwiseOr(uint8_t lhs, uint8_t rhs);
     [[nodiscard]] uint8_t bitwise_xor(uint8_t lhs, uint8_t rhs);
     [[nodiscard]] uint8_t rotate_left(uint8_t op, bool circular = false);
     [[nodiscard]] uint8_t rotate_right(uint8_t op, bool circular = false);
@@ -276,8 +276,8 @@ class SM83 final : public Component
     /* Misc */
 
     void                  set_flag(Flags flag, bool value);
-    [[nodiscard]] bool    get_flag(Flags flag) const;
-    [[nodiscard]] bool    is_condition_met(Conditionals conditional) const;
+    [[nodiscard]] bool    getFlag(Flags flag) const;
+    [[nodiscard]] bool    isConditionMet(Conditionals conditional) const;
     [[nodiscard]] uint8_t getInterruptRequest() const;
     void                  interrupts();
 
@@ -305,7 +305,7 @@ class SM83 final : public Component
      */
     uint8_t IR{};
 
-    std::vector<uint8_t> instruction_buffer{};
+    std::vector<uint8_t> instructionBuffer{};
 
     /**
      * @brief State of the CPU.

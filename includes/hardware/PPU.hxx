@@ -266,13 +266,8 @@ class PPU final : public Component
     OnFramebufferReadyCallback _onFramebufferReadyCallback;
 
     Mode mode{};
-};
 
-class A
-{
-  public:
-    A();
-    A(const A&) = default;
+    friend class MooneyeAcceptance;
 };
 
 #endif  // PPU_HXX

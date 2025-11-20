@@ -15,7 +15,7 @@
 
 SM83::SM83(Addressable& bus, Ticking& timer, Ticking& ppu) : bus(bus), timer(timer), ppu(ppu)
 {
-    instruction_buffer.reserve(16);
+    instructionBuffer.reserve(16);
 }
 
 void SM83::write(const uint16_t address, const uint8_t value)
@@ -70,7 +70,7 @@ void SM83::tick()
             fetchInstruction();
             decodeExecuteInstruction();
 
-            instruction_buffer.clear();
+            instructionBuffer.clear();
             break;
         }
         case State::STOPPED:
@@ -143,7 +143,7 @@ void SM83::print_state()
     std::print(std::cout, "{:<85s} - ", formatted_state);
 }
 
-void SM83::onMachineCycleCb() const
+void SM83::onMachineCycleCb()
 {
     timer.tick();
 
@@ -155,24 +155,24 @@ void SM83::onMachineCycleCb() const
 
 void SM83::fetchInstruction()
 {
-    IR = fetch_memory(PC++);
-    instruction_buffer.push_back(IR);
+    IR = fetchMemory(PC++);
+    instructionBuffer.push_back(IR);
 }
 
-uint8_t SM83::fetch_memory(const uint16_t address) const
+uint8_t SM83::fetchMemory(const uint16_t address)
 {
     onMachineCycleCb();
     return bus.read(address);
 }
 
-uint8_t SM83::fetch_operand()
+uint8_t SM83::fetchOperand()
 {
-    const auto byte{fetch_memory(PC++)};
-    instruction_buffer.push_back(byte);
+    const auto byte{fetchMemory(PC++)};
+    instructionBuffer.push_back(byte);
     return byte;
 }
 
-void SM83::writeMemory(const uint16_t address, const uint8_t value) const
+void SM83::writeMemory(const uint16_t address, const uint8_t value)
 {
     onMachineCycleCb();
     return bus.write(address, value);
@@ -219,7 +219,7 @@ void SM83::HL(const uint16_t value)
 
 uint8_t SM83::add(const uint8_t lhs, const uint8_t rhs, const bool carry)
 {
-    const auto add_carry{static_cast<uint8_t>(carry ? get_flag(Flags::Carry) : 0)};
+    const auto add_carry{static_cast<uint8_t>(carry ? getFlag(Flags::Carry) : 0)};
     const auto result{static_cast<uint16_t>(lhs + rhs + add_carry)};
 
     set_flag(Flags::Zero, (result & 0xFF) == 0);
@@ -251,11 +251,11 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 
     onMachineCycleCb();
 
-    if (get_flag(Flags::Carry) && !sign)
+    if (getFlag(Flags::Carry) && !sign)
     {
         lhs_msb += 1;
     }
-    else if (!get_flag(Flags::Carry) && sign)
+    else if (!getFlag(Flags::Carry) && sign)
     {
         lhs_msb -= 1;
     }
@@ -271,16 +271,16 @@ void SM83::daa()
 {
     uint8_t adj{};
 
-    if ((!get_flag(Flags::Subtract) && (A & 0x0F) > 0x09) || get_flag(Flags::HalfCarry))
+    if ((!getFlag(Flags::Subtract) && (A & 0x0F) > 0x09) || getFlag(Flags::HalfCarry))
     {
         adj |= 0x06;
     }
-    if ((!get_flag(Flags::Subtract) && A > 0x99) || get_flag(Flags::Carry))
+    if ((!getFlag(Flags::Subtract) && A > 0x99) || getFlag(Flags::Carry))
     {
         adj |= 0x60;
         set_flag(Flags::Carry, true);
     }
-    if (!get_flag(Flags::Subtract))
+    if (!getFlag(Flags::Subtract))
     {
         A += adj;
     }
@@ -295,7 +295,7 @@ void SM83::daa()
 
 uint8_t SM83::sub(const uint8_t lhs, const uint8_t rhs, const bool borrow)
 {
-    const auto sub_borrow{static_cast<uint8_t>(borrow ? get_flag(Flags::Carry) : 0)};
+    const auto sub_borrow{static_cast<uint8_t>(borrow ? getFlag(Flags::Carry) : 0)};
     const auto result{static_cast<uint16_t>(lhs - rhs - sub_borrow)};
 
     set_flag(Flags::Zero, (result & 0xFF) == 0);
@@ -318,7 +318,7 @@ uint8_t SM83::bitwise_and(const uint8_t lhs, const uint8_t rhs)
     return result;
 }
 
-uint8_t SM83::bitwise_or(const uint8_t lhs, const uint8_t rhs)
+uint8_t SM83::bitwiseOr(const uint8_t lhs, const uint8_t rhs)
 {
     const uint8_t result = lhs | rhs;
 
@@ -345,7 +345,7 @@ uint8_t SM83::rotate_left(uint8_t op, const bool circular)
     const auto new_carry{(op & 0x80) != 0};
 
     op <<= 1;
-    if ((circular && new_carry) || (!circular && get_flag(Flags::Carry)))
+    if ((circular && new_carry) || (!circular && getFlag(Flags::Carry)))
     {
         op |= 0x01;
     }
@@ -363,7 +363,7 @@ uint8_t SM83::rotate_right(uint8_t op, const bool circular)
     const auto new_carry{(op & 0x01) != 0};
 
     op >>= 1;
-    if ((circular && new_carry) || (!circular && get_flag(Flags::Carry)))
+    if ((circular && new_carry) || (!circular && getFlag(Flags::Carry)))
     {
         op |= 0x80;
     }
@@ -468,7 +468,7 @@ uint8_t SM83::dec(uint8_t value)
 
 void SM83::jr()
 {
-    const auto e8{static_cast<int8_t>(fetch_operand())};
+    const auto e8{static_cast<int8_t>(fetchOperand())};
 
     PC += e8;
     onMachineCycleCb();
@@ -476,8 +476,8 @@ void SM83::jr()
 
 void SM83::jp()
 {
-    const auto lsb{fetch_operand()};
-    const auto msb{fetch_operand()};
+    const auto lsb{fetchOperand()};
+    const auto msb{fetchOperand()};
 
     PC = utils::to_word(msb, lsb);
     onMachineCycleCb();
@@ -485,8 +485,8 @@ void SM83::jp()
 
 void SM83::call()
 {
-    const auto lsb{fetch_operand()};
-    const auto msb{fetch_operand()};
+    const auto lsb{fetchOperand()};
+    const auto msb{fetchOperand()};
 
     push(PC);
     PC = utils::to_word(msb, lsb);
@@ -494,21 +494,21 @@ void SM83::call()
 
 void SM83::call_cc(Conditionals conditional)
 {
-    if (is_condition_met(conditional))
+    if (isConditionMet(conditional))
     {
         call();
     }
     else
     {
-        (void) fetch_operand();
-        (void) fetch_operand();
+        (void) fetchOperand();
+        (void) fetchOperand();
     }
 }
 
 void SM83::ret()
 {
-    const auto lsb{fetch_memory(SP++)};
-    const auto msb{fetch_memory(SP++)};
+    const auto lsb{fetchMemory(SP++)};
+    const auto msb{fetchMemory(SP++)};
 
     PC = utils::to_word(msb, lsb);
     onMachineCycleCb();
@@ -517,7 +517,7 @@ void SM83::ret()
 void SM83::ret_cc(const Conditionals conditional)
 {
     onMachineCycleCb();
-    if (is_condition_met(conditional))
+    if (isConditionMet(conditional))
     {
         ret();
     }
@@ -525,26 +525,26 @@ void SM83::ret_cc(const Conditionals conditional)
 
 void SM83::jp_cc(Conditionals conditional)
 {
-    if (is_condition_met(conditional))
+    if (isConditionMet(conditional))
     {
         jp();
     }
     else
     {
-        (void) fetch_operand();
-        (void) fetch_operand();
+        (void) fetchOperand();
+        (void) fetchOperand();
     }
 }
 
 void SM83::jr_cc(const Conditionals conditional)
 {
-    if (is_condition_met(conditional))
+    if (isConditionMet(conditional))
     {
         jr();
     }
     else
     {
-        (void) fetch_operand();
+        (void) fetchOperand();
     }
 }
 
@@ -571,14 +571,14 @@ void SM83::push(const uint16_t value)
 
 void SM83::pop(uint8_t& msb, uint8_t& lsb)
 {
-    lsb = fetch_memory(SP++);
-    msb = fetch_memory(SP++);
+    lsb = fetchMemory(SP++);
+    msb = fetchMemory(SP++);
 }
 
 void SM83::pop(uint16_t& value)
 {
-    const auto lsb{fetch_memory(SP++)};
-    const auto msb{fetch_memory(SP++)};
+    const auto lsb{fetchMemory(SP++)};
+    const auto msb{fetchMemory(SP++)};
     value = utils::to_word(msb, lsb);
 }
 
@@ -588,23 +588,23 @@ void SM83::set_flag(const Flags flag, const bool value)
     F = (F & ~bit) | (value ? bit : 0);
 }
 
-bool SM83::get_flag(const Flags flag) const
+bool SM83::getFlag(const Flags flag) const
 {
     return (F & std::to_underlying(flag)) != 0;
 }
 
-bool SM83::is_condition_met(const Conditionals conditional) const
+bool SM83::isConditionMet(const Conditionals conditional) const
 {
     switch (conditional)
     {
         case Conditionals::NZ:
-            return !this->get_flag(Flags::Zero);
+            return !this->getFlag(Flags::Zero);
         case Conditionals::Z:
-            return this->get_flag(Flags::Zero);
+            return this->getFlag(Flags::Zero);
         case Conditionals::NC:
-            return !this->get_flag(Flags::Carry);
+            return !this->getFlag(Flags::Carry);
         case Conditionals::C:
-            return this->get_flag(Flags::Carry);
+            return this->getFlag(Flags::Carry);
         [[unlikely]] default:
             throw std::logic_error("Conditional not implemented");
     }
