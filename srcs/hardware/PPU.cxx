@@ -346,7 +346,6 @@ void PPU::transition(const Mode transitionTo)
     }
     else if (mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
     {
-        _dotsSoFar   = 0;
         registers.LY = 0;
     }
 
