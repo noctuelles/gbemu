@@ -99,14 +99,14 @@ class PPU final : public Component
 
     struct LCDControlFlags
     {
-        static constexpr uint8_t BGWindowEnableOrPriority{0x01};
-        static constexpr uint8_t ObjEnable{0x02};
-        static constexpr uint8_t ObjSize{0x04};
-        static constexpr uint8_t BGTileMapSelect{0x08};
-        static constexpr uint8_t BGAndWindowTileDataArea{0x10};
-        static constexpr uint8_t WindowEnable{0x20};
-        static constexpr uint8_t WindowTileMapSelect{0x40};
-        static constexpr uint8_t LCDAndPPUEnable{0x80};
+        static constexpr uint8_t BGWindowEnableOrPriority{1 << 0};
+        static constexpr uint8_t ObjEnable{1 << 1};
+        static constexpr uint8_t ObjSize{1 << 2};
+        static constexpr uint8_t BGTileMapSelect{1 << 3};
+        static constexpr uint8_t BGAndWindowTileDataArea{1 << 4};
+        static constexpr uint8_t WindowEnable{1 << 5};
+        static constexpr uint8_t WindowTileMapSelect{1 << 6};
+        static constexpr uint8_t LCDAndPPUEnable{1 << 7};
     };
 
     struct OAMEntry

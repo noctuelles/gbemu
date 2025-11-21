@@ -46,12 +46,22 @@ void PPU::PixelFetcher::tick()
                 if (isBackground)
                 {
                     size_t tileOffset{};
+                    size_t bgTileMapAreaOffset{};
                     /* The background tile map is a 32x32 tile grid. */
+
+                    if ((_registers.LCDC & LCDControlFlags::BGTileMapSelect) == 0)
+                    {
+                        bgTileMapAreaOffset = 0x1800;
+                    }
+                    else
+                    {
+                        bgTileMapAreaOffset = 0x1C00;
+                    }
 
                     tileOffset = ((_registers.SCX >> 3) + _x) & 0x1F;
                     tileOffset += 32 * (((_registers.LY + _registers.SCY) & 0xFF) >> 3);
 
-                    _tileMapNbr = _videoRam[0x1800 + tileOffset];
+                    _tileMapNbr = _videoRam[bgTileMapAreaOffset +  tileOffset];
                 }
 
                 _state = State::GetTileDataLow;

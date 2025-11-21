@@ -117,6 +117,7 @@ TEST_F(MooneyeAcceptance, OamDma_RegisterRead)
 
 TEST_F(MooneyeAcceptance, OamDma_Sources)
 {
+    /* Failing on 0xFE00 as source. */
     ASSERT_NO_THROW(executeROM("oam_dma/sources-GS.gb"));
 }
 

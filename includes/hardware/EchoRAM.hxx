@@ -9,7 +9,7 @@
 class EchoRAM final : public Addressable
 {
   public:
-    explicit EchoRAM(Addressable& ram);
+    explicit EchoRAM(Addressable& workRam);
 
     [[nodiscard]] uint8_t read(uint16_t address) const override;
     void                  write(uint16_t address, uint8_t value) override;
@@ -17,7 +17,9 @@ class EchoRAM final : public Addressable
     [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 
   private:
-    Addressable& content;
+    static uint16_t getRealAddress(uint16_t address);
+
+    Addressable& _workRam;
 };
 
 #endif  // ECHORAM_HXX
