@@ -9,9 +9,9 @@
 #include <string>
 #include <vector>
 
+#include "EmulationState.hxx"
 #include "hardware/Addressable.hxx"
 #include "hardware/PPU.hxx"
-#include "hardware/Timer.hxx"
 
 namespace Test
 {
@@ -120,7 +120,7 @@ class SM83 final : public Component
         } registers;
     };
 
-    SM83(Addressable& bus, Ticking& timer, Ticking& ppu);
+    SM83(EmulationState& emulationState, Addressable& bus, Ticking& timer, Ticking& ppu);
 
     void                           write(uint16_t address, uint8_t value) override;
     [[nodiscard]] uint8_t          read(uint16_t address) const override;
@@ -130,8 +130,6 @@ class SM83 final : public Component
 
     void               applyView(const View& view);
     [[nodiscard]] View getView() const;
-
-    void print_state();
 
   private:
     void onMachineCycleCb();
@@ -231,7 +229,7 @@ class SM83 final : public Component
     void daa();
 
     [[nodiscard]] uint8_t sub(uint8_t lhs, uint8_t rhs, bool borrow = false);
-    [[nodiscard]] uint8_t bitwise_and(uint8_t lhs, uint8_t rhs);
+    [[nodiscard]] uint8_t bitwiseAnd(uint8_t lhs, uint8_t rhs);
     [[nodiscard]] uint8_t bitwiseOr(uint8_t lhs, uint8_t rhs);
     [[nodiscard]] uint8_t bitwise_xor(uint8_t lhs, uint8_t rhs);
     [[nodiscard]] uint8_t rotate_left(uint8_t op, bool circular = false);
@@ -323,9 +321,21 @@ class SM83 final : public Component
 
     uint8_t requestIme{};
 
-    Addressable& bus;
-    Ticking&     timer;
-    Ticking&     ppu;
+    /**
+     * @brief Represents the source and destination addresses involved in the OAM DMA transfer.
+     *
+     * The pair consists of:
+     * - the First element: Source address for the DMA transfer (16-bit).
+     * - Second element: Target address in OAM (16-bit).
+     */
+    uint16_t oamDmaSourceAddress{};
+    uint8_t  requestOamDma{};
+    uint8_t  oamDmaElapsedMachineCycles{};
+
+    EmulationState& emulationState;
+    Addressable&    bus;
+    Ticking&        timer;
+    Ticking&        ppu;
 
     friend class MooneyeAcceptance;
     friend class Test::SM83;

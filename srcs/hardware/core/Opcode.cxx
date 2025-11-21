@@ -54,10 +54,10 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
             {
                 const auto lsb{fetchOperand()};
                 const auto msb{fetchOperand()};
-                const auto address{utils::to_word(msb, lsb)};
+                const auto address{Utils::to_word(msb, lsb)};
 
-                writeMemory(address, utils::wordLsb(SP));
-                writeMemory(address + 1, utils::wordMsb(SP));
+                writeMemory(address, Utils::wordLsb(SP));
+                writeMemory(address + 1, Utils::wordMsb(SP));
             }
             break;
             case 0x09:
@@ -540,28 +540,28 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 A = sub(A, A, true);
                 break;
             case 0xA0:
-                A = bitwise_and(A, B);
+                A = bitwiseAnd(A, B);
                 break;
             case 0xA1:
-                A = bitwise_and(A, C);
+                A = bitwiseAnd(A, C);
                 break;
             case 0xA2:
-                A = bitwise_and(A, D);
+                A = bitwiseAnd(A, D);
                 break;
             case 0xA3:
-                A = bitwise_and(A, E);
+                A = bitwiseAnd(A, E);
                 break;
             case 0xA4:
-                A = bitwise_and(A, H);
+                A = bitwiseAnd(A, H);
                 break;
             case 0xA5:
-                A = bitwise_and(A, L);
+                A = bitwiseAnd(A, L);
                 break;
             case 0xA6:
-                A = bitwise_and(A, fetchMemory(HL()));
+                A = bitwiseAnd(A, fetchMemory(HL()));
                 break;
             case 0xA7:
-                A = bitwise_and(A, A);
+                A = bitwiseAnd(A, A);
                 break;
             case 0xA8:
                 A = bitwise_xor(A, B);
@@ -737,7 +737,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 push(H, L);
                 break;
             case 0xE6:
-                A = bitwise_and(A, fetchOperand());
+                A = bitwiseAnd(A, fetchOperand());
                 break;
             case 0xE7:
                 rst(ResetVector::h20);
@@ -752,7 +752,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
             {
                 const auto lsb = fetchOperand();
                 const auto msb = fetchOperand();
-                writeMemory(utils::to_word(msb, lsb), A);
+                writeMemory(Utils::to_word(msb, lsb), A);
             }
             break;
             case 0xEE:
@@ -795,7 +795,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
             {
                 const auto lsb{fetchOperand()};
                 const auto msb{fetchOperand()};
-                A = fetchMemory(utils::to_word(msb, lsb));
+                A = fetchMemory(Utils::to_word(msb, lsb));
             }
             break;
             case 0xFB:

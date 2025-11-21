@@ -10,6 +10,7 @@
 #include "Utils.hxx"
 #include "graphics/Tile.hxx"
 #include "hardware/Bus.hxx"
+#include "hardware/EchoRAM.hxx"
 #include "hardware/PPU.hxx"
 #include "hardware/Timer.hxx"
 #include "hardware/WorkRAM.hxx"
@@ -78,7 +79,7 @@ class Emulator
         Payload payload;
     };
 
-    explicit Emulator(utils::ThreadSafeQueue<Event>& eventQueue);
+    explicit Emulator(Utils::ThreadSafeQueue<Event>& eventQueue);
 
     void pushCommand(const Command& cmd);
     void operator()();
@@ -90,18 +91,20 @@ class Emulator
 
     std::condition_variable         cmdCv;
     std::mutex                      cmdMutex;
-    utils::ThreadSafeQueue<Command> cmdQueue;
-    utils::ThreadSafeQueue<Event>&  uiEventQueue;
+    Utils::ThreadSafeQueue<Command> cmdQueue;
+    Utils::ThreadSafeQueue<Event>&  uiEventQueue;
 
     bool running{true};
     bool paused{true};
     bool requestedPause{false};
 
+    EmulationState        emulationState{};
     Bus                   bus;
     Timer                 timer;
     PPU                   ppu;
     FakeRAM               ram;
     SM83                  cpu;
+    EchoRAM               echoRam;
     Graphics::Framebuffer framebuffer;
 
     Breakpoints breakpoints;

@@ -9,6 +9,7 @@
 #include "gtest/gtest.h"
 #include "hardware/Bus.hxx"
 #include "hardware/Cartridge.hxx"
+#include "hardware/EchoRAM.hxx"
 #include "hardware/Timer.hxx"
 #include "hardware/WorkRAM.hxx"
 #include "hardware/core/SM83.hxx"
@@ -16,25 +17,30 @@
 class MooneyeAcceptance : public testing::Test
 {
   protected:
-    Graphics::Framebuffer    framebuffer{};
+    Graphics::Framebuffer framebuffer{};
+    EmulationState        emulationState{};
+
     std::unique_ptr<Bus>     bus{};
     std::unique_ptr<SM83>    cpu{};
+    std::unique_ptr<EchoRAM> echoRam{};
     std::unique_ptr<FakeRAM> ram{};
     std::unique_ptr<Timer>   timer{};
     std::unique_ptr<PPU>     ppu{};
 
     void SetUp() override
     {
-        bus = std::make_unique<Bus>();
+        bus = std::make_unique<Bus>(emulationState);
         ppu = std::make_unique<PPU>(*bus, framebuffer, [] {});
 
         timer = std::make_unique<Timer>(*bus);
-        cpu   = std::make_unique<SM83>(*bus, *timer, *ppu);
+        cpu   = std::make_unique<SM83>(emulationState, *bus, *timer, *ppu);
         ram   = std::make_unique<FakeRAM>();
+        echoRam = std::make_unique<EchoRAM>(*ram);
 
         bus->attach(*cpu);
         bus->attach(*timer);
         bus->attach(*ppu);
+        bus->attach(*echoRam);
         bus->attach(*ram);
     }
 
@@ -61,11 +67,11 @@ class MooneyeAcceptance : public testing::Test
             ram->write(i, byte);
         }
 
-        cpu->A = 0x01;
-        cpu->C = 0x13;
-        cpu->E = 0xD8;
-        cpu->H = 0x01;
-        cpu->L = 0x4D;
+        cpu->A  = 0x01;
+        cpu->C  = 0x13;
+        cpu->E  = 0xD8;
+        cpu->H  = 0x01;
+        cpu->L  = 0x4D;
         cpu->SP = 0xFFFE;
         cpu->PC = 0x0100;
 
@@ -99,6 +105,31 @@ class MooneyeAcceptance : public testing::Test
     }
 };
 
+TEST_F(MooneyeAcceptance, OamDma_Basic)
+{
+    ASSERT_NO_THROW(executeROM("oam_dma/basic.gb"));
+}
+
+TEST_F(MooneyeAcceptance, OamDma_RegisterRead)
+{
+    ASSERT_NO_THROW(executeROM("oam_dma/reg_read.gb"));
+}
+
+TEST_F(MooneyeAcceptance, OamDma_Sources)
+{
+    ASSERT_NO_THROW(executeROM("oam_dma/sources-GS.gb"));
+}
+
+TEST_F(MooneyeAcceptance, OamDmaTiming)
+{
+    ASSERT_NO_THROW(executeROM("oam_dma_timing.gb"));
+}
+
+TEST_F(MooneyeAcceptance, OamDmaStart)
+{
+    ASSERT_NO_THROW(executeROM("oam_dma_start.gb"));
+}
+
 TEST_F(MooneyeAcceptance, InstructionDAA)
 {
     ASSERT_NO_THROW(executeROM("instr/daa.gb"));
@@ -106,9 +137,6 @@ TEST_F(MooneyeAcceptance, InstructionDAA)
 
 TEST_F(MooneyeAcceptance, TimingRet)
 {
-    /* TODO: Infinite Loop ? Looks like it is related to LCD registers that are not yet implemented. */
-
-    GTEST_SKIP();
     ASSERT_NO_THROW(executeROM("ret_timing.gb"));
 }
 

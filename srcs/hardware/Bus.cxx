@@ -6,6 +6,11 @@
 
 #include <utility>
 
+#include "Common.hxx"
+#include "Utils.hxx"
+
+Bus::Bus(const EmulationState& emulationState) : emulationState(emulationState) {}
+
 Addressable::AddressableRange Bus::getAddressableRange() const noexcept
 {
     return {std::make_pair(0x0000, 0xFFFF)};
@@ -15,7 +20,7 @@ std::array<uint8_t, 0x10000> Bus::getAddressSpace() const noexcept
 {
     std::array<uint8_t, 0x10000> snapshot{};
 
-    for (auto i = 0ULL; i < memory_map.size(); i++)
+    for (auto i = 0ULL; i < memoryMap.size(); i++)
     {
         snapshot[i] = read(i);
     }
@@ -39,18 +44,18 @@ void Bus::attach(Addressable& addressable)
     {
         if (const auto memoryLocation{std::get_if<uint16_t>(&range)}; memoryLocation)
         {
-            if (memory_map[*memoryLocation] == nullptr)
+            if (memoryMap[*memoryLocation] == nullptr)
             {
-                memory_map[*memoryLocation] = &addressable;
+                memoryMap[*memoryLocation] = &addressable;
             }
         }
         else if (const auto memoryRange{std::get_if<AddressRange>(&range)}; memoryRange)
         {
             for (std::size_t address = memoryRange->first; address <= memoryRange->second; ++address)
             {
-                if (memory_map[address] == nullptr)
+                if (memoryMap[address] == nullptr)
                 {
-                    memory_map[address] = &addressable;
+                    memoryMap[address] = &addressable;
                 }
             }
         }
@@ -59,25 +64,36 @@ void Bus::attach(Addressable& addressable)
 
 void Bus::write(const uint16_t address, const uint8_t value)
 {
-    if (memory_map[address] == nullptr)
+    if (emulationState.isInOamDma)
+    {
+        if (!Utils::addressIn(address, MemoryMap::HIGH_RAM))
+        {
+            return;
+        }
+    }
+
+    if (memoryMap[address] == nullptr)
     {
         throw std::logic_error{std::format("Cannot perform bus write at {:#04x}.", address)};
     }
 
-    if (address == 0xFF50)
-    {
-        bootRomDisabled = value & 0x01;
-    }
-
-    memory_map[address]->write(address, value);
+    memoryMap[address]->write(address, value);
 }
 
 uint8_t Bus::read(const uint16_t address) const
 {
-    if (memory_map[address] == nullptr)
+    if (emulationState.isInOamDma)
+    {
+        if (!Utils::addressIn(address, MemoryMap::HIGH_RAM))
+        {
+            return 0xFF;
+        }
+    }
+
+    if (memoryMap[address] == nullptr)
     {
         throw std::logic_error{std::format("Cannot perform bus read at {:#04x}.", address)};
     }
 
-    return memory_map[address]->read(address);
+    return memoryMap[address]->read(address);
 }

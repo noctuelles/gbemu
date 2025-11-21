@@ -6,11 +6,12 @@
 #include <vector>
 
 #include "Addressable.hxx"
+#include "EmulationState.hxx"
 
 class Bus final : public Addressable
 {
   public:
-    Bus() = default;
+    explicit Bus(const EmulationState& emulationState);
 
     void                           write(uint16_t address, uint8_t value) override;
     [[nodiscard]] uint8_t          read(uint16_t address) const override;
@@ -21,9 +22,8 @@ class Bus final : public Addressable
     void attach(Addressable& addressable);
 
   private:
-    std::array<Addressable*, 0x10000> memory_map{};
-
-    bool bootRomDisabled{false};
+    const EmulationState&             emulationState;
+    std::array<Addressable*, 0x10000> memoryMap{};
 };
 
 #endif  // BUS_HXX

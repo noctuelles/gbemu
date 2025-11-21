@@ -47,9 +47,11 @@ namespace MemoryMap
         constexpr uint16_t SCY{0xFF42};
         constexpr uint16_t SCX{0xFF43};
         constexpr uint16_t LY{0xFF44};
+        constexpr uint16_t DMA{0xFF46};
+        constexpr uint16_t BGP{0xFF47};
         constexpr uint16_t WY{0xFF4A};
         constexpr uint16_t WX{0xFF4B};
-        constexpr uint16_t BGP{0xFF47};
+        constexpr uint16_t BOOTM{0xFF50};
 
     }  // namespace IORegisters
 
@@ -57,12 +59,5 @@ namespace MemoryMap
 
     constexpr uint16_t IE{0xFFFF};
 }  // namespace MemoryMap
-
-enum class EmulationState
-{
-    NORMAL,
-    HALTED,
-    SINGLE_CPU_TICK,
-};
 
 #endif  // COMMON_HXX

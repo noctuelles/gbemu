@@ -13,7 +13,7 @@
 
 #include "Common.hxx"
 
-namespace utils
+namespace Utils
 {
     template <typename E>
     concept EnumType = std::is_enum_v<E> && std::is_same_v<std::underlying_type_t<E>, uint8_t>;
@@ -39,7 +39,7 @@ namespace utils
         lsb = static_cast<uint8_t>(word & 0xFF);
     }
 
-    constexpr bool address_in(const uint16_t addr, const MemoryMap::AddressRange& range)
+    constexpr bool addressIn(const uint16_t addr, const MemoryMap::AddressRange& range)
     {
         return addr >= range.first && addr <= range.second;
     }

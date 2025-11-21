@@ -13,6 +13,9 @@
 PPU::PPU(Addressable& bus, Graphics::Framebuffer& framebuffer, OnFramebufferReadyCallback onFramebufferReadyCallback)
     : _bus(bus), _framebuffer(framebuffer), _onFramebufferReadyCallback{std::move(onFramebufferReadyCallback)}
 {
+    registers.LCDC = 0x91;
+    registers.STAT = 0x85;
+
     objsToDraw.reserve(10);
 
     addrToRegister = {
@@ -110,7 +113,7 @@ void PPU::PixelFetcher::start()
 
 uint8_t PPU::read(const uint16_t address) const
 {
-    if (utils::address_in(address, MemoryMap::VIDEO_RAM))
+    if (Utils::addressIn(address, MemoryMap::VIDEO_RAM))
     {
         // if (!_videoRamAccessible)
         // {
@@ -124,7 +127,7 @@ uint8_t PPU::read(const uint16_t address) const
 
         return _videoRam[address - 0x8000];
     }
-    if (utils::address_in(address, MemoryMap::OAM))
+    if (Utils::addressIn(address, MemoryMap::OAM))
     {
         // if (!_oamAccessible)
         // {
@@ -144,7 +147,7 @@ uint8_t PPU::read(const uint16_t address) const
 
 void PPU::write(const uint16_t address, const uint8_t value)
 {
-    if (utils::address_in(address, MemoryMap::VIDEO_RAM))
+    if (Utils::addressIn(address, MemoryMap::VIDEO_RAM))
     {
         if (!_videoRamAccessible)
         {
@@ -153,7 +156,7 @@ void PPU::write(const uint16_t address, const uint8_t value)
 
         _videoRam[address - 0x8000] = value;
     }
-    else if (utils::address_in(address, MemoryMap::OAM))
+    else if (Utils::addressIn(address, MemoryMap::OAM))
     {
         if (!_oamAccessible)
         {
@@ -174,7 +177,7 @@ void PPU::write(const uint16_t address, const uint8_t value)
 
 void PPU::tick()
 {
-    using namespace utils;
+    using namespace Utils;
 
     if ((registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 0)
     {

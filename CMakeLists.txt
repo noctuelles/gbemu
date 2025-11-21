@@ -103,6 +103,7 @@ add_executable(gbemu
         includes/graphics/Framebuffer.hxx
         includes/graphics/Framebuffer.hxx
         srcs/ui/Display.cxx
+        includes/EmulationState.hxx
 )
 
 target_link_libraries(
@@ -118,6 +119,7 @@ add_executable(gbemu_test
         srcs/hardware/PPU.cxx
         srcs/hardware/Timer.cxx
         srcs/hardware/WorkRAM.cxx
+        srcs/hardware/EchoRAM.cxx
         srcs/hardware/Bus.cxx
         srcs/hardware/Cartridge.cxx
         includes/hardware/Displayable.hxx
@@ -125,6 +127,8 @@ add_executable(gbemu_test
         srcs/tests/graphics/Tile.cxx
         srcs/tests/graphics/Tile.cxx
         srcs/tests/hardware/core/MooneyeAcceptance.cxx
+        includes/EmulationState.hxx
+        includes/hardware/EchoRAM.hxx
 )
 
 target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/roms")

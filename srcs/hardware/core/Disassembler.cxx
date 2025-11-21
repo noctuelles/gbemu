@@ -593,7 +593,7 @@ auto SM83::Disassembler::disassemble(const uint16_t startingAddress, std::size_t
                 {
                     const auto lsb{read_memory()};
                     const auto msb{read_memory()};
-                    const auto value{utils::to_word(msb, lsb)};
+                    const auto value{Utils::to_word(msb, lsb)};
                     name = std::vformat(instruction.name, std::make_format_args(value));
                     break;
                 }

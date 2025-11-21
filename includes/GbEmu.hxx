@@ -25,7 +25,7 @@ class GbEmu
     void loop();
 
   private:
-    utils::ThreadSafeQueue<Emulator::Event>      eventQueue;
+    Utils::ThreadSafeQueue<Emulator::Event>      eventQueue;
     std::queue<std::optional<Emulator::Command>> uiCommands;
 
     void configureSDL();

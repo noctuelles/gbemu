@@ -13,8 +13,17 @@
 #include <iostream>
 #include <utility>
 
-SM83::SM83(Addressable& bus, Ticking& timer, Ticking& ppu) : bus(bus), timer(timer), ppu(ppu)
+SM83::SM83(EmulationState& emulationState, Addressable& bus, Ticking& timer, Ticking& ppu)
+    : emulationState(emulationState), bus(bus), timer(timer), ppu(ppu)
 {
+    A  = 0x01;
+    C  = 0x13;
+    E  = 0xD8;
+    H  = 0x01;
+    L  = 0x4D;
+    PC = 0x100;
+    SP = 0xFFFE;
+
     instructionBuffer.reserve(16);
 }
 
@@ -27,6 +36,10 @@ void SM83::write(const uint16_t address, const uint8_t value)
             break;
         case MemoryMap::IORegisters::IF:
             IF = 0xE0 | value;
+            break;
+        case MemoryMap::IORegisters::DMA:
+            oamDmaSourceAddress = static_cast<uint16_t>(value << 8);
+            requestOamDma       = 3;
             break;
         default:
             throw std::logic_error(std::format("Invalid SM83 Write"));
@@ -41,6 +54,8 @@ uint8_t SM83::read(const uint16_t address) const
             return IE;
         case MemoryMap::IORegisters::IF:
             return 0xE0 | IF;
+        case MemoryMap::IORegisters::DMA:
+            return static_cast<uint8_t>(oamDmaSourceAddress >> 8);
         default:
             std::cout << "Invalid SM83 Read" << std::endl;
             throw std::logic_error("Invalid SM83 Write");
@@ -49,7 +64,7 @@ uint8_t SM83::read(const uint16_t address) const
 
 Addressable::AddressableRange SM83::getAddressableRange() const noexcept
 {
-    return {MemoryMap::IE, MemoryMap::IORegisters::IF};
+    return {MemoryMap::IE, MemoryMap::IORegisters::IF, MemoryMap::IORegisters::DMA};
 }
 
 void SM83::tick()
@@ -135,16 +150,32 @@ SM83::View SM83::getView() const
     return view;
 }
 
-void SM83::print_state()
-{
-    std::string formatted_state{std::format(
-        "A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} IE:{:02X} IF:{:02X} IME:{:s}",
-        A, F, B, C, D, E, H, L, SP, PC, IE, IF, IME)};
-    std::print(std::cout, "{:<85s} - ", formatted_state);
-}
-
 void SM83::onMachineCycleCb()
 {
+    if (requestOamDma > 0)
+    {
+        requestOamDma -= 1;
+        if (requestOamDma == 0)
+        {
+            emulationState.isInOamDma = true;
+            oamDmaElapsedMachineCycles       = 0;
+        }
+    }
+
+    if (emulationState.isInOamDma)
+    {
+        oamDmaElapsedMachineCycles += 1;
+        if (oamDmaElapsedMachineCycles == 160)
+        {
+            emulationState.isInOamDma = false;
+
+            for (auto address{MemoryMap::OAM.first}; address <= MemoryMap::OAM.second; address += 1)
+            {
+                bus.write(address, bus.read(oamDmaSourceAddress + (address - MemoryMap::OAM.first)));
+            }
+        }
+    }
+
     timer.tick();
 
     ppu.tick();
@@ -162,6 +193,13 @@ void SM83::fetchInstruction()
 uint8_t SM83::fetchMemory(const uint16_t address)
 {
     onMachineCycleCb();
+
+    /* Let the CPU read the DMA source address even if it is in OAM DMA. */
+    if (emulationState.isInOamDma && address == MemoryMap::IORegisters::DMA)
+    {
+        return static_cast<uint8_t>(oamDmaSourceAddress >> 8);
+    }
+
     return bus.read(address);
 }
 
@@ -175,46 +213,52 @@ uint8_t SM83::fetchOperand()
 void SM83::writeMemory(const uint16_t address, const uint8_t value)
 {
     onMachineCycleCb();
+
+    if (emulationState.isInOamDma && address == MemoryMap::IORegisters::DMA)
+    {
+        oamDmaSourceAddress = static_cast<uint16_t>(value << 8);
+    }
+
     return bus.write(address, value);
 }
 
 uint16_t SM83::AF() const
 {
-    return utils::to_word(A, F);
+    return Utils::to_word(A, F);
 }
 
 uint16_t SM83::BC() const
 {
-    return utils::to_word(B, C);
+    return Utils::to_word(B, C);
 }
 
 uint16_t SM83::DE() const
 {
-    return utils::to_word(D, E);
+    return Utils::to_word(D, E);
 }
 
 uint16_t SM83::HL() const
 {
-    return utils::to_word(H, L);
+    return Utils::to_word(H, L);
 }
 
 void SM83::AF(const uint16_t value)
 {
-    utils::to_bytes(value, A, F);
+    Utils::to_bytes(value, A, F);
 }
 void SM83::BC(const uint16_t value)
 {
-    utils::to_bytes(value, B, C);
+    Utils::to_bytes(value, B, C);
 }
 
 void SM83::DE(const uint16_t value)
 {
-    utils::to_bytes(value, D, E);
+    Utils::to_bytes(value, D, E);
 }
 
 void SM83::HL(const uint16_t value)
 {
-    utils::to_bytes(value, H, L);
+    Utils::to_bytes(value, H, L);
 }
 
 uint8_t SM83::add(const uint8_t lhs, const uint8_t rhs, const bool carry)
@@ -244,8 +288,8 @@ uint16_t SM83::add(const uint16_t lhs, const uint16_t rhs)
 uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 {
     const auto sign{(rhs & 0x80) != 0};
-    auto       lhs_lsb{utils::wordLsb(lhs)};
-    auto       lhs_msb{utils::wordMsb(lhs)};
+    auto       lhs_lsb{Utils::wordLsb(lhs)};
+    auto       lhs_msb{Utils::wordMsb(lhs)};
 
     lhs_lsb = add(lhs_lsb, rhs);
 
@@ -264,7 +308,7 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 
     onMachineCycleCb();
 
-    return utils::to_word(lhs_msb, lhs_lsb);
+    return Utils::to_word(lhs_msb, lhs_lsb);
 }
 
 void SM83::daa()
@@ -306,7 +350,7 @@ uint8_t SM83::sub(const uint8_t lhs, const uint8_t rhs, const bool borrow)
     return static_cast<uint8_t>(result & 0xFF);
 }
 
-uint8_t SM83::bitwise_and(const uint8_t lhs, const uint8_t rhs)
+uint8_t SM83::bitwiseAnd(const uint8_t lhs, const uint8_t rhs)
 {
     const uint8_t result = lhs & rhs;
 
@@ -479,7 +523,7 @@ void SM83::jp()
     const auto lsb{fetchOperand()};
     const auto msb{fetchOperand()};
 
-    PC = utils::to_word(msb, lsb);
+    PC = Utils::to_word(msb, lsb);
     onMachineCycleCb();
 }
 
@@ -489,7 +533,7 @@ void SM83::call()
     const auto msb{fetchOperand()};
 
     push(PC);
-    PC = utils::to_word(msb, lsb);
+    PC = Utils::to_word(msb, lsb);
 }
 
 void SM83::call_cc(Conditionals conditional)
@@ -510,7 +554,7 @@ void SM83::ret()
     const auto lsb{fetchMemory(SP++)};
     const auto msb{fetchMemory(SP++)};
 
-    PC = utils::to_word(msb, lsb);
+    PC = Utils::to_word(msb, lsb);
     onMachineCycleCb();
 }
 
@@ -563,8 +607,8 @@ void SM83::push(const uint8_t msb, const uint8_t lsb)
 
 void SM83::push(const uint16_t value)
 {
-    const auto lsb{utils::wordLsb(value)};
-    const auto msb{utils::wordMsb(value)};
+    const auto lsb{Utils::wordLsb(value)};
+    const auto msb{Utils::wordMsb(value)};
 
     push(msb, lsb);
 }
@@ -579,7 +623,7 @@ void SM83::pop(uint16_t& value)
 {
     const auto lsb{fetchMemory(SP++)};
     const auto msb{fetchMemory(SP++)};
-    value = utils::to_word(msb, lsb);
+    value = Utils::to_word(msb, lsb);
 }
 
 void SM83::set_flag(const Flags flag, const bool value)
@@ -636,8 +680,8 @@ void SM83::interrupts()
 
     onMachineCycleCb();
     onMachineCycleCb();
-    writeMemory(--SP, utils::wordMsb(PC));
-    writeMemory(--SP, utils::wordLsb(PC));
+    writeMemory(--SP, Utils::wordMsb(PC));
+    writeMemory(--SP, Utils::wordLsb(PC));
     onMachineCycleCb();
 
     PC = interruptVector;
