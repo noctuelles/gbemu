@@ -85,6 +85,18 @@ void SM83::tick()
             fetchInstruction();
             decodeExecuteInstruction();
 
+            // Disassembler disassembler{instructionBuffer};
+            // const auto inst{disassembler.disassemble(0, 1)};
+
+            // for (const auto& line : inst)
+            // {
+            //     for (const auto byte: line.first.second)
+            //     {
+            //         std::cout << std::format("{:02X} ", byte);
+            //     }
+            //     std::cout << ": " << line.second << std::endl;
+            // }
+
             instructionBuffer.clear();
             break;
         }
@@ -216,6 +228,12 @@ void SM83::writeMemory(const uint16_t address, const uint8_t value)
 
     if (emulationState.isInOamDma && address == MemoryMap::IORegisters::DMA)
     {
+        /* Do we need to restart OAM DMA ? */
+        if (oamDmaElapsedMachineCycles != 0)
+        {
+            requestOamDma = 3;
+        }
+
         oamDmaSourceAddress = static_cast<uint16_t>(value << 8);
     }
 

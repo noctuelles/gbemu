@@ -131,15 +131,17 @@ TEST_F(MooneyeAcceptance, OamDmaStart)
     ASSERT_NO_THROW(executeROM("oam_dma_start.gb"));
 }
 
+TEST_F(MooneyeAcceptance, OamDmaRestart)
+{
+    ASSERT_NO_THROW(executeROM("oam_dma_restart.gb"));
+}
+
 TEST_F(MooneyeAcceptance, InstructionDAA)
 {
     ASSERT_NO_THROW(executeROM("instr/daa.gb"));
 }
 
-TEST_F(MooneyeAcceptance, TimingRet)
-{
-    ASSERT_NO_THROW(executeROM("ret_timing.gb"));
-}
+
 
 TEST_F(MooneyeAcceptance, EiTiming)
 {
@@ -154,6 +156,31 @@ TEST_F(MooneyeAcceptance, DiTiming)
 TEST_F(MooneyeAcceptance, InterruptTiming)
 {
     ASSERT_NO_THROW(executeROM("intr_timing.gb"));
+}
+
+TEST_F(MooneyeAcceptance, PopTiming)
+{
+    ASSERT_NO_THROW(executeROM("pop_timing.gb"));
+}
+
+TEST_F(MooneyeAcceptance, PushTiming)
+{
+    ASSERT_NO_THROW(executeROM("push_timing.gb"));
+}
+
+TEST_F(MooneyeAcceptance, RstTiming)
+{
+    ASSERT_NO_THROW(executeROM("rst_timing.gb"));
+}
+
+TEST_F(MooneyeAcceptance, RetTiming)
+{
+    ASSERT_NO_THROW(executeROM("ret_timing.gb"));
+}
+
+TEST_F(MooneyeAcceptance, RetCcTiming)
+{
+    ASSERT_NO_THROW(executeROM("ret_cc_timing.gb"));
 }
 
 TEST_F(MooneyeAcceptance, DivTiming)
@@ -194,6 +221,7 @@ TEST_F(MooneyeAcceptance, HaltIme1Timing)
 
 TEST_F(MooneyeAcceptance, HaltBug)
 {
+    /* Infinite loop. */
     GTEST_SKIP();
     ASSERT_NO_THROW(executeROM("halt_bug.gb"));
 }
