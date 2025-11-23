@@ -15,11 +15,8 @@ void Joypad::write(const uint16_t address, const uint8_t value)
         throw std::logic_error{"Invalid joypad write"};
     }
 
-    [[unlikely]] (void) address;
-
-    /* The lower nibble is read-only. */
-
-    state = value & 0xF0;
+    _selectButtons    = value & 0x20;
+    _selectDirections = value & 0x10;
 }
 
 Addressable::AddressableRange Joypad::getAddressableRange() const noexcept
@@ -29,14 +26,12 @@ Addressable::AddressableRange Joypad::getAddressableRange() const noexcept
 
 void Joypad::press(const Button button)
 {
-    /* Rather unconventionally for the Game Boy, a button being pressed is seen as the corresponding bit being 0, not 1.
-     */
-    state &= ~std::to_underlying(button);
+    _state &= ~(1 << std::to_underlying(button));
 }
 
 void Joypad::release(const Button button)
 {
-    state |= ~std::to_underlying(button);
+    _state |= (1 << std::to_underlying(button));
 }
 
 uint8_t Joypad::read(const uint16_t address) const
@@ -46,13 +41,24 @@ uint8_t Joypad::read(const uint16_t address) const
         throw std::logic_error{"Invalid joypad read"};
     }
 
-    /**
-     * If neither buttons nor d-pad is selected ($30 was written), then the low nibble reads $F (all buttons released).
-     */
-    if ((state & 0x30) == 0x30)
+    uint8_t keyValue{};
+
+    if (_selectButtons && _selectDirections)
     {
-        return state | 0x0F;
+        keyValue = 0xF;
+    }
+    else if (!_selectButtons && !_selectDirections)
+    {
+        keyValue = ((_state & 0xF0) >> 4) & (_state & 0xF);
+    }
+    else if (!_selectButtons && _selectDirections)
+    {
+        keyValue = _state & 0x0F;
+    }
+    else if (_selectButtons && !_selectDirections)
+    {
+        keyValue = ((_state & 0xF0) >> 4);
     }
 
-    return state;
+    return 0xC0 | (_selectButtons | _selectDirections) | keyValue;
 }

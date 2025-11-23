@@ -17,6 +17,18 @@ namespace Interrupts
     static constexpr uint8_t Joypad = 0x10;
 };  // namespace Interrupts
 
+enum class Button : uint8_t
+{
+    A,
+    B,
+    Select,
+    Start,
+    Right,
+    Left,
+    Up,
+    Down
+};
+
 namespace MemoryMap
 {
     using AddressRange = std::pair<uint16_t, uint16_t>;

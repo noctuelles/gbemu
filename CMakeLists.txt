@@ -118,6 +118,7 @@ add_executable(gbemu_test
         srcs/hardware/core/Opcode.cxx
         srcs/hardware/PPU.cxx
         srcs/hardware/Timer.cxx
+        srcs/hardware/Joypad.cxx
         srcs/hardware/WorkRAM.cxx
         srcs/hardware/EchoRAM.cxx
         srcs/hardware/Bus.cxx
@@ -129,6 +130,7 @@ add_executable(gbemu_test
         srcs/tests/hardware/core/MooneyeAcceptance.cxx
         includes/EmulationState.hxx
         includes/hardware/EchoRAM.hxx
+        srcs/tests/hardware/core/Joypad.cxx
 )
 
 target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/roms")
