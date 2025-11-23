@@ -9,4 +9,5 @@ cmake-build-debug
 build
 gbemu
 *.pdf
+*.gb
 ./test*

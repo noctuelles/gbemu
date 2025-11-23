@@ -10,8 +10,7 @@
 #include "graphics/Tile.hxx"
 #include "hardware/core/SM83.hxx"
 
-PPU::PPU(Addressable& bus, Graphics::Framebuffer& framebuffer, OnFramebufferReadyCallback onFramebufferReadyCallback)
-    : _bus(bus), _framebuffer(framebuffer), _onFramebufferReadyCallback{std::move(onFramebufferReadyCallback)}
+PPU::PPU(Addressable& bus) : _bus(bus)
 {
     registers.LCDC = 0x91;
     registers.STAT = 0x85;
@@ -61,7 +60,7 @@ void PPU::PixelFetcher::tick()
                     tileOffset = ((_registers.SCX >> 3) + _x) & 0x1F;
                     tileOffset += 32 * (((_registers.LY + _registers.SCY) & 0xFF) >> 3);
 
-                    _tileMapNbr = _videoRam[bgTileMapAreaOffset +  tileOffset];
+                    _tileMapNbr = _videoRam[bgTileMapAreaOffset + tileOffset];
                 }
 
                 _state = State::GetTileDataLow;
@@ -310,6 +309,17 @@ void PPU::tick()
     _dots += 1;
 }
 
+const Graphics::Framebuffer* PPU::getFramebuffer() noexcept
+{
+    if (_isFrameReady)
+    {
+        _isFrameReady = false;
+        return &_framebuffer;
+    }
+
+    return nullptr;
+}
+
 Addressable::AddressableRange PPU::getAddressableRange() const noexcept
 {
     return {MemoryMap::VIDEO_RAM,        MemoryMap::OAM,
@@ -355,7 +365,7 @@ void PPU::transition(const Mode transitionTo)
     {
         _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | 1 << Interrupts::VBlank);
 
-        _onFramebufferReadyCallback();
+        _isFrameReady = true;
     }
     else if (mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
     {

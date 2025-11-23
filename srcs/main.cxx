@@ -2,16 +2,16 @@
 // Created by plouvel on 12/8/24.
 //
 
+#include <QApplication>
 
-#include "GbEmu.hxx"
+#include "ui/MainWindow.hxx"
 
 int main(int argc, char* args[])
 {
-    (void) argc;
-    (void) args;
-    GbEmu emu{};
+    QApplication app{argc, args};
+    MainWindow window{};
 
-    emu.loop();
+    window.show();
 
-    return 0;
+    return app.exec();
 }
