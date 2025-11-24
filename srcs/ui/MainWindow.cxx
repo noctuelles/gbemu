@@ -22,16 +22,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
     connect(&_emulatorThread, &QThread::finished, emulator, &QObject::deleteLater);
 
     connect(emulator, &Emulator::frameReady, this, &MainWindow::onFrameReady);
-    connect(this, &MainWindow::nextFrame, emulator, &Emulator::runFrame);
+    connect(this, &MainWindow::requestNextFrame, emulator, &Emulator::runFrame);
 
-    connect(this, &MainWindow::loadRomRequested, emulator, &Emulator::loadRom);
+    connect(this, &MainWindow::requestLoadRom, emulator, &Emulator::loadRom);
     connect(_ui->actionLoad_ROM, &QAction::triggered, this,
             [this]
             {
                 if (const auto path = QFileDialog::getOpenFileName(this, tr("Open ROM"), ".", tr("ROM Files (*.gb)"));
                     !path.isEmpty())
                 {
-                    emit loadRomRequested(path);
+                    emit requestLoadRom(path);
                 }
             });
 
@@ -57,7 +57,7 @@ void MainWindow::showEvent(QShowEvent* event)
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
 {
     updateDisplay(framebuffer);
-    emit nextFrame();
+    emit requestNextFrame();
 }
 
 void MainWindow::updateDisplay(const Graphics::Framebuffer& framebuffer) const

@@ -32,8 +32,8 @@ class MainWindow final : public QMainWindow
     void onFrameReady(const Graphics::Framebuffer& framebuffer);
 
   signals:
-    void nextFrame();
-    void loadRomRequested(const QString& path);
+    void requestNextFrame();
+    void requestLoadRom(const QString& path);
 
   private:
     void updateDisplay(const Graphics::Framebuffer& framebuffer) const;
