@@ -36,7 +36,7 @@ class MainWindow final : public QMainWindow
     void requestLoadRom(const QString& path);
 
   private:
-    static constexpr size_t MaxRecentFiles{8};
+    static constexpr qsizetype MaxRecentFiles{8};
 
     void updateDisplay(const Graphics::Framebuffer& framebuffer) const;
 

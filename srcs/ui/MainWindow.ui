@@ -60,7 +60,21 @@
     <addaction name="actionOpen"/>
     <addaction name="menuOpen_Recent"/>
    </widget>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>Window</string>
+    </property>
+    <addaction name="actionDebugger"/>
+   </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="actionPreference"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuSettings"/>
+   <addaction name="menuWindow"/>
   </widget>
   <action name="actionOpen_Recent">
    <property name="text">
@@ -69,10 +83,26 @@
   </action>
   <action name="actionOpen">
    <property name="text">
-    <string>Open</string>
+    <string>Open...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionDebugger">
+   <property name="text">
+    <string>Debugger</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="actionPreference">
+   <property name="text">
+    <string>Preferences...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>

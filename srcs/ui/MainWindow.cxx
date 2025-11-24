@@ -124,10 +124,10 @@ void MainWindow::populateRecentMenu()
                 continue;
             }
 
-            const auto recentROM{new QAction(fi.fileName(), _ui->menuOpen_Recent)};
+            const auto action{new QAction(fi.fileName(), _ui->menuOpen_Recent)};
 
-            recentROM->setData(fi.absoluteFilePath());
-            connect(recentROM, &QAction::triggered, this,
+            action->setData(fi.absoluteFilePath());
+            connect(action, &QAction::triggered, this,
                     [this, path = fi.absoluteFilePath()]
                     {
                         if (!QFileInfo::exists(path))
@@ -138,11 +138,11 @@ void MainWindow::populateRecentMenu()
                             return;
                         }
 
-                        emit requestLoadRom(path);
                         addRecentFile(path);
+                        emit requestLoadRom(path);
                     });
 
-            _ui->menuOpen_Recent->addAction(recentROM);
+            _ui->menuOpen_Recent->addAction(action);
 
             cleanedStoredROM.emplace_back(fi.absoluteFilePath());
         }
