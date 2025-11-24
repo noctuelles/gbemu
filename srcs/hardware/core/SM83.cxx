@@ -13,7 +13,7 @@
 #include <iostream>
 #include <utility>
 
-SM83::SM83(EmulationState& emulationState, IAddressable& bus, Ticking& timer, Ticking& ppu)
+SM83::SM83(EmulationState& emulationState, IAddressable& bus, ITicking& timer, ITicking& ppu)
     : emulationState(emulationState), bus(bus), timer(timer), ppu(ppu)
 {
     A  = 0x01;

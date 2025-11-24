@@ -8,30 +8,32 @@
 #include <QTimer>
 #include <iostream>
 
-Emulator::Emulator(QObject* parent)
-    : QObject(parent),
-      _state(),
-      _bus(_state),
-      _cartridge("../roms/tetris.gb"),
-      _timer(_bus),
-      _ppu(_bus),
-      _cpu(_state, _bus, _timer, _ppu),
-      _echoRam(_workRam)
+Emulator::Emulator(QObject* parent) : QObject(parent), _components(nullptr) {}
+
+void Emulator::loadRom(const QString& path)
 {
-    _bus.attach(_cartridge);
-    _bus.attach(_timer);
-    _bus.attach(_ppu);
-    _bus.attach(_cpu);
-    _bus.attach(_echoRam);
-    _bus.attach(_joypad);
-    _bus.attach(_workRam);
-    _bus.attach(_fakeRam);
+    _components = std::make_unique<Components>();
+    _components->cartridge.load(path.toStdString());
+    runFrame();
 }
 
 void Emulator::runFrame()
 {
     /* Run the emulation for a whole frame. A frame = 70,224 dots = 17,556 machine cycles. */
-    _cpu.tick(17556);
+    _components->cpu.tick(17556);
 
-    emit frameReady(_ppu.getFramebuffer());
+    emit frameReady(_components->ppu.getFramebuffer());
+}
+
+Emulator::Components::Components()
+    : _state(), bus(_state), timer(bus), ppu(bus), cpu(_state, bus, timer, ppu), echoRam(workRam)
+{
+    bus.attach(cartridge);
+    bus.attach(timer);
+    bus.attach(ppu);
+    bus.attach(cpu);
+    bus.attach(echoRam);
+    bus.attach(joypad);
+    bus.attach(workRam);
+    bus.attach(fakeRam);
 }

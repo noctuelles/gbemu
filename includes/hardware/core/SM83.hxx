@@ -18,7 +18,7 @@ namespace Test
     class SM83;
 }
 
-class SM83 final : public Component
+class SM83 final : public IComponent
 {
   public:
     enum class Flags : uint8_t
@@ -120,7 +120,7 @@ class SM83 final : public Component
         } registers;
     };
 
-    SM83(EmulationState& emulationState, IAddressable& bus, Ticking& timer, Ticking& ppu);
+    SM83(EmulationState& emulationState, IAddressable& bus, ITicking& timer, ITicking& ppu);
 
     void                           write(uint16_t address, uint8_t value) override;
     [[nodiscard]] uint8_t          read(uint16_t address) const override;
@@ -332,8 +332,8 @@ class SM83 final : public Component
 
     EmulationState& emulationState;
     IAddressable&    bus;
-    Ticking&        timer;
-    Ticking&        ppu;
+    ITicking&        timer;
+    ITicking&        ppu;
 
     size_t _machineCyclesElapsed{};
 

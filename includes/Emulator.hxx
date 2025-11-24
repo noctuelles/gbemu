@@ -23,21 +23,33 @@ class Emulator final : public QObject
     explicit Emulator(QObject* parent = nullptr);
 
   public slots:
+    void loadRom(const QString& path);
     void runFrame();
 
   signals:
     void frameReady(const Graphics::Framebuffer& framebuffer);
 
   private:
-    EmulationState _state;
-    Bus            _bus;
-    Cartridge      _cartridge;
-    Timer          _timer;
-    PPU            _ppu;
-    SM83           _cpu;
-    WorkRAM        _workRam;
-    EchoRAM        _echoRam;
-    Joypad         _joypad;
+    class Components
+    {
+        EmulationState _state;
+
+      public:
+        Components();
+
+        Bus       bus;
+        Cartridge cartridge;
+        Timer     timer;
+        PPU       ppu;
+        SM83      cpu;
+        WorkRAM   workRam;
+        EchoRAM   echoRam;
+        FakeRAM   fakeRam;
+        Joypad    joypad;
+    };
+
+    std::unique_ptr<Components> _components;
+
     /**
      * @brief Used to fill gaps.
      */

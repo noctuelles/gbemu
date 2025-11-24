@@ -6,7 +6,7 @@
 
 #include "ui/MainWindow.hxx"
 
-#include <iostream>
+#include <QFileDialog>
 
 #include "Emulator.hxx"
 #include "ui_MainWindow.h"
@@ -15,17 +15,27 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
 {
     const auto emulator{new Emulator};
 
+    _ui->setupUi(this);
+
     emulator->moveToThread(&_emulatorThread);
 
-    connect(&_emulatorThread, &QThread::started, emulator, &Emulator::runFrame);
     connect(&_emulatorThread, &QThread::finished, emulator, &QObject::deleteLater);
 
     connect(emulator, &Emulator::frameReady, this, &MainWindow::onFrameReady);
     connect(this, &MainWindow::nextFrame, emulator, &Emulator::runFrame);
 
-    _emulatorThread.start();
+    connect(this, &MainWindow::loadRomRequested, emulator, &Emulator::loadRom);
+    connect(_ui->actionLoad_ROM, &QAction::triggered, this,
+            [this]
+            {
+                if (const auto path = QFileDialog::getOpenFileName(this, tr("Open ROM"), ".", tr("ROM Files (*.gb)"));
+                    !path.isEmpty())
+                {
+                    emit loadRomRequested(path);
+                }
+            });
 
-    _ui->setupUi(this);
+    _emulatorThread.start();
 }
 
 MainWindow::~MainWindow()
@@ -36,7 +46,21 @@ MainWindow::~MainWindow()
     delete _ui;
 }
 
+void MainWindow::showEvent(QShowEvent* event)
+{
+    constexpr Graphics::Framebuffer framebuffer{};
+
+    QMainWindow::showEvent(event);
+    updateDisplay(framebuffer);
+}
+
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
+{
+    updateDisplay(framebuffer);
+    emit nextFrame();
+}
+
+void MainWindow::updateDisplay(const Graphics::Framebuffer& framebuffer) const
 {
     QImage img{std::tuple_size_v<Graphics::Framebuffer::value_type>, std::tuple_size_v<Graphics::Framebuffer>,
                QImage::Format_RGB32};
@@ -71,6 +95,4 @@ void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
 
     _ui->display->setPixmap(
         QPixmap::fromImage(img.scaled(_ui->display->size(), Qt::IgnoreAspectRatio, Qt::FastTransformation)));
-
-    emit nextFrame();
 }

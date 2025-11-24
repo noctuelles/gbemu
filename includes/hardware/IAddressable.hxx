@@ -22,13 +22,13 @@ struct IAddressable
     [[nodiscard]] virtual AddressableRange getAddressableRange() const noexcept = 0;
 };
 
-struct Ticking
+struct ITicking
 {
-    virtual ~Ticking()  = default;
+    virtual ~ITicking()                        = default;
     virtual void tick(size_t machineCycle = 1) = 0;
 };
 
-struct Component : IAddressable, Ticking
+struct IComponent : IAddressable, ITicking
 {
 };
 

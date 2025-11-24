@@ -6,19 +6,80 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>340</width>
-    <height>349</height>
+    <width>391</width>
+    <height>359</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>GbEmu</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_2">
-    <item row="0" column="0">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
      <widget class="QLabel" name="display">
+      <property name="palette">
+       <palette>
+        <active>
+         <colorrole role="Window">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>0</red>
+            <green>0</green>
+            <blue>0</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </active>
+        <inactive>
+         <colorrole role="Window">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>0</red>
+            <green>0</green>
+            <blue>0</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </inactive>
+        <disabled>
+         <colorrole role="Base">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>0</red>
+            <green>0</green>
+            <blue>0</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="Window">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>0</red>
+            <green>0</green>
+            <blue>0</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </disabled>
+       </palette>
+      </property>
       <property name="text">
        <string/>
+      </property>
+      <property name="indent">
+       <number>0</number>
       </property>
      </widget>
     </item>
@@ -29,7 +90,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>340</width>
+     <width>391</width>
      <height>23</height>
     </rect>
    </property>
@@ -37,10 +98,18 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionLoad_ROM"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionLoad_ROM">
+   <property name="text">
+    <string>Load ROM...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

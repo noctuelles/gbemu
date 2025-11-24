@@ -7,7 +7,7 @@
 
 #include "hardware/IAddressable.hxx"
 
-class Timer final : public Component
+class Timer final : public IComponent
 {
   public:
     enum class State

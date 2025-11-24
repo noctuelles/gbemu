@@ -16,7 +16,7 @@
 #include "graphics/Framebuffer.hxx"
 #include "hardware/IAddressable.hxx"
 
-class PPU final : public Component
+class PPU final : public IComponent
 {
   private:
     struct Registers

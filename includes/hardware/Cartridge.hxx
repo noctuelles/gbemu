@@ -46,7 +46,7 @@ class Cartridge final : public IAddressable
         HuC1_RAM_BATTERY               = 0xFF
     };
 
-    explicit Cartridge(const std::filesystem::path& path);
+    void load(const std::filesystem::path& path);
 
     uint8_t                        read(uint16_t address) const override;
     void                           write(uint16_t address, uint8_t value) override;

@@ -26,12 +26,18 @@ class MainWindow final : public QMainWindow
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() override;
 
+    void showEvent(QShowEvent* event) override;
+
   public slots:
     void onFrameReady(const Graphics::Framebuffer& framebuffer);
+
   signals:
     void nextFrame();
+    void loadRomRequested(const QString& path);
 
   private:
+    void updateDisplay(const Graphics::Framebuffer& framebuffer) const;
+
     QThread         _emulatorThread;
     Ui::MainWindow* _ui;
 };

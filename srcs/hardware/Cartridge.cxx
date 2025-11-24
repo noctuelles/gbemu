@@ -3,7 +3,6 @@
 
 #include "../../includes/hardware/Cartridge.hxx"
 
-#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <string_view>
@@ -226,19 +225,26 @@ static const std::unordered_map<std::string_view, std::string_view> new_licensee
     {"DK", "Kodansha"},
 }};
 
-Cartridge::Cartridge(const std::filesystem::path& path)
+void Cartridge::load(const std::filesystem::path& path)
 {
-    const auto    cartridge_size{std::filesystem::file_size(path)};
+    if (!std::filesystem::is_regular_file(path))
+    {
+        throw std::runtime_error(std::format("File {} does not exist or is not a regular file.", path.string()));
+    }
+
+    const auto    cartridgeSize{std::filesystem::file_size(path)};
     std::ifstream input{path, std::ios::binary};
 
-    if (cartridge_size < 2 << 14)
+    input.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+    if (cartridgeSize < 2 << 14)
     {
-        throw std::runtime_error(std::format("Cartridge size ({:#010x}) is too small.", cartridge_size));
+        throw std::runtime_error(std::format("Cartridge size ({:#010x}) is too small.", cartridgeSize));
     }
 
     input.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    content.resize(cartridge_size);
-    input.read(reinterpret_cast<char*>(content.data()), static_cast<std::streamsize>(cartridge_size));
+    content.resize(cartridgeSize);
+    input.read(reinterpret_cast<char*>(content.data()), static_cast<std::streamsize>(cartridgeSize));
 
     const auto title        = reinterpret_cast<const char*>(&content[0x0134]);
     const auto new_licensee = reinterpret_cast<const char*>(&content[0x0144]);
@@ -264,8 +270,7 @@ Cartridge::Cartridge(const std::filesystem::path& path)
             this->type = static_cast<Type>(type);
             break;
         default:
-            throw std::runtime_error(
-                std::format("Cartridge type ({:#04x}) not supported.", type));
+            throw std::runtime_error(std::format("Cartridge type ({:#04x}) not supported.", type));
     }
 }
 
