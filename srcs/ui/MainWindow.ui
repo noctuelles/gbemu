@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>391</width>
-    <height>359</height>
+    <width>433</width>
+    <height>420</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,8 +29,17 @@
     </property>
     <item>
      <widget class="QLabel" name="display">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="text">
        <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
       <property name="indent">
        <number>0</number>
@@ -44,7 +53,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>391</width>
+     <width>433</width>
      <height>23</height>
     </rect>
    </property>

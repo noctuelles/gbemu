@@ -20,6 +20,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
 
     _ui->setupUi(this);
 
+    _ui->display->setMinimumSize(std::tuple_size_v<Graphics::Framebuffer::value_type> * 2,
+                                 std::tuple_size_v<Graphics::Framebuffer> * 2);
+    resize(_ui->display->minimumSize());
+
     populateRecentMenu();
 
     emulator->moveToThread(&_emulatorThread);
