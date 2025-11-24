@@ -36,7 +36,13 @@ class MainWindow final : public QMainWindow
     void requestLoadRom(const QString& path);
 
   private:
+    static constexpr size_t MaxRecentFiles{8};
+
     void updateDisplay(const Graphics::Framebuffer& framebuffer) const;
+
+    void populateRecentMenu();
+    void addRecentFile(const QString& path);
+    void clearRecentFiles();
 
     QThread         _emulatorThread;
     Ui::MainWindow* _ui;

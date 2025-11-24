@@ -29,52 +29,6 @@
     </property>
     <item>
      <widget class="QLabel" name="display">
-      <property name="palette">
-       <palette>
-        <active>
-         <colorrole role="Window">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-        </active>
-        <inactive>
-         <colorrole role="Window">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-        </inactive>
-        <disabled>
-         <colorrole role="Base">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-         <colorrole role="Window">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>0</blue>
-           </color>
-          </brush>
-         </colorrole>
-        </disabled>
-       </palette>
-      </property>
       <property name="text">
        <string/>
       </property>
@@ -98,13 +52,24 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionLoad_ROM"/>
+    <widget class="QMenu" name="menuOpen_Recent">
+     <property name="title">
+      <string>Recent</string>
+     </property>
+    </widget>
+    <addaction name="actionOpen"/>
+    <addaction name="menuOpen_Recent"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
-  <action name="actionLoad_ROM">
+  <action name="actionOpen_Recent">
    <property name="text">
-    <string>Load ROM...</string>
+    <string>Recent</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="text">
+    <string>Open</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
