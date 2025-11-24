@@ -9,12 +9,12 @@
 #include <variant>
 #include <vector>
 
-struct Addressable
+struct IAddressable
 {
     using AddressRange     = std::pair<uint16_t, uint16_t>;
     using AddressableRange = std::vector<std::variant<uint16_t, AddressRange>>;
 
-    virtual ~Addressable() = default;
+    virtual ~IAddressable() = default;
 
     [[nodiscard]] virtual uint8_t read(uint16_t address) const           = 0;
     virtual void                  write(uint16_t address, uint8_t value) = 0;
@@ -28,7 +28,7 @@ struct Ticking
     virtual void tick() = 0;
 };
 
-struct Component : Addressable, Ticking
+struct Component : IAddressable, Ticking
 {
 };
 

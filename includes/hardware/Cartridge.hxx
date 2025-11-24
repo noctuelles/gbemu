@@ -9,9 +9,9 @@
 #include <string_view>
 #include <vector>
 
-#include "Addressable.hxx"
+#include "IAddressable.hxx"
 
-class Cartridge final : public Addressable
+class Cartridge final : public IAddressable
 {
   public:
     enum class Type : std::uint8_t

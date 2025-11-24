@@ -7,11 +7,11 @@
 
 #include <array>
 
-#include "Addressable.hxx"
 #include "Common.hxx"
+#include "IAddressable.hxx"
 
 template <std::size_t N, uint16_t O = 0>
-class FixedSizeRAM : public Addressable
+class FixedSizeRAM : public IAddressable
 {
   public:
     static constexpr uint16_t OFFSET = O;

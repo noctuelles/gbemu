@@ -6,14 +6,15 @@
 
 #include <QThread>
 #include <QTimer>
+#include <iostream>
 
-Emulator::Emulator(QObject* parent)
-    : QObject(parent),
+Emulator::Emulator(IRenderer* renderer, QObject* parent)
+    : QThread(parent),
       _state(),
       _bus(_state),
       _cartridge("../roms/tetris.gb"),
       _timer(_bus),
-      _ppu(_bus),
+      _ppu(_bus, *renderer),
       _cpu(_state, _bus, _timer, _ppu),
       _echoRam(_workRam)
 {
@@ -29,22 +30,8 @@ Emulator::Emulator(QObject* parent)
 
 void Emulator::run()
 {
-    if (!_running)
+    while (_running)
     {
-        return;
+        _cpu.tick();
     }
-
-    _cpu.tick();
-
-    if (_ppu.getFramebuffer() != nullptr)
-    {
-        emit frameReady();
-    }
-
-    QTimer::singleShot(0, this, &Emulator::run);
-}
-
-void Emulator::end()
-{
-    _running = false;
 }

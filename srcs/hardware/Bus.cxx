@@ -11,7 +11,7 @@
 
 Bus::Bus(const EmulationState& emulationState) : emulationState(emulationState) {}
 
-Addressable::AddressableRange Bus::getAddressableRange() const noexcept
+IAddressable::AddressableRange Bus::getAddressableRange() const noexcept
 {
     return {std::make_pair(0x0000, 0xFFFF)};
 }
@@ -38,7 +38,7 @@ std::array<uint8_t, 0x10000> Bus::getAddressSpace() const noexcept
  * @param addressable A reference to an Addressable object, which contains
  *        addressable ranges that need to be mapped to the bus.
  */
-void Bus::attach(Addressable& addressable)
+void Bus::attach(IAddressable& addressable)
 {
     for (const auto& range : addressable.getAddressableRange())
     {

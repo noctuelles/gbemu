@@ -11,29 +11,23 @@
 #include "Emulator.hxx"
 #include "ui_MainWindow.h"
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _emulator(new Emulator), _ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget* parent)
+    : QMainWindow(parent), _renderer(new QtRenderer), _emulator(_renderer, this), _ui(new Ui::MainWindow)
 {
-    _emulator->moveToThread(&_emulatorThread);
+    connect(_renderer, &QtRenderer::frameReady, this, &MainWindow::onFrameReady);
 
-    connect(&_emulatorThread, &QThread::started, _emulator, &Emulator::run);
-    connect(&_emulatorThread, &QThread::finished, _emulator, &QObject::deleteLater);
-    connect(this, &MainWindow::closeEvent, _emulator, &Emulator::end);
-    connect(_emulator, &Emulator::frameReady, this, &MainWindow::onFrameReady);
-
-    _emulatorThread.start();
+    _emulator.start();
 
     _ui->setupUi(this);
 }
 
 MainWindow::~MainWindow()
 {
-    _emulatorThread.quit();
-    _emulatorThread.wait();
-
     delete _ui;
 }
 
 void MainWindow::onFrameReady()
 {
-    std::cout << "Frame ready!" << std::endl;
+    _ui->display->setPixmap(QPixmap::fromImage(
+        _renderer->render().scaled(_ui->display->size(), Qt::IgnoreAspectRatio, Qt::FastTransformation)));
 }

@@ -13,7 +13,7 @@
 #include <iostream>
 #include <utility>
 
-SM83::SM83(EmulationState& emulationState, Addressable& bus, Ticking& timer, Ticking& ppu)
+SM83::SM83(EmulationState& emulationState, IAddressable& bus, Ticking& timer, Ticking& ppu)
     : emulationState(emulationState), bus(bus), timer(timer), ppu(ppu)
 {
     A  = 0x01;
@@ -62,7 +62,7 @@ uint8_t SM83::read(const uint16_t address) const
     }
 }
 
-Addressable::AddressableRange SM83::getAddressableRange() const noexcept
+IAddressable::AddressableRange SM83::getAddressableRange() const noexcept
 {
     return {MemoryMap::IE, MemoryMap::IORegisters::IF, MemoryMap::IORegisters::DMA};
 }

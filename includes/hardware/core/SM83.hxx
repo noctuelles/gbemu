@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "EmulationState.hxx"
-#include "hardware/Addressable.hxx"
+#include "hardware/IAddressable.hxx"
 #include "hardware/PPU.hxx"
 
 namespace Test
@@ -120,7 +120,7 @@ class SM83 final : public Component
         } registers;
     };
 
-    SM83(EmulationState& emulationState, Addressable& bus, Ticking& timer, Ticking& ppu);
+    SM83(EmulationState& emulationState, IAddressable& bus, Ticking& timer, Ticking& ppu);
 
     void                           write(uint16_t address, uint8_t value) override;
     [[nodiscard]] uint8_t          read(uint16_t address) const override;
@@ -333,7 +333,7 @@ class SM83 final : public Component
     uint8_t  oamDmaElapsedMachineCycles{};
 
     EmulationState& emulationState;
-    Addressable&    bus;
+    IAddressable&    bus;
     Ticking&        timer;
     Ticking&        ppu;
 

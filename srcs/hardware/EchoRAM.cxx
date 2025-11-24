@@ -3,7 +3,7 @@
 #include "Common.hxx"
 #include "hardware/WorkRAM.hxx"
 
-EchoRAM::EchoRAM(Addressable& workRam) : _workRam(workRam) {}
+EchoRAM::EchoRAM(IAddressable& workRam) : _workRam(workRam) {}
 
 uint8_t EchoRAM::read(const uint16_t address) const
 {
@@ -15,7 +15,7 @@ void EchoRAM::write(const uint16_t address, const uint8_t value)
     _workRam.write(getRealAddress(address), value);
 }
 
-Addressable::AddressableRange EchoRAM::getAddressableRange() const noexcept
+IAddressable::AddressableRange EchoRAM::getAddressableRange() const noexcept
 {
     return {MemoryMap::ECHO_RAM};
 }

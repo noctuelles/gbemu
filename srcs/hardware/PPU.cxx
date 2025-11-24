@@ -10,7 +10,7 @@
 #include "graphics/Tile.hxx"
 #include "hardware/core/SM83.hxx"
 
-PPU::PPU(Addressable& bus) : _bus(bus)
+PPU::PPU(IAddressable& bus, IRenderer& renderer) : _bus(bus), _renderer(renderer)
 {
     registers.LCDC = 0x91;
     registers.STAT = 0x85;
@@ -118,6 +118,8 @@ void PPU::PixelFetcher::tick()
 void PPU::PixelFetcher::start()
 {
     _x = 0;
+    _dots = 0;
+    _state = State::GetTile;
 }
 
 uint8_t PPU::read(const uint16_t address) const
@@ -257,8 +259,10 @@ void PPU::tick()
                 {
                     const auto& backgroundPixel{_backgroundFIFO.front()};
 
-                    _framebuffer[registers.LY][_x] =
-                        Graphics::getRealColorIndexFromPaletteRegister(backgroundPixel.colorIndex, registers.BGP);
+                    _renderer.setPixel(Graphics::getRealColorIndexFromPaletteRegister(backgroundPixel.colorIndex,
+                                                                                      registers.BGP),
+                                       _x, registers.LY);
+                    ;
                     _x += 1;
                 }
 
@@ -309,18 +313,7 @@ void PPU::tick()
     _dots += 1;
 }
 
-const Graphics::Framebuffer* PPU::getFramebuffer() noexcept
-{
-    if (_isFrameReady)
-    {
-        _isFrameReady = false;
-        return &_framebuffer;
-    }
-
-    return nullptr;
-}
-
-Addressable::AddressableRange PPU::getAddressableRange() const noexcept
+IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
 {
     return {MemoryMap::VIDEO_RAM,        MemoryMap::OAM,
             MemoryMap::IORegisters::SCX, MemoryMap::IORegisters::SCY,
@@ -365,7 +358,7 @@ void PPU::transition(const Mode transitionTo)
     {
         _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | 1 << Interrupts::VBlank);
 
-        _isFrameReady = true;
+        _renderer.frameReady();
     }
     else if (mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
     {

@@ -9,6 +9,7 @@
 #include <QThread>
 
 #include "Emulator.hxx"
+#include "QtRenderer.hxx"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -30,8 +31,8 @@ class MainWindow final : public QMainWindow
     void onFrameReady();
 
   private:
-    Emulator*       _emulator;
-    QThread         _emulatorThread;
+    QtRenderer*     _renderer;
+    Emulator        _emulator;
     Ui::MainWindow* _ui;
 };
 

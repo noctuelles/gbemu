@@ -5,10 +5,10 @@
 #include <memory>
 #include <vector>
 
-#include "Addressable.hxx"
 #include "EmulationState.hxx"
+#include "IAddressable.hxx"
 
-class Bus final : public Addressable
+class Bus final : public IAddressable
 {
   public:
     explicit Bus(const EmulationState& emulationState);
@@ -19,11 +19,11 @@ class Bus final : public Addressable
 
     [[nodiscard]] std::array<uint8_t, 0x10000> getAddressSpace() const noexcept;
 
-    void attach(Addressable& addressable);
+    void attach(IAddressable& addressable);
 
   private:
     const EmulationState&             emulationState;
-    std::array<Addressable*, 0x10000> memoryMap{};
+    std::array<IAddressable*, 0x10000> memoryMap{};
 };
 
 #endif  // BUS_HXX

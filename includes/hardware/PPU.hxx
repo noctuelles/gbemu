@@ -12,8 +12,9 @@
 #include <queue>
 #include <unordered_map>
 
+#include "IRenderer.hxx"
 #include "graphics/Framebuffer.hxx"
-#include "hardware/Addressable.hxx"
+#include "hardware/IAddressable.hxx"
 
 class PPU final : public Component
 {
@@ -70,7 +71,7 @@ class PPU final : public Component
     static constexpr std::size_t LCD_WIDTH{144};
     static constexpr std::size_t VERTICAL_BLANK_SCANLINE{10};
 
-    explicit PPU(Addressable& bus);
+    explicit PPU(IAddressable& bus, IRenderer& renderer);
 
     struct Status
     {
@@ -234,8 +235,6 @@ class PPU final : public Component
     void                  write(uint16_t address, uint8_t value) override;
     void                  tick() override;
 
-    [[nodiscard]] const Graphics::Framebuffer* getFramebuffer() noexcept;
-
     AddressableRange getAddressableRange() const noexcept override;
 
   private:
@@ -243,9 +242,8 @@ class PPU final : public Component
     void triggerStatInterrupt(bool value);
     void off();
 
-    Graphics::Framebuffer _framebuffer;
-
-    Addressable& _bus;
+    IAddressable& _bus;
+    IRenderer&   _renderer;
 
     std::queue<FIFOEntry> _backgroundFIFO{};
     std::queue<FIFOEntry> _spriteFIFO{};
@@ -267,8 +265,6 @@ class PPU final : public Component
     uint8_t  _x{};
 
     Mode mode{};
-
-    bool _isFrameReady{};
 
     friend class MooneyeAcceptance;
 };

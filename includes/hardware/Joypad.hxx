@@ -5,10 +5,10 @@
 #ifndef JOYPAD_HXX
 #define JOYPAD_HXX
 
-#include "Addressable.hxx"
 #include "Common.hxx"
+#include "IAddressable.hxx"
 
-class Joypad final : public Addressable
+class Joypad final : public IAddressable
 {
   public:
     Joypad() = default;

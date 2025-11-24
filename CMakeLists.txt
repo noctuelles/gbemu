@@ -41,6 +41,9 @@ qt_add_executable(gbemu
         srcs/Emulator.cxx
         includes/Emulator.hxx
         srcs/main.cxx
+        includes/IRenderer.hxx
+        includes/QtRenderer.hxx
+        srcs/QtRenderer.cxx
 )
 
 target_link_libraries(gbemu PRIVATE

@@ -19,7 +19,7 @@ void Joypad::write(const uint16_t address, const uint8_t value)
     _selectDirections = value & 0x10;
 }
 
-Addressable::AddressableRange Joypad::getAddressableRange() const noexcept
+IAddressable::AddressableRange Joypad::getAddressableRange() const noexcept
 {
     return {MemoryMap::IORegisters::JOYPAD};
 }
