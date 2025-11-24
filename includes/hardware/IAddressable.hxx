@@ -25,7 +25,7 @@ struct IAddressable
 struct Ticking
 {
     virtual ~Ticking()  = default;
-    virtual void tick() = 0;
+    virtual void tick(size_t machineCycle = 1) = 0;
 };
 
 struct Component : IAddressable, Ticking

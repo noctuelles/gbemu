@@ -8,13 +8,13 @@
 #include <QTimer>
 #include <iostream>
 
-Emulator::Emulator(IRenderer* renderer, QObject* parent)
-    : QThread(parent),
+Emulator::Emulator(QObject* parent)
+    : QObject(parent),
       _state(),
       _bus(_state),
       _cartridge("../roms/tetris.gb"),
       _timer(_bus),
-      _ppu(_bus, *renderer),
+      _ppu(_bus),
       _cpu(_state, _bus, _timer, _ppu),
       _echoRam(_workRam)
 {
@@ -28,10 +28,10 @@ Emulator::Emulator(IRenderer* renderer, QObject* parent)
     _bus.attach(_fakeRam);
 }
 
-void Emulator::run()
+void Emulator::runFrame()
 {
-    while (_running)
-    {
-        _cpu.tick();
-    }
+    /* Run the emulation for a whole frame. A frame = 70,224 dots = 17,556 machine cycles. */
+    _cpu.tick(17556);
+
+    emit frameReady(_ppu.getFramebuffer());
 }

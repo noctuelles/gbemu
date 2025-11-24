@@ -67,7 +67,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 A = fetchMemory(BC());
                 break;
             case 0x0B:
-                onMachineCycleCb();
+                onMachineCycle();
                 BC(BC() - 1);
                 break;
             case 0x0C:
@@ -119,7 +119,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 A = fetchMemory(DE());
                 break;
             case 0x1B:
-                onMachineCycleCb();
+                onMachineCycle();
                 DE(DE() - 1);
                 break;
             case 0x1C:
@@ -172,7 +172,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 HL(HL() + 1);
                 break;
             case 0x2B:
-                onMachineCycleCb();
+                onMachineCycle();
                 HL(HL() - 1);
                 break;
             case 0x2C:
@@ -228,7 +228,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 HL(HL() - 1);
                 break;
             case 0x3B:
-                onMachineCycleCb();
+                onMachineCycle();
                 SP -= 1;
                 break;
             case 0x3C:
@@ -789,7 +789,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 break;
             case 0xF9:
                 SP = HL();
-                onMachineCycleCb();
+                onMachineCycle();
                 break;
             case 0xFA:
             {

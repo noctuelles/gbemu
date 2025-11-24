@@ -1,7 +1,7 @@
 //
 // Created by plouvel on 1/10/25.
 //
-#include "../../includes/hardware/PPU.hxx"
+#include "hardware/PPU.hxx"
 
 #include <Utils.hxx>
 #include <iostream>
@@ -10,7 +10,7 @@
 #include "graphics/Tile.hxx"
 #include "hardware/core/SM83.hxx"
 
-PPU::PPU(IAddressable& bus, IRenderer& renderer) : _bus(bus), _renderer(renderer)
+PPU::PPU(IAddressable& bus) : _bus(bus)
 {
     registers.LCDC = 0x91;
     registers.STAT = 0x85;
@@ -117,8 +117,8 @@ void PPU::PixelFetcher::tick()
 
 void PPU::PixelFetcher::start()
 {
-    _x = 0;
-    _dots = 0;
+    _x     = 0;
+    _dots  = 0;
     _state = State::GetTile;
 }
 
@@ -186,131 +186,138 @@ void PPU::write(const uint16_t address, const uint8_t value)
     }
 }
 
-void PPU::tick()
+void PPU::tick(const size_t machineCycle)
 {
     using namespace Utils;
 
-    if ((registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 0)
+    for (size_t i{0}; i < machineCycle * 4; ++i)
     {
-        registers.STAT &= 0xFC;
-        return;
-    }
+        if ((registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 0)
+        {
+            registers.STAT &= 0xFC;
+            return;
+        }
 
-    if (registers.LY == registers.LYC)
-    {
-        registers.STAT |= Status::LYCCompare;
+        if (registers.LY == registers.LYC)
+        {
+            registers.STAT |= Status::LYCCompare;
 
-        triggerStatInterrupt((registers.STAT & Status::LYC) != 0);
-    }
-    else
-    {
-        registers.STAT &= ~Status::LYCCompare;
-    }
+            triggerStatInterrupt((registers.STAT & Status::LYC) != 0);
+        }
+        else
+        {
+            registers.STAT &= ~Status::LYCCompare;
+        }
 
-    switch (mode)
-    {
-        case Mode::OAMScan:
-            _videoRamAccessible = true;
-            _oamAccessible      = false;
+        switch (mode)
+        {
+            case Mode::OAMScan:
+                _videoRamAccessible = true;
+                _oamAccessible      = false;
 
-            if (_dots % 2 == 0 && _dots != 0)
-            {
-                /**
-                 * During each scanline’s OAM scan, the PPU compares LY (using LCDC bit 2 to determine their size) to
-                 * each object’s Y position to select up to 10 objects to be drawn on that line. The PPU scans OAM
-                 * sequentially (from $FE00 to $FE9F), selecting the first (up to) 10 suitably-positioned objects. Since
-                 * the PPU only checks the Y coordinate to select objects, even off-screen objects count towards the
-                 * 10-objects-per-scanline limit. Merely setting an object’s X coordinate to X = 0 or X ≥ 168 (160 + 8)
-                 * will hide it, but it will still count towards the limit, possibly causing another object later in OAM
-                 * not to be drawn.
-                 */
-                if (const uint8_t objHeight = (registers.LCDC & LCDControlFlags::ObjSize) != 0 ? 16 : 8;
-                    registers.LY >= _currentOamEntry->y && registers.LY < _currentOamEntry->y + objHeight)
+                if (_dots % 2 == 0 && _dots != 0)
                 {
-                    if (objsToDraw.size() < 10)
+                    /**
+                     * During each scanline’s OAM scan, the PPU compares LY (using LCDC bit 2 to determine their size)
+                     * to each object’s Y position to select up to 10 objects to be drawn on that line. The PPU scans
+                     * OAM sequentially (from $FE00 to $FE9F), selecting the first (up to) 10 suitably-positioned
+                     * objects. Since the PPU only checks the Y coordinate to select objects, even off-screen objects
+                     * count towards the 10-objects-per-scanline limit. Merely setting an object’s X coordinate to X = 0
+                     * or X ≥ 168 (160 + 8) will hide it, but it will still count towards the limit, possibly causing
+                     * another object later in OAM not to be drawn.
+                     */
+                    if (const uint8_t objHeight = (registers.LCDC & LCDControlFlags::ObjSize) != 0 ? 16 : 8;
+                        registers.LY >= _currentOamEntry->y && registers.LY < _currentOamEntry->y + objHeight)
                     {
-                        objsToDraw.push_back(_currentOamEntry);
+                        if (objsToDraw.size() < 10)
+                        {
+                            objsToDraw.push_back(_currentOamEntry);
+                        }
+                    }
+                    _currentOamEntry += 1;
+                }
+
+                if (_dots == 80)
+                {
+                    transition(Mode::Drawing);
+                }
+
+                break;
+            case Mode::Drawing:
+                /* Minimum length : 172 dots. */
+
+                _videoRamAccessible = false;
+                _oamAccessible      = false;
+
+                pixelFetcher.tick();
+
+                if (!_backgroundFIFO.empty())
+                {
+                    if (_pixelsToDiscard != 0)
+                    {
+                        _pixelsToDiscard -= 1;
+                    }
+                    else
+                    {
+                        const auto& backgroundPixel{_backgroundFIFO.front()};
+
+                        _framebuffer[registers.LY][_x] =
+                            Graphics::getRealColorIndexFromPaletteRegister(backgroundPixel.colorIndex, registers.BGP);
+                        ;
+                        _x += 1;
+                    }
+
+                    _backgroundFIFO.pop();
+                }
+
+                if (_x == 160)
+                {
+                    transition(Mode::HorizontalBlank);
+                }
+                break;
+            case Mode::HorizontalBlank:
+                _videoRamAccessible = true;
+                _oamAccessible      = true;
+
+                if (_dots == 456)
+                {
+                    _dots = 0;
+                    registers.LY += 1;
+
+                    if (registers.LY == 144)
+                    {
+                        transition(Mode::VerticalBlank);
+                    }
+                    else
+                    {
+                        transition(Mode::OAMScan);
                     }
                 }
-                _currentOamEntry += 1;
-            }
+                break;
+            case Mode::VerticalBlank:
+                _videoRamAccessible = true;
+                _oamAccessible      = true;
 
-            if (_dots == 80)
-            {
-                transition(Mode::Drawing);
-            }
-
-            break;
-        case Mode::Drawing:
-            /* Minimum length : 172 dots. */
-
-            _videoRamAccessible = false;
-            _oamAccessible      = false;
-
-            pixelFetcher.tick();
-
-            if (!_backgroundFIFO.empty())
-            {
-                if (_pixelsToDiscard != 0)
+                if (_dots == 456)
                 {
-                    _pixelsToDiscard -= 1;
+                    _dots = 0;
+                    registers.LY += 1;
+
+                    if (registers.LY == 154)
+                    {
+                        transition(Mode::OAMScan);
+                    }
                 }
-                else
-                {
-                    const auto& backgroundPixel{_backgroundFIFO.front()};
+                break;
+        }
 
-                    _renderer.setPixel(Graphics::getRealColorIndexFromPaletteRegister(backgroundPixel.colorIndex,
-                                                                                      registers.BGP),
-                                       _x, registers.LY);
-                    ;
-                    _x += 1;
-                }
-
-                _backgroundFIFO.pop();
-            }
-
-            if (_x == 160)
-            {
-                transition(Mode::HorizontalBlank);
-            }
-            break;
-        case Mode::HorizontalBlank:
-            _videoRamAccessible = true;
-            _oamAccessible      = true;
-
-            if (_dots == 456)
-            {
-                _dots = 0;
-                registers.LY += 1;
-
-                if (registers.LY == 144)
-                {
-                    transition(Mode::VerticalBlank);
-                }
-                else
-                {
-                    transition(Mode::OAMScan);
-                }
-            }
-            break;
-        case Mode::VerticalBlank:
-            _videoRamAccessible = true;
-            _oamAccessible      = true;
-
-            if (_dots == 456)
-            {
-                _dots = 0;
-                registers.LY += 1;
-
-                if (registers.LY == 154)
-                {
-                    transition(Mode::OAMScan);
-                }
-            }
-            break;
+        _dots += 1;
     }
+}
 
-    _dots += 1;
+const Graphics::Framebuffer& PPU::getFramebuffer() const noexcept
+{
+    return _framebuffer;
 }
 
 IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
@@ -357,8 +364,6 @@ void PPU::transition(const Mode transitionTo)
     else if (mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
     {
         _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | 1 << Interrupts::VBlank);
-
-        _renderer.frameReady();
     }
     else if (mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
     {

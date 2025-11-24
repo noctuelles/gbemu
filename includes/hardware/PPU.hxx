@@ -71,7 +71,7 @@ class PPU final : public Component
     static constexpr std::size_t LCD_WIDTH{144};
     static constexpr std::size_t VERTICAL_BLANK_SCANLINE{10};
 
-    explicit PPU(IAddressable& bus, IRenderer& renderer);
+    explicit PPU(IAddressable& bus);
 
     struct Status
     {
@@ -233,7 +233,9 @@ class PPU final : public Component
 
     [[nodiscard]] uint8_t read(uint16_t address) const override;
     void                  write(uint16_t address, uint8_t value) override;
-    void                  tick() override;
+    void                  tick(size_t machineCycle = 1) override;
+
+    const Graphics::Framebuffer& getFramebuffer() const noexcept;
 
     AddressableRange getAddressableRange() const noexcept override;
 
@@ -242,8 +244,8 @@ class PPU final : public Component
     void triggerStatInterrupt(bool value);
     void off();
 
-    IAddressable& _bus;
-    IRenderer&   _renderer;
+    IAddressable&         _bus;
+    Graphics::Framebuffer _framebuffer;
 
     std::queue<FIFOEntry> _backgroundFIFO{};
     std::queue<FIFOEntry> _spriteFIFO{};

@@ -27,12 +27,12 @@ class MainWindow final : public QMainWindow
     ~MainWindow() override;
 
   public slots:
-
-    void onFrameReady();
+    void onFrameReady(const Graphics::Framebuffer& framebuffer);
+  signals:
+    void nextFrame();
 
   private:
-    QtRenderer*     _renderer;
-    Emulator        _emulator;
+    QThread         _emulatorThread;
     Ui::MainWindow* _ui;
 };
 

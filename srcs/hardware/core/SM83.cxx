@@ -23,8 +23,6 @@ SM83::SM83(EmulationState& emulationState, IAddressable& bus, Ticking& timer, Ti
     L  = 0x4D;
     PC = 0x100;
     SP = 0xFFFE;
-
-    instructionBuffer.reserve(16);
 }
 
 void SM83::write(const uint16_t address, const uint8_t value)
@@ -67,55 +65,49 @@ IAddressable::AddressableRange SM83::getAddressableRange() const noexcept
     return {MemoryMap::IE, MemoryMap::IORegisters::IF, MemoryMap::IORegisters::DMA};
 }
 
-void SM83::tick()
+void SM83::tick(const size_t machineCycle)
 {
-    switch (state)
+    _machineCyclesElapsed = 0;
+
+    while (_machineCyclesElapsed < machineCycle)
     {
-        case State::NORMAL:
+        switch (state)
         {
-            if (requestIme != 0)
+            case State::NORMAL:
             {
-                requestIme -= 1;
-                if (requestIme == 0)
+                if (requestIme != 0)
                 {
-                    IME = true;
+                    requestIme -= 1;
+                    if (requestIme == 0)
+                    {
+                        IME = true;
+                    }
                 }
+
+                fetchInstruction();
+                decodeExecuteInstruction();
+
+                break;
             }
-
-            fetchInstruction();
-            decodeExecuteInstruction();
-
-            // Disassembler disassembler{instructionBuffer};
-            // const auto inst{disassembler.disassemble(0, 1)};
-
-            // for (const auto& line : inst)
-            // {
-            //     for (const auto byte: line.first.second)
-            //     {
-            //         std::cout << std::format("{:02X} ", byte);
-            //     }
-            //     std::cout << ": " << line.second << std::endl;
-            // }
-
-            instructionBuffer.clear();
-            break;
+            case State::STOPPED:
+            case State::HALTED:
+                onMachineCycle();
+                if ((IE & IF) != 0)
+                {
+                    state = State::NORMAL;
+                }
+                break;
+            case State::HALTED_BUG:
+                fetchInstruction();
+                PC--;
+                decodeExecuteInstruction();
+                break;
         }
-        case State::STOPPED:
-        case State::HALTED:
-            onMachineCycleCb();
-            if ((IE & IF) != 0)
-            {
-                state = State::NORMAL;
-            }
-            break;
-        case State::HALTED_BUG:
-            fetchInstruction();
-            PC--;
-            decodeExecuteInstruction();
-            break;
+
+        interrupts();
     }
 
-    interrupts();
+
 }
 
 void SM83::applyView(const View& view)
@@ -162,15 +154,17 @@ SM83::View SM83::getView() const
     return view;
 }
 
-void SM83::onMachineCycleCb()
+void SM83::onMachineCycle()
 {
+    _machineCyclesElapsed += 1;
+
     if (requestOamDma > 0)
     {
         requestOamDma -= 1;
         if (requestOamDma == 0)
         {
-            emulationState.isInOamDma = true;
-            oamDmaElapsedMachineCycles       = 0;
+            emulationState.isInOamDma  = true;
+            oamDmaElapsedMachineCycles = 0;
         }
     }
 
@@ -189,22 +183,17 @@ void SM83::onMachineCycleCb()
     }
 
     timer.tick();
-
-    ppu.tick();
-    ppu.tick();
-    ppu.tick();
     ppu.tick();
 }
 
 void SM83::fetchInstruction()
 {
     IR = fetchMemory(PC++);
-    instructionBuffer.push_back(IR);
 }
 
 uint8_t SM83::fetchMemory(const uint16_t address)
 {
-    onMachineCycleCb();
+    onMachineCycle();
 
     /* Let the CPU read the DMA source address even if it is in OAM DMA. */
     if (emulationState.isInOamDma && address == MemoryMap::IORegisters::DMA)
@@ -218,13 +207,12 @@ uint8_t SM83::fetchMemory(const uint16_t address)
 uint8_t SM83::fetchOperand()
 {
     const auto byte{fetchMemory(PC++)};
-    instructionBuffer.push_back(byte);
     return byte;
 }
 
 void SM83::writeMemory(const uint16_t address, const uint8_t value)
 {
-    onMachineCycleCb();
+    onMachineCycle();
 
     if (emulationState.isInOamDma && address == MemoryMap::IORegisters::DMA)
     {
@@ -311,7 +299,7 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 
     lhs_lsb = add(lhs_lsb, rhs);
 
-    onMachineCycleCb();
+    onMachineCycle();
 
     if (getFlag(Flags::Carry) && !sign)
     {
@@ -324,7 +312,7 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 
     set_flag(Flags::Zero, false);
 
-    onMachineCycleCb();
+    onMachineCycle();
 
     return Utils::to_word(lhs_msb, lhs_lsb);
 }
@@ -533,7 +521,7 @@ void SM83::jr()
     const auto e8{static_cast<int8_t>(fetchOperand())};
 
     PC += e8;
-    onMachineCycleCb();
+    onMachineCycle();
 }
 
 void SM83::jp()
@@ -542,7 +530,7 @@ void SM83::jp()
     const auto msb{fetchOperand()};
 
     PC = Utils::to_word(msb, lsb);
-    onMachineCycleCb();
+    onMachineCycle();
 }
 
 void SM83::call()
@@ -573,12 +561,12 @@ void SM83::ret()
     const auto msb{fetchMemory(SP++)};
 
     PC = Utils::to_word(msb, lsb);
-    onMachineCycleCb();
+    onMachineCycle();
 }
 
 void SM83::ret_cc(const Conditionals conditional)
 {
-    onMachineCycleCb();
+    onMachineCycle();
     if (isConditionMet(conditional))
     {
         ret();
@@ -618,7 +606,7 @@ void SM83::rst(const ResetVector rst_vector)
 
 void SM83::push(const uint8_t msb, const uint8_t lsb)
 {
-    onMachineCycleCb();
+    onMachineCycle();
     writeMemory(--SP, msb);
     writeMemory(--SP, lsb);
 }
@@ -696,11 +684,11 @@ void SM83::interrupts()
     interruptVector = 0x40 + bitZeroCount * 8;
     IF &= ~(1 << bitZeroCount);
 
-    onMachineCycleCb();
-    onMachineCycleCb();
+    onMachineCycle();
+    onMachineCycle();
     writeMemory(--SP, Utils::wordMsb(PC));
     writeMemory(--SP, Utils::wordLsb(PC));
-    onMachineCycleCb();
+    onMachineCycle();
 
     PC = interruptVector;
 }

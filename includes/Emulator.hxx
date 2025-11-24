@@ -5,6 +5,7 @@
 #ifndef GBEMU_EMULATOR_HXX
 #define GBEMU_EMULATOR_HXX
 
+#include <QObject>
 
 #include "hardware/Bus.hxx"
 #include "hardware/Cartridge.hxx"
@@ -14,17 +15,18 @@
 #include "hardware/WorkRAM.hxx"
 #include "hardware/core/SM83.hxx"
 
-#include <QThread>
-
-class Emulator final : public QThread
+class Emulator final : public QObject
 {
     Q_OBJECT
 
   public:
-    explicit Emulator(IRenderer* renderer, QObject* parent = nullptr);
+    explicit Emulator(QObject* parent = nullptr);
 
-  protected:
-    void run() override;
+  public slots:
+    void runFrame();
+
+  signals:
+    void frameReady(const Graphics::Framebuffer& framebuffer);
 
   private:
     EmulationState _state;

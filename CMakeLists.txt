@@ -4,13 +4,11 @@ project(gbemu VERSION 1.0)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets OpenGLWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 include_directories(includes)
 
 qt_standard_project_setup()
-
-add_compile_options(-Wall -Werror -Wextra -Wpedantic -g)
 
 qt_add_executable(gbemu
         srcs/graphics/Tile.cxx
@@ -48,8 +46,9 @@ qt_add_executable(gbemu
 
 target_link_libraries(gbemu PRIVATE
         Qt6::Widgets
-        Qt6::OpenGLWidgets
 )
+
+target_compile_options(gbemu PRIVATE -Wall -Wextra -Wpedantic -g)
 
 #target_link_libraries(
 #        gbemu_test

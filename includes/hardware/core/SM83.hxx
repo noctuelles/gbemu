@@ -126,13 +126,13 @@ class SM83 final : public Component
     [[nodiscard]] uint8_t          read(uint16_t address) const override;
     [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 
-    void tick() override;
+    void tick(size_t machineCycle) override;
 
     void               applyView(const View& view);
     [[nodiscard]] View getView() const;
 
   private:
-    void onMachineCycleCb();
+    void onMachineCycle();
 
     /**
      * @brief Load an instruction into the IR register.
@@ -303,8 +303,6 @@ class SM83 final : public Component
      */
     uint8_t IR{};
 
-    std::vector<uint8_t> instructionBuffer{};
-
     /**
      * @brief State of the CPU.
      */
@@ -336,6 +334,8 @@ class SM83 final : public Component
     IAddressable&    bus;
     Ticking&        timer;
     Ticking&        ppu;
+
+    size_t _machineCyclesElapsed{};
 
     friend class MooneyeAcceptance;
     friend class Test::SM83;

@@ -127,22 +127,25 @@ IAddressable::AddressableRange Timer::getAddressableRange() const noexcept
             MemoryMap::IORegisters::TAC};
 }
 
-void Timer::tick()
+void Timer::tick(const size_t machineCycle)
 {
-    switch (state)
+    for (size_t i{0}; i < machineCycle; ++i)
     {
-        case State::NORMAL:
-            break;
-        case State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD:
-            state = State::RELOADING_TIMA_TO_TMA;
-            TIMA  = TMA;
-            bus.write(0xFF0F, bus.read(0xFF0F) | 1 << 2);
-            break;
-        case State::RELOADING_TIMA_TO_TMA:
-            state = State::NORMAL;
-    }
+        switch (state)
+        {
+            case State::NORMAL:
+                break;
+            case State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD:
+                state = State::RELOADING_TIMA_TO_TMA;
+                TIMA  = TMA;
+                bus.write(0xFF0F, bus.read(0xFF0F) | 1 << 2);
+                break;
+            case State::RELOADING_TIMA_TO_TMA:
+                state = State::NORMAL;
+        }
 
-    set_system_counter(system_counter + 1);
+        set_system_counter(system_counter + 1);
+    }
 }
 
 void Timer::set_system_counter(const uint16_t value)

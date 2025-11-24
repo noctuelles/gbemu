@@ -23,7 +23,7 @@ class Timer final : public Component
     void                           write(uint16_t address, uint8_t value) override;
     uint8_t                        read(uint16_t address) const override;
     [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
-    void                           tick() override;
+    void                           tick(size_t machineCycle = 1) override;
 
   private:
     void set_system_counter(uint16_t value);
