@@ -99,12 +99,10 @@ void PPU::PixelFetcher::tick()
             {
                 /* If the tile is flipped horizontally? */
 
-                for (size_t i = 8; i > 0; i--)
+                for (ssize_t i = 7; i >= 0; --i)
                 {
-                    const auto low{(_tileDataLow & (1 << (i - 1))) != 0};
-                    const auto high{(_tileDataHigh & (1 << (i - 1))) != 0};
-
-                    _backgroundFIFO.emplace(FIFOEntry{static_cast<uint8_t>(low << 1 | high), 0, false});
+                    const uint8_t value = (((_tileDataLow >> i) & 1) << 1) | ((_tileDataHigh >> i) & 1);
+                    _backgroundFIFO.emplace(FIFOEntry{value, 0, false});
                 }
 
                 _state = State::GetTile;
