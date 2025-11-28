@@ -4,11 +4,11 @@
 
 #ifndef GBEMU_FRAMEBUFFER_HXX
 #define GBEMU_FRAMEBUFFER_HXX
-#include "Tile.hxx"
+#include <cstdint>
 
 namespace Graphics
 {
-    using Framebuffer = std::array<std::array<Tile::ColorIndex, 160>, 144>;
+    using Framebuffer = std::array<std::array<uint8_t, 160>, 144>;
 }
 
 #endif  // GBEMU_FRAMEBUFFER_HXX

@@ -4,6 +4,7 @@
 
 #include "hardware/Bus.hxx"
 
+#include <format>
 #include <utility>
 
 #include "Common.hxx"

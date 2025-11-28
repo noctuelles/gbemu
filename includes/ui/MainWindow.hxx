@@ -9,7 +9,6 @@
 #include <QThread>
 
 #include "Emulator.hxx"
-#include "QtRenderer.hxx"
 
 QT_BEGIN_NAMESPACE
 namespace Ui

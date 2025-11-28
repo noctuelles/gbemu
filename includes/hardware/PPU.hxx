@@ -6,13 +6,10 @@
 #define PPU_HXX
 
 #include <array>
-#include <bitset>
 #include <functional>
-#include <optional>
 #include <queue>
 #include <unordered_map>
 
-#include "IRenderer.hxx"
 #include "graphics/Framebuffer.hxx"
 #include "hardware/IAddressable.hxx"
 
@@ -189,7 +186,7 @@ class PPU final : public IComponent
         /**
          * @brief Color index ignoring palette.
          */
-        std::bitset<2> colorIndex{};
+        uint8_t        color{};
         uint8_t        palette{};
         bool           backgroundPriority{};
     };

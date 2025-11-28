@@ -5,13 +5,13 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Boost REQUIRED)
 
 include_directories(includes)
 
 qt_standard_project_setup()
 
 qt_add_executable(gbemu
-        srcs/graphics/Tile.cxx
         srcs/hardware/core/Disassembler.cxx
         srcs/hardware/core/Opcode.cxx
         srcs/hardware/core/SM83.cxx
@@ -39,9 +39,6 @@ qt_add_executable(gbemu
         srcs/Emulator.cxx
         includes/Emulator.hxx
         srcs/main.cxx
-        includes/IRenderer.hxx
-        includes/QtRenderer.hxx
-        srcs/QtRenderer.cxx
 )
 
 target_link_libraries(gbemu PRIVATE
