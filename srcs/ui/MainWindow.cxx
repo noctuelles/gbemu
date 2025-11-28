@@ -79,7 +79,7 @@ void MainWindow::updateDisplay(const Graphics::Framebuffer& framebuffer) const
     {
         for (const auto& [x, color] : std::views::enumerate(row))
         {
-            const auto colorValue{color.to_ulong()};
+            const auto colorValue{color};
             QRgb       rgbColor{};
 
             if (colorValue == 0b11)
