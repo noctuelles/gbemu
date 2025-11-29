@@ -40,7 +40,7 @@ qt_add_executable(gbemu
         includes/Emulator.hxx
         srcs/main.cxx
         srcs/ui/Preference.cxx
-        srcs/ui/Preference.hxx
+        includes/ui/Preference.hxx
         srcs/ui/Preference.ui
 )
 

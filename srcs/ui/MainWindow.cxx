@@ -13,8 +13,8 @@
 #include <QSettings>
 #include <iostream>
 
+#include "../../includes/ui/Preference.hxx"
 #include "Emulator.hxx"
-#include "Preference.hxx"
 #include "ui_MainWindow.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainWindow)
