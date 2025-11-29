@@ -17,6 +17,16 @@ void Emulator::loadRom(const QString& path)
     runFrame();
 }
 
+void Emulator::onKeyPressed(Key key)
+{
+    (void) key;
+}
+
+void Emulator::onKeyReleased(Key key)
+{
+    (void) key;
+}
+
 void Emulator::runFrame()
 {
     /* Run the emulation for a whole frame. A frame = 70,224 dots = 17,556 machine cycles. */

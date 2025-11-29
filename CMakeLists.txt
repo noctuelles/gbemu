@@ -39,6 +39,9 @@ qt_add_executable(gbemu
         srcs/Emulator.cxx
         includes/Emulator.hxx
         srcs/main.cxx
+        srcs/ui/Preference.cxx
+        srcs/ui/Preference.hxx
+        srcs/ui/Preference.ui
 )
 
 target_link_libraries(gbemu PRIVATE

@@ -20,10 +20,24 @@ class Emulator final : public QObject
     Q_OBJECT
 
   public:
+    enum class Key
+    {
+        Up,
+        Down,
+        Left,
+        Right,
+        A,
+        B,
+        Start,
+        Select
+    };
+
     explicit Emulator(QObject* parent = nullptr);
 
   public slots:
     void loadRom(const QString& path);
+    void onKeyPressed(Key key);
+    void onKeyReleased(Key key);
     void runFrame();
 
   signals:

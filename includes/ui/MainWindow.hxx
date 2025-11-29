@@ -26,11 +26,16 @@ class MainWindow final : public QMainWindow
     ~MainWindow() override;
 
     void showEvent(QShowEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
 
   public slots:
     void onFrameReady(const Graphics::Framebuffer& framebuffer);
 
   signals:
+    void keyPressed(Emulator::Key key);
+    void keyReleased(Emulator::Key key);
+
     void requestNextFrame();
     void requestLoadRom(const QString& path);
 

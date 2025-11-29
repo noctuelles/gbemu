@@ -8,10 +8,13 @@
 
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QSettings>
+#include <iostream>
 
 #include "Emulator.hxx"
+#include "Preference.hxx"
 #include "ui_MainWindow.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainWindow)
@@ -33,7 +36,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
     connect(emulator, &Emulator::frameReady, this, &MainWindow::onFrameReady);
     connect(this, &MainWindow::requestNextFrame, emulator, &Emulator::runFrame);
 
+    connect(this, &MainWindow::keyPressed, emulator, &Emulator::onKeyPressed);
+    connect(this, &MainWindow::keyReleased, emulator, &Emulator::onKeyReleased);
+
     connect(this, &MainWindow::requestLoadRom, emulator, &Emulator::loadRom);
+
+    /* UI */
+
     connect(_ui->actionOpen, &QAction::triggered, this,
             [this]
             {
@@ -43,6 +52,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                     addRecentFile(path);
                     emit requestLoadRom(path);
                 }
+            });
+
+    connect(_ui->actionPreference, &QAction::triggered, this,
+            [this]
+            {
+                Preference prefDialog(this);
+
+                prefDialog.exec();
             });
 
     _emulatorThread.start();
@@ -62,6 +79,58 @@ void MainWindow::showEvent(QShowEvent* event)
 
     QMainWindow::showEvent(event);
     updateDisplay(framebuffer);
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* event)
+{
+    if (!event->isAutoRepeat())
+    {
+        switch (event->key())
+        {
+            case Qt::Key_Up:
+                emit keyPressed(Emulator::Key::Up);
+                break;
+            case Qt::Key_Down:
+                emit keyPressed(Emulator::Key::Down);
+                break;
+            case Qt::Key_Left:
+                emit keyPressed(Emulator::Key::Left);
+                break;
+            case Qt::Key_Right:
+                emit keyPressed(Emulator::Key::Right);
+                break;
+            default:
+                break;
+        }
+    }
+
+    QMainWindow::keyPressEvent(event);
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent* event)
+{
+    if (!event->isAutoRepeat())
+    {
+        switch (event->key())
+        {
+            case Qt::Key_Up:
+                emit keyReleased(Emulator::Key::Up);
+                break;
+            case Qt::Key_Down:
+                emit keyReleased(Emulator::Key::Down);
+                break;
+            case Qt::Key_Left:
+                emit keyReleased(Emulator::Key::Left);
+                break;
+            case Qt::Key_Right:
+                emit keyReleased(Emulator::Key::Right);
+                break;
+            default:
+                break;
+        }
+    }
+
+    QMainWindow::keyReleaseEvent(event);
 }
 
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
