@@ -112,7 +112,7 @@ void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
     emit requestNextFrame();
 }
 
-void MainWindow::onEmulationFatalError(const QString& message)
+void MainWindow::onEmulationFatalError(const QString& message) const
 {
     constexpr Graphics::Framebuffer framebuffer{};
 
@@ -236,10 +236,10 @@ void MainWindow::_loadSettings()
     {
         using namespace Settings::Palette;
 
-        _colorMapping[0] = get(Type::White);
-        _colorMapping[1] = get(Type::LightGrey);
-        _colorMapping[2] = get(Type::DarkGrey);
-        _colorMapping[3] = get(Type::Black);
+        _colorMapping[0] = get(Type::Color0);
+        _colorMapping[1] = get(Type::Color1);
+        _colorMapping[2] = get(Type::Color2);
+        _colorMapping[3] = get(Type::Color3);
     }
 }
 
