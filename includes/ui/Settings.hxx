@@ -23,10 +23,10 @@ namespace Settings
     {
         enum class Type : uint8_t
         {
-            White,
-            LightGrey,
-            DarkGrey,
-            Black
+            Color0,
+            Color1,
+            Color2,
+            Color3
         };
 
         constexpr QColor DEFAULT_COLORS[] = {
