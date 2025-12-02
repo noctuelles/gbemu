@@ -53,12 +53,8 @@ class Emulator final : public QObject
 
     std::unique_ptr<Components> _components;
 
-    /**
-     * @brief Used to fill gaps.
-     */
-    FakeRAM _fakeRam;
-
-    bool _running{true};
+    std::chrono::steady_clock::time_point _lastUpdate;
+    bool                                  _running{true};
 };
 
 #endif  // GBEMU_EMULATOR_HXX

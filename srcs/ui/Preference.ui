@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="keysTab">
       <attribute name="title">
@@ -185,6 +185,26 @@
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_10">
+         <item>
+          <widget class="QGroupBox" name="groupBox">
+           <property name="title">
+            <string>Palette</string>
+           </property>
+           <widget class="QPushButton" name="color">
+            <property name="geometry">
+             <rect>
+              <x>20</x>
+              <y>40</y>
+              <width>94</width>
+              <height>26</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Color</string>
+            </property>
+           </widget>
+          </widget>
+         </item>
          <item>
           <widget class="QCheckBox" name="enableBootRomCheckbox">
            <property name="text">
