@@ -16,6 +16,7 @@ qt_add_executable(gbemu
         srcs/hardware/core/Opcode.cxx
         srcs/hardware/core/SM83.cxx
         srcs/hardware/Bus.cxx
+        srcs/hardware/Joypad.cxx
         srcs/hardware/Cartridge.cxx
         srcs/hardware/EchoRAM.cxx
         srcs/hardware/Joypad.cxx

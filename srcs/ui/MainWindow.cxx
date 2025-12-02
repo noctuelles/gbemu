@@ -13,8 +13,8 @@
 #include <QSettings>
 #include <iostream>
 
-#include "ui/Preference.hxx"
 #include "Emulator.hxx"
+#include "ui/Preference.hxx"
 #include "ui_MainWindow.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainWindow)
@@ -146,7 +146,7 @@ void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const
         QPixmap::fromImage(img.scaled(_ui->display->size(), Qt::IgnoreAspectRatio, Qt::FastTransformation)));
 }
 
-std::optional<Emulator::Key> MainWindow::_isAMappedKey(const QKeyEvent* keyEvent) const
+std::optional<Key> MainWindow::_isAMappedKey(const QKeyEvent* keyEvent) const
 {
     if (!keyEvent->isAutoRepeat())
     {
@@ -230,14 +230,14 @@ void MainWindow::_loadSettings()
 
     _keyMapping.clear();
 
-    _keyMapping.insert(settings.value("up").value<QKeySequence>()[0], Emulator::Key::Up);
-    _keyMapping.insert(settings.value("down").value<QKeySequence>()[0], Emulator::Key::Down);
-    _keyMapping.insert(settings.value("left").value<QKeySequence>()[0], Emulator::Key::Left);
-    _keyMapping.insert(settings.value("right").value<QKeySequence>()[0], Emulator::Key::Right);
-    _keyMapping.insert(settings.value("a").value<QKeySequence>()[0], Emulator::Key::A);
-    _keyMapping.insert(settings.value("b").value<QKeySequence>()[0], Emulator::Key::B);
-    _keyMapping.insert(settings.value("select").value<QKeySequence>()[0], Emulator::Key::Select);
-    _keyMapping.insert(settings.value("start").value<QKeySequence>()[0], Emulator::Key::Start);
+    _keyMapping.insert(settings.value("up").value<QKeySequence>()[0], Key::Up);
+    _keyMapping.insert(settings.value("down").value<QKeySequence>()[0], Key::Down);
+    _keyMapping.insert(settings.value("left").value<QKeySequence>()[0], Key::Left);
+    _keyMapping.insert(settings.value("right").value<QKeySequence>()[0], Key::Right);
+    _keyMapping.insert(settings.value("a").value<QKeySequence>()[0], Key::A);
+    _keyMapping.insert(settings.value("b").value<QKeySequence>()[0], Key::B);
+    _keyMapping.insert(settings.value("select").value<QKeySequence>()[0], Key::Select);
+    _keyMapping.insert(settings.value("start").value<QKeySequence>()[0], Key::Start);
 
     settings.endGroup();
 }

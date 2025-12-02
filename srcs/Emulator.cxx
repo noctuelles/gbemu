@@ -17,22 +17,29 @@ void Emulator::loadRom(const QString& path)
     runFrame();
 }
 
-void Emulator::onKeyPressed(Key key)
+void Emulator::onKeyPressed(const Key key) const
 {
-    (void) key;
+    _components->joypad.press(key);
 }
 
-void Emulator::onKeyReleased(Key key)
+void Emulator::onKeyReleased(const Key key) const
 {
-    (void) key;
+    _components->joypad.release(key);
 }
 
 void Emulator::runFrame()
 {
-    /* Run the emulation for a whole frame. A frame = 70,224 dots = 17,556 machine cycles. */
-    _components->cpu.tick(17556);
+    try
+    {
+        /* Run the emulation for a whole frame. A frame = 70,224 dots = 17,556 machine cycles. */
+        _components->cpu.tick(17556);
 
-    emit frameReady(_components->ppu.getFramebuffer());
+        emit frameReady(_components->ppu.getFramebuffer());
+    }
+    catch (const std::exception& e)
+    {
+        emit emulationFatalError(e.what());
+    }
 }
 
 Emulator::Components::Components()
