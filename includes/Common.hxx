@@ -17,7 +17,7 @@ namespace Interrupts
     static constexpr uint8_t Joypad = 0x10;
 };  // namespace Interrupts
 
-enum class Button : uint8_t
+enum class Key : uint8_t
 {
     A,
     B,

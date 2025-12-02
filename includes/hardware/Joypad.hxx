@@ -17,8 +17,8 @@ class Joypad final : public IAddressable
     void                           write(uint16_t address, uint8_t value) override;
     [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 
-    void press(Button button);
-    void release(Button button);
+    void press(Key button);
+    void release(Key button);
 
   private:
     uint8_t _state{0xFF};

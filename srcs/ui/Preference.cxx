@@ -107,13 +107,3 @@ void Preference::reject()
 {
     QDialog::reject();
 }
-
-void Preference::onKeySequenceEditChanged(const QKeySequence& sequence)
-{
-    auto keySequenceEdit{qobject_cast<QKeySequenceEdit*>(sender())};
-
-    if (keySequenceEdit == nullptr)
-    {
-        return;
-    }
-}

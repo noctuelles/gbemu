@@ -28,9 +28,6 @@ class Preference final : public QDialog
     void accept() override;
     void reject() override;
 
-  public slots:
-    void onKeySequenceEditChanged(const QKeySequence& sequence);
-
   private:
     QString         _bootRomPath;
     Ui::Preference* _ui;

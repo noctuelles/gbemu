@@ -33,8 +33,8 @@ class MainWindow final : public QMainWindow
     void onFrameReady(const Graphics::Framebuffer& framebuffer);
 
   signals:
-    void keyPressed(Emulator::Key key);
-    void keyReleased(Emulator::Key key);
+    void keyPressed(Key key);
+    void keyReleased(Key key);
 
     void requestNextFrame();
     void requestLoadRom(const QString& path);
@@ -42,17 +42,17 @@ class MainWindow final : public QMainWindow
   private:
     static constexpr qsizetype MaxRecentFiles{8};
 
-    void                         _updateDisplay(const Graphics::Framebuffer& framebuffer) const;
-    std::optional<Emulator::Key> _isAMappedKey(const QKeyEvent* keyEvent) const;
+    void               _updateDisplay(const Graphics::Framebuffer& framebuffer) const;
+    std::optional<Key> _isAMappedKey(const QKeyEvent* keyEvent) const;
 
     void _populateRecentMenu();
     void _loadSettings();
     void _addRecentFile(const QString& path);
     void _clearRecentFiles();
 
-    QMap<QKeySequence, Emulator::Key> _keyMapping;
-    QThread                           _emulatorThread;
-    Ui::MainWindow*                   _ui;
+    QMap<QKeySequence, Key> _keyMapping;
+    QThread                 _emulatorThread;
+    Ui::MainWindow*         _ui;
 };
 
 #endif  // GBEMU_MAINWINDOW_HXX

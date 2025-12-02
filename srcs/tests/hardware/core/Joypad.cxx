@@ -26,8 +26,8 @@ TEST_F(TestJoypad, SelectNothing) {}
 
 TEST_F(TestJoypad, SelectButtons)
 {
-    joypad->press(Button::A);
-    joypad->press(Button::B);
+    joypad->press(Key::A);
+    joypad->press(Key::B);
 
     joypad->write(MemoryMap::IORegisters::JOYPAD, 0b00010000);
 

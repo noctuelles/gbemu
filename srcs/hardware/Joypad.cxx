@@ -24,12 +24,12 @@ IAddressable::AddressableRange Joypad::getAddressableRange() const noexcept
     return {MemoryMap::IORegisters::JOYPAD};
 }
 
-void Joypad::press(const Button button)
+void Joypad::press(const Key button)
 {
     _state &= ~(1 << std::to_underlying(button));
 }
 
-void Joypad::release(const Button button)
+void Joypad::release(const Key button)
 {
     _state |= (1 << std::to_underlying(button));
 }
