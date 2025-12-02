@@ -6,6 +6,9 @@
 #define GBEMU_PREFERENCE_HXX
 
 #include <QDialog>
+#include <QKeySequenceEdit>
+
+#include "Emulator.hxx"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -24,6 +27,9 @@ class Preference final : public QDialog
 
     void accept() override;
     void reject() override;
+
+  public slots:
+    void onKeySequenceEditChanged(const QKeySequence& sequence);
 
   private:
     QString         _bootRomPath;

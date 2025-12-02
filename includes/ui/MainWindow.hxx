@@ -42,14 +42,17 @@ class MainWindow final : public QMainWindow
   private:
     static constexpr qsizetype MaxRecentFiles{8};
 
-    void updateDisplay(const Graphics::Framebuffer& framebuffer) const;
+    void                         _updateDisplay(const Graphics::Framebuffer& framebuffer) const;
+    std::optional<Emulator::Key> _isAMappedKey(const QKeyEvent* keyEvent) const;
 
-    void populateRecentMenu();
-    void addRecentFile(const QString& path);
-    void clearRecentFiles();
+    void _populateRecentMenu();
+    void _loadSettings();
+    void _addRecentFile(const QString& path);
+    void _clearRecentFiles();
 
-    QThread         _emulatorThread;
-    Ui::MainWindow* _ui;
+    QMap<QKeySequence, Emulator::Key> _keyMapping;
+    QThread                           _emulatorThread;
+    Ui::MainWindow*                   _ui;
 };
 
 #endif  // GBEMU_MAINWINDOW_HXX

@@ -13,7 +13,7 @@
 #include <QSettings>
 #include <iostream>
 
-#include "../../includes/ui/Preference.hxx"
+#include "ui/Preference.hxx"
 #include "Emulator.hxx"
 #include "ui_MainWindow.h"
 
@@ -27,7 +27,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                                  std::tuple_size_v<Graphics::Framebuffer> * 2);
     resize(_ui->display->minimumSize());
 
-    populateRecentMenu();
+    _populateRecentMenu();
+    _loadSettings();
 
     emulator->moveToThread(&_emulatorThread);
 
@@ -49,7 +50,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                 if (const auto path = QFileDialog::getOpenFileName(this, tr("Open ROM"), ".", tr("ROM Files (*.gb)"));
                     !path.isEmpty())
                 {
-                    addRecentFile(path);
+                    _addRecentFile(path);
                     emit requestLoadRom(path);
                 }
             });
@@ -57,9 +58,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
     connect(_ui->actionPreference, &QAction::triggered, this,
             [this]
             {
-                Preference prefDialog(this);
-
-                prefDialog.exec();
+                if (Preference prefDialog(this); prefDialog.exec() == QDialog::Accepted)
+                {
+                    _loadSettings();
+                }
             });
 
     _emulatorThread.start();
@@ -78,30 +80,14 @@ void MainWindow::showEvent(QShowEvent* event)
     constexpr Graphics::Framebuffer framebuffer{};
 
     QMainWindow::showEvent(event);
-    updateDisplay(framebuffer);
+    _updateDisplay(framebuffer);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event)
 {
-    if (!event->isAutoRepeat())
+    if (const auto key{_isAMappedKey(event)}; key.has_value())
     {
-        switch (event->key())
-        {
-            case Qt::Key_Up:
-                emit keyPressed(Emulator::Key::Up);
-                break;
-            case Qt::Key_Down:
-                emit keyPressed(Emulator::Key::Down);
-                break;
-            case Qt::Key_Left:
-                emit keyPressed(Emulator::Key::Left);
-                break;
-            case Qt::Key_Right:
-                emit keyPressed(Emulator::Key::Right);
-                break;
-            default:
-                break;
-        }
+        emit keyPressed(key.value());
     }
 
     QMainWindow::keyPressEvent(event);
@@ -109,25 +95,9 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 
 void MainWindow::keyReleaseEvent(QKeyEvent* event)
 {
-    if (!event->isAutoRepeat())
+    if (const auto key{_isAMappedKey(event)}; key.has_value())
     {
-        switch (event->key())
-        {
-            case Qt::Key_Up:
-                emit keyReleased(Emulator::Key::Up);
-                break;
-            case Qt::Key_Down:
-                emit keyReleased(Emulator::Key::Down);
-                break;
-            case Qt::Key_Left:
-                emit keyReleased(Emulator::Key::Left);
-                break;
-            case Qt::Key_Right:
-                emit keyReleased(Emulator::Key::Right);
-                break;
-            default:
-                break;
-        }
+        emit keyReleased(key.value());
     }
 
     QMainWindow::keyReleaseEvent(event);
@@ -135,11 +105,11 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event)
 
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
 {
-    updateDisplay(framebuffer);
+    _updateDisplay(framebuffer);
     emit requestNextFrame();
 }
 
-void MainWindow::updateDisplay(const Graphics::Framebuffer& framebuffer) const
+void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const
 {
     QImage img{std::tuple_size_v<Graphics::Framebuffer::value_type>, std::tuple_size_v<Graphics::Framebuffer>,
                QImage::Format_RGB32};
@@ -176,7 +146,24 @@ void MainWindow::updateDisplay(const Graphics::Framebuffer& framebuffer) const
         QPixmap::fromImage(img.scaled(_ui->display->size(), Qt::IgnoreAspectRatio, Qt::FastTransformation)));
 }
 
-void MainWindow::populateRecentMenu()
+std::optional<Emulator::Key> MainWindow::_isAMappedKey(const QKeyEvent* keyEvent) const
+{
+    if (!keyEvent->isAutoRepeat())
+    {
+        const auto keySequence{QKeySequence(static_cast<int>(keyEvent->modifiers()) | keyEvent->key())};
+
+        if (const auto it{_keyMapping.find(keySequence)}; it != _keyMapping.end())
+        {
+            return it.value();
+        }
+
+        return std::nullopt;
+    }
+
+    return std::nullopt;
+}
+
+void MainWindow::_populateRecentMenu()
 {
     QSettings settings;
 
@@ -207,11 +194,11 @@ void MainWindow::populateRecentMenu()
                         {
                             QMessageBox::warning(this, tr("File not found"),
                                                  tr("The file \"%1\" cannot be found.").arg(path));
-                            populateRecentMenu();
+                            _populateRecentMenu();
                             return;
                         }
 
-                        addRecentFile(path);
+                        _addRecentFile(path);
                         emit requestLoadRom(path);
                     });
 
@@ -228,14 +215,34 @@ void MainWindow::populateRecentMenu()
         }
 
         _ui->menuOpen_Recent->addSeparator();
-        connect(clear, &QAction::triggered, this, &MainWindow::clearRecentFiles);
+        connect(clear, &QAction::triggered, this, &MainWindow::_clearRecentFiles);
         _ui->menuOpen_Recent->addAction(clear);
 
         settings.setValue("recentFiles", cleanedStoredROM);
     }
 }
 
-void MainWindow::addRecentFile(const QString& path)
+void MainWindow::_loadSettings()
+{
+    QSettings settings{};
+
+    settings.beginGroup("preference/keys");
+
+    _keyMapping.clear();
+
+    _keyMapping.insert(settings.value("up").value<QKeySequence>()[0], Emulator::Key::Up);
+    _keyMapping.insert(settings.value("down").value<QKeySequence>()[0], Emulator::Key::Down);
+    _keyMapping.insert(settings.value("left").value<QKeySequence>()[0], Emulator::Key::Left);
+    _keyMapping.insert(settings.value("right").value<QKeySequence>()[0], Emulator::Key::Right);
+    _keyMapping.insert(settings.value("a").value<QKeySequence>()[0], Emulator::Key::A);
+    _keyMapping.insert(settings.value("b").value<QKeySequence>()[0], Emulator::Key::B);
+    _keyMapping.insert(settings.value("select").value<QKeySequence>()[0], Emulator::Key::Select);
+    _keyMapping.insert(settings.value("start").value<QKeySequence>()[0], Emulator::Key::Start);
+
+    settings.endGroup();
+}
+
+void MainWindow::_addRecentFile(const QString& path)
 {
     const QString absPath{QFileInfo(path).absoluteFilePath()};
     QSettings     settings;
@@ -251,14 +258,14 @@ void MainWindow::addRecentFile(const QString& path)
 
     settings.setValue("recentFiles", list);
 
-    populateRecentMenu();
+    _populateRecentMenu();
 }
 
-void MainWindow::clearRecentFiles()
+void MainWindow::_clearRecentFiles()
 {
     QSettings settings;
 
     settings.remove("recentFiles");
 
-    populateRecentMenu();
+    _populateRecentMenu();
 }
