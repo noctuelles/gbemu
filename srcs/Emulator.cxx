@@ -29,12 +29,25 @@ void Emulator::onKeyReleased(const Key key) const
 
 void Emulator::runFrame()
 {
+    using namespace std::chrono_literals;
+
+    constexpr auto frameDuration{16740000ns};
+
     try
     {
         /* Run the emulation for a whole frame. A frame = 70,224 dots = 17,556 machine cycles. */
         _components->cpu.tick(17556);
 
+        const auto now{std::chrono::steady_clock::now()};
+
+        if (const auto diff{now - _lastUpdate}; diff < frameDuration)
+        {
+            std::this_thread::sleep_for(frameDuration - diff);
+        }
+
         emit frameReady(_components->ppu.getFramebuffer());
+
+        _lastUpdate = now;
     }
     catch (const std::exception& e)
     {

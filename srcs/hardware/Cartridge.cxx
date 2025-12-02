@@ -254,13 +254,20 @@ void Cartridge::load(const std::filesystem::path& path)
 
     this->title    = std::string_view{title, 16};
     this->rom_size = (2 << 14) * (1 << rom_size);
-    if (old_licensee == 0x33)
+    try
     {
-        this->licensee = new_licensee_code.at(std::string_view{new_licensee, 2});
+        if (old_licensee == 0x33)
+        {
+            this->licensee = new_licensee_code.at(std::string_view{new_licensee, 2});
+        }
+        else
+        {
+            this->licensee = old_licensee_code.at(old_licensee);
+        }
     }
-    else
+    catch (const std::out_of_range& e)
     {
-        this->licensee = old_licensee_code.at(old_licensee);
+        this->licensee = "Unknown";
     }
 
     switch (type)
