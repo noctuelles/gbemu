@@ -35,6 +35,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
     connect(&_emulatorThread, &QThread::finished, emulator, &QObject::deleteLater);
 
     connect(emulator, &Emulator::frameReady, this, &MainWindow::onFrameReady);
+    connect(emulator, &Emulator::emulationFatalError, this, &MainWindow::onEmulationFatalError);
+
     connect(this, &MainWindow::requestNextFrame, emulator, &Emulator::runFrame);
 
     connect(this, &MainWindow::keyPressed, emulator, &Emulator::onKeyPressed);
@@ -107,6 +109,15 @@ void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
 {
     _updateDisplay(framebuffer);
     emit requestNextFrame();
+}
+
+void MainWindow::onEmulationFatalError(const QString& message)
+{
+    constexpr Graphics::Framebuffer framebuffer{};
+
+    QMessageBox::critical(nullptr, tr("Emulation fatal error"), QString{"%1\nHalting."}.arg(message));
+
+    _updateDisplay(framebuffer);
 }
 
 void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const

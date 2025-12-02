@@ -31,6 +31,7 @@ class MainWindow final : public QMainWindow
 
   public slots:
     void onFrameReady(const Graphics::Framebuffer& framebuffer);
+    void onEmulationFatalError(const QString& message);
 
   signals:
     void keyPressed(Key key);
