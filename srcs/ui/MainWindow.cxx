@@ -15,6 +15,7 @@
 
 #include "Emulator.hxx"
 #include "ui/Preference.hxx"
+#include "ui/Settings.hxx"
 #include "ui_MainWindow.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainWindow)
@@ -129,27 +130,8 @@ void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const
     {
         for (const auto& [x, color] : std::views::enumerate(row))
         {
-            const auto colorValue{color};
-            QRgb       rgbColor{};
-
-            if (colorValue == 0b11)
-            {
-                rgbColor = qRgb(0x08, 0x18, 0x20);
-            }
-            else if (colorValue == 0b10)
-            {
-                rgbColor = qRgb(0x34, 0x68, 0x56);
-            }
-            else if (colorValue == 0b01)
-            {
-                rgbColor = qRgb(0x88, 0xC0, 0x70);
-            }
-            else if (colorValue == 0b00)
-            {
-                rgbColor = qRgb(0xE0, 0xF8, 0xD8);
-            }
-
-            img.setPixel(x, y, rgbColor);
+            const auto& rgbColor{_colorMapping[color]};
+            img.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
         }
     }
 
@@ -235,22 +217,30 @@ void MainWindow::_populateRecentMenu()
 
 void MainWindow::_loadSettings()
 {
-    QSettings settings{};
+    {
+        using namespace Settings::Keys;
 
-    settings.beginGroup("preference/keys");
+        _keyMapping.clear();
 
-    _keyMapping.clear();
+        _keyMapping.insert(get(Key::Up), Key::Up);
+        _keyMapping.insert(get(Key::Down), Key::Down);
+        _keyMapping.insert(get(Key::Left), Key::Left);
+        _keyMapping.insert(get(Key::Right), Key::Right);
 
-    _keyMapping.insert(settings.value("up").value<QKeySequence>()[0], Key::Up);
-    _keyMapping.insert(settings.value("down").value<QKeySequence>()[0], Key::Down);
-    _keyMapping.insert(settings.value("left").value<QKeySequence>()[0], Key::Left);
-    _keyMapping.insert(settings.value("right").value<QKeySequence>()[0], Key::Right);
-    _keyMapping.insert(settings.value("a").value<QKeySequence>()[0], Key::A);
-    _keyMapping.insert(settings.value("b").value<QKeySequence>()[0], Key::B);
-    _keyMapping.insert(settings.value("select").value<QKeySequence>()[0], Key::Select);
-    _keyMapping.insert(settings.value("start").value<QKeySequence>()[0], Key::Start);
+        _keyMapping.insert(get(Key::A), Key::A);
+        _keyMapping.insert(get(Key::B), Key::B);
+        _keyMapping.insert(get(Key::Select), Key::Select);
+        _keyMapping.insert(get(Key::Start), Key::Start);
+    }
 
-    settings.endGroup();
+    {
+        using namespace Settings::Palette;
+
+        _colorMapping[0] = get(Type::White);
+        _colorMapping[1] = get(Type::LightGrey);
+        _colorMapping[2] = get(Type::DarkGrey);
+        _colorMapping[3] = get(Type::Black);
+    }
 }
 
 void MainWindow::_addRecentFile(const QString& path)

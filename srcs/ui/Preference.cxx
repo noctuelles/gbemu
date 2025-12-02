@@ -6,6 +6,7 @@
 
 #include "../../includes/ui/Preference.hxx"
 
+#include <QColorDialog>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSettings>
@@ -46,32 +47,73 @@ Preference::Preference(QWidget* parent) : QDialog(parent), _ui(new Ui::Preferenc
 
     settings.endGroup();
 
-    const QList keySequenceEdits{
-        _ui->upKeySequenceEdit, _ui->downKeySequenceEdit, _ui->leftKeySequenceEdit,   _ui->rightKeySequenceEdit,
-        _ui->aKeySequenceEdit,  _ui->bKeySequenceEdit,    _ui->selectKeySequenceEdit, _ui->startKeySequenceEdit,
-    };
-
-    auto checkKeySequenceEditChanged = [this, keySequenceEdits](const QKeySequence& sequence)
     {
-        const auto senderKeySequenceEdit{qobject_cast<QKeySequenceEdit*>(sender())};
+        const QList keySequenceEdits{
+            _ui->upKeySequenceEdit, _ui->downKeySequenceEdit, _ui->leftKeySequenceEdit,   _ui->rightKeySequenceEdit,
+            _ui->aKeySequenceEdit,  _ui->bKeySequenceEdit,    _ui->selectKeySequenceEdit, _ui->startKeySequenceEdit,
+        };
+
+        auto checkKeySequenceEditChanged = [this, keySequenceEdits](const QKeySequence& sequence)
+        {
+            const auto senderKeySequenceEdit{qobject_cast<QKeySequenceEdit*>(sender())};
+
+            for (const auto keySequenceEdit : keySequenceEdits)
+            {
+                if (keySequenceEdit->keySequence() == sequence && keySequenceEdit != senderKeySequenceEdit)
+                {
+                    senderKeySequenceEdit->clear();
+                    return;
+                }
+            }
+        };
 
         for (const auto keySequenceEdit : keySequenceEdits)
         {
-            if (keySequenceEdit->keySequence() == sequence && keySequenceEdit != senderKeySequenceEdit)
-            {
-                senderKeySequenceEdit->clear();
-                return;
-            }
+            connect(keySequenceEdit, &QKeySequenceEdit::keySequenceChanged, this, checkKeySequenceEditChanged);
         }
-    };
-
-    for (const auto keySequenceEdit : keySequenceEdits)
-    {
-        connect(keySequenceEdit, &QKeySequenceEdit::keySequenceChanged, this, checkKeySequenceEditChanged);
     }
 
     _ui->enableBootRomCheckbox->setChecked(settings.value("preference/system/enableBootRom", false).toBool());
     _bootRomPath = settings.value("preference/system/bootRomPath", QString()).toString();
+
+    {
+        const auto setBtnBackgroundColor = [](QPushButton* button, const QColor& color)
+        {
+            QPalette palette{};
+
+            palette.setColor(QPalette::Button, color);
+
+            button->setAutoFillBackground(true);
+            button->setPalette(palette);
+            button->update();
+        };
+
+        const auto setColorButtonPalette = [setBtnBackgroundColor](QPushButton* button)
+        {
+            setBtnBackgroundColor(
+                button, QSettings{}.value(QString{"preference/palette/%1"}.arg(button->objectName())).value<QColor>());
+        };
+
+        const auto updateColorPicker = [this, setBtnBackgroundColor](bool checked)
+        {
+            const auto button{qobject_cast<QPushButton*>(sender())};
+
+            const auto color =
+                QColorDialog::getColor(button->palette().color(QPalette::Button), this, tr("Select Color"));
+
+            if (color.isValid())
+            {
+                setBtnBackgroundColor(button, color);
+            }
+        };
+
+        for (const QList colorButtons{_ui->color0, _ui->color1, _ui->color2, _ui->color3};
+             const auto  colorButton : colorButtons)
+        {
+            setColorButtonPalette(colorButton);
+            connect(colorButton, &QPushButton::clicked, this, updateColorPicker);
+        }
+    }
 }
 
 Preference::~Preference()
@@ -97,6 +139,15 @@ void Preference::accept()
     settings.setValue("b", _ui->bKeySequenceEdit->keySequence());
     settings.setValue("select", _ui->selectKeySequenceEdit->keySequence());
     settings.setValue("start", _ui->startKeySequenceEdit->keySequence());
+
+    settings.endGroup();
+
+    settings.beginGroup("preference/palette");
+
+    settings.setValue("color0", _ui->color0->palette().color(QPalette::Button));
+    settings.setValue("color1", _ui->color1->palette().color(QPalette::Button));
+    settings.setValue("color2", _ui->color2->palette().color(QPalette::Button));
+    settings.setValue("color3", _ui->color3->palette().color(QPalette::Button));
 
     settings.endGroup();
 

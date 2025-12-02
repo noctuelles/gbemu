@@ -52,8 +52,10 @@ class MainWindow final : public QMainWindow
     void _clearRecentFiles();
 
     QMap<QKeySequence, Key> _keyMapping;
-    QThread                 _emulatorThread;
-    Ui::MainWindow*         _ui;
+    std::array<QColor, 4>   _colorMapping;
+
+    QThread         _emulatorThread;
+    Ui::MainWindow* _ui;
 };
 
 #endif  // GBEMU_MAINWINDOW_HXX
