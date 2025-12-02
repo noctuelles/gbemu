@@ -1,0 +1,65 @@
+//
+// Created by plouvel on 12/2/25.
+//
+
+#include "ui/Settings.hxx"
+
+#include <QSettings>
+
+namespace Settings::Palette
+{
+    void set(const Type type, const QColor& color)
+    {
+        QSettings{}.setValue(QString{"preference/palette/color%1"}.arg(std::to_underlying(type)), color);
+    }
+
+    QColor get(const Type type)
+    {
+        const auto value{std::to_underlying(type)};
+
+        return QSettings{}
+            .value(QString{"preference/palette/color%1"}.arg(value), DEFAULT_COLORS[value])
+            .value<QColor>();
+    }
+}  // namespace Settings::Palette
+
+namespace Settings::Keys
+{
+    static QString keyToString(const Key key)
+    {
+        switch (key)
+        {
+            case Key::A:
+                return QString{"a"};
+            case Key::B:
+                return QString{"b"};
+            case Key::Select:
+                return QString{"select"};
+            case Key::Start:
+                return QString{"start"};
+            case Key::Right:
+                return QString{"right"};
+            case Key::Left:
+                return QString{"left"};
+            case Key::Up:
+                return QString{"up"};
+            case Key::Down:
+                return QString{"down"};
+            [[unlikely]] default:
+                return QString{};
+        }
+    }
+
+    void set(const Key key, const QKeySequence& sequence)
+    {
+        QSettings{}.setValue(QString{"preference/keys/%1"}.arg(keyToString(key)), sequence);
+    }
+
+    QKeySequence get(const Key key)
+    {
+        return QSettings{}
+            .value(QString{"preference/keys/%1"}.arg(keyToString(key)), DEFAULT_KEY_SEQUENCES[std::to_underlying(key)])
+            .value<QKeySequence>();
+    }
+
+}  // namespace Settings::Keys

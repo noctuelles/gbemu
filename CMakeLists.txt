@@ -43,6 +43,8 @@ qt_add_executable(gbemu
         srcs/ui/Preference.cxx
         includes/ui/Preference.hxx
         srcs/ui/Preference.ui
+        includes/ui/Settings.hxx
+        srcs/ui/Settings.cxx
 )
 
 target_link_libraries(gbemu PRIVATE
