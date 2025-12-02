@@ -7,6 +7,7 @@
 #include "../../includes/ui/Preference.hxx"
 
 #include <QFileDialog>
+#include <QMessageBox>
 #include <QSettings>
 
 #include "ui_Preference.h"
@@ -33,17 +34,41 @@ Preference::Preference(QWidget* parent) : QDialog(parent), _ui(new Ui::Preferenc
 
     settings.beginGroup("preference/keys");
 
-    _ui->upKeySequenceEdit->setKeySequence(QKeySequence{settings.value("up", QKeySequence{}).toString()});
-    _ui->downKeySequenceEdit->setKeySequence(QKeySequence{settings.value("down", QKeySequence{}).toString()});
-    _ui->leftKeySequenceEdit->setKeySequence(QKeySequence{settings.value("left", QKeySequence{}).toString()});
-    _ui->rightKeySequenceEdit->setKeySequence(QKeySequence{settings.value("right", QKeySequence{}).toString()});
+    _ui->upKeySequenceEdit->setKeySequence(settings.value("up").value<QKeySequence>());
+    _ui->downKeySequenceEdit->setKeySequence(settings.value("down").value<QKeySequence>());
+    _ui->leftKeySequenceEdit->setKeySequence(settings.value("left").value<QKeySequence>());
+    _ui->rightKeySequenceEdit->setKeySequence(settings.value("right").value<QKeySequence>());
 
-    _ui->aKeySequenceEdit->setKeySequence(QKeySequence{settings.value("a", QKeySequence{}).toString()});
-    _ui->bKeySequenceEdit->setKeySequence(QKeySequence{settings.value("b", QKeySequence{}).toString()});
-    _ui->selectKeySequenceEdit->setKeySequence(QKeySequence{settings.value("select", QKeySequence{}).toString()});
-    _ui->startKeySequenceEdit->setKeySequence(QKeySequence{settings.value("start", QKeySequence{}).toString()});
+    _ui->aKeySequenceEdit->setKeySequence(settings.value("a").value<QKeySequence>());
+    _ui->bKeySequenceEdit->setKeySequence(settings.value("b").value<QKeySequence>());
+    _ui->selectKeySequenceEdit->setKeySequence(settings.value("select").value<QKeySequence>());
+    _ui->startKeySequenceEdit->setKeySequence(settings.value("start").value<QKeySequence>());
 
     settings.endGroup();
+
+    const QList keySequenceEdits{
+        _ui->upKeySequenceEdit, _ui->downKeySequenceEdit, _ui->leftKeySequenceEdit,   _ui->rightKeySequenceEdit,
+        _ui->aKeySequenceEdit,  _ui->bKeySequenceEdit,    _ui->selectKeySequenceEdit, _ui->startKeySequenceEdit,
+    };
+
+    auto checkKeySequenceEditChanged = [this, keySequenceEdits](const QKeySequence& sequence)
+    {
+        const auto senderKeySequenceEdit{qobject_cast<QKeySequenceEdit*>(sender())};
+
+        for (const auto keySequenceEdit : keySequenceEdits)
+        {
+            if (keySequenceEdit->keySequence() == sequence && keySequenceEdit != senderKeySequenceEdit)
+            {
+                senderKeySequenceEdit->clear();
+                return;
+            }
+        }
+    };
+
+    for (const auto keySequenceEdit : keySequenceEdits)
+    {
+        connect(keySequenceEdit, &QKeySequenceEdit::keySequenceChanged, this, checkKeySequenceEditChanged);
+    }
 
     _ui->enableBootRomCheckbox->setChecked(settings.value("preference/system/enableBootRom", false).toBool());
     _bootRomPath = settings.value("preference/system/bootRomPath", QString()).toString();
@@ -63,15 +88,15 @@ void Preference::accept()
 
     settings.beginGroup("preference/keys");
 
-    settings.setValue("up", _ui->upKeySequenceEdit->keySequence().toString());
-    settings.setValue("down", _ui->downKeySequenceEdit->keySequence().toString());
-    settings.setValue("left", _ui->leftKeySequenceEdit->keySequence().toString());
-    settings.setValue("right", _ui->rightKeySequenceEdit->keySequence().toString());
+    settings.setValue("up", _ui->upKeySequenceEdit->keySequence());
+    settings.setValue("down", _ui->downKeySequenceEdit->keySequence());
+    settings.setValue("left", _ui->leftKeySequenceEdit->keySequence());
+    settings.setValue("right", _ui->rightKeySequenceEdit->keySequence());
 
-    settings.setValue("a", _ui->aKeySequenceEdit->keySequence().toString());
-    settings.setValue("b", _ui->bKeySequenceEdit->keySequence().toString());
-    settings.setValue("select", _ui->selectKeySequenceEdit->keySequence().toString());
-    settings.setValue("start", _ui->startKeySequenceEdit->keySequence().toString());
+    settings.setValue("a", _ui->aKeySequenceEdit->keySequence());
+    settings.setValue("b", _ui->bKeySequenceEdit->keySequence());
+    settings.setValue("select", _ui->selectKeySequenceEdit->keySequence());
+    settings.setValue("start", _ui->startKeySequenceEdit->keySequence());
 
     settings.endGroup();
 
@@ -81,4 +106,14 @@ void Preference::accept()
 void Preference::reject()
 {
     QDialog::reject();
+}
+
+void Preference::onKeySequenceEditChanged(const QKeySequence& sequence)
+{
+    auto keySequenceEdit{qobject_cast<QKeySequenceEdit*>(sender())};
+
+    if (keySequenceEdit == nullptr)
+    {
+        return;
+    }
 }

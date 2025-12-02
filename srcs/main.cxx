@@ -8,6 +8,9 @@
 
 int main(int argc, char* args[])
 {
+    QCoreApplication::setOrganizationName("noctuelles");
+    QCoreApplication::setApplicationName("gbemu");
+
     QApplication app{argc, args};
     MainWindow window{};
 
