@@ -186,9 +186,9 @@ class PPU final : public IComponent
         /**
          * @brief Color index ignoring palette.
          */
-        uint8_t        color{};
-        uint8_t        palette{};
-        bool           backgroundPriority{};
+        uint8_t color{};
+        uint8_t palette{};
+        bool    backgroundPriority{};
     };
 
     using OAMArray = std::array<OAMEntry, 40>;
@@ -231,6 +231,7 @@ class PPU final : public IComponent
     [[nodiscard]] uint8_t read(uint16_t address) const override;
     void                  write(uint16_t address, uint8_t value) override;
     void                  tick(size_t machineCycle = 1) override;
+    void                  setPostBootRomRegisters();
 
     const Graphics::Framebuffer& getFramebuffer() const noexcept;
 

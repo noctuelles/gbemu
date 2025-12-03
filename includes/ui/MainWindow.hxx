@@ -31,14 +31,14 @@ class MainWindow final : public QMainWindow
 
   public slots:
     void onFrameReady(const Graphics::Framebuffer& framebuffer);
-    void onEmulationFatalError(const QString& message) const;
+    void onEmulationFatalError(const QString& message);
 
   signals:
     void keyPressed(Key key);
     void keyReleased(Key key);
 
     void requestNextFrame();
-    void requestLoadRom(const QString& path);
+    void requestStartEmulation(const QString& path);
 
   private:
     static constexpr qsizetype MaxRecentFiles{8};
@@ -46,6 +46,7 @@ class MainWindow final : public QMainWindow
     void               _updateDisplay(const Graphics::Framebuffer& framebuffer) const;
     std::optional<Key> _isAMappedKey(const QKeyEvent* keyEvent) const;
 
+    void _startEmulation(const QString& romPath);
     void _populateRecentMenu();
     void _loadSettings();
     void _addRecentFile(const QString& path);

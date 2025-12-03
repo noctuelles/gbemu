@@ -20,12 +20,13 @@ class Emulator final : public QObject
     Q_OBJECT
 
   public:
-    explicit Emulator(QObject* parent = nullptr);
+    explicit Emulator(std::optional<QString> bootRom = std::nullopt, QObject* parent = nullptr);
 
   public slots:
-    void loadRom(const QString& path);
-    void onKeyPressed(Key key) const;
-    void onKeyReleased(Key key) const;
+    void startEmulation(const QString& path);
+
+    void onKeyPressed(Key key);
+    void onKeyReleased(Key key);
     void runFrame();
 
   signals:
@@ -51,7 +52,7 @@ class Emulator final : public QObject
         Joypad    joypad;
     };
 
-    std::unique_ptr<Components> _components;
+    Components _components;
 
     std::chrono::steady_clock::time_point _lastUpdate;
     bool                                  _running{true};

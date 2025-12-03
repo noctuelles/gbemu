@@ -11,12 +11,6 @@
 
 #include "Common.hxx"
 
-constexpr inline auto enumRange = [](auto front, auto back)
-{
-    return std::views::iota(std::to_underlying(front), std::to_underlying(back) + 1) |
-           std::views::transform([](auto e) { return decltype(front)(e); });
-};
-
 namespace Settings
 {
     namespace Palette
@@ -58,6 +52,12 @@ namespace Settings
         void         set(Key key, const QKeySequence& sequence);
         QKeySequence get(Key key);
     }  // namespace Keys
+
+    bool isBootRomEnabled();
+    void setBootRomEnabled(bool enabled);
+
+    QString getBootRomPath();
+    void    setBootRomPath(const QString& path);
 
 }  // namespace Settings
 

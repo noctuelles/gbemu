@@ -32,11 +32,14 @@ Preference::Preference(QWidget* parent) : QDialog(parent), _ui(new Ui::Preferenc
                     if (!path.isEmpty())
                     {
                         _bootRomPath = path;
+                        _ui->bootRomFilename->setText(QFileInfo{_bootRomPath}.fileName());
                     }
                 });
 
-        _ui->enableBootRomCheckbox->setChecked(settings.value("preference/system/enableBootRom", false).toBool());
-        _bootRomPath = settings.value("preference/system/bootRomPath", QString()).toString();
+        _ui->enableBootRomCheckbox->setChecked(Settings::isBootRomEnabled());
+        _bootRomPath = Settings::getBootRomPath();
+
+        _ui->bootRomFilename->setText(QFileInfo{_bootRomPath}.fileName());
     }
 
     {
@@ -134,10 +137,8 @@ Preference::~Preference()
 
 void Preference::accept()
 {
-    QSettings settings{};
-
-    settings.setValue("preference/system/enableBootRom", _ui->enableBootRomCheckbox->isChecked());
-    settings.setValue("preference/system/bootRomPath", _bootRomPath);
+    Settings::setBootRomEnabled(_ui->enableBootRomCheckbox->isChecked());
+    Settings::setBootRomPath(Settings::getBootRomPath());
 
     {
         using namespace Settings::Keys;

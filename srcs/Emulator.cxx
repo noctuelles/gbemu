@@ -4,27 +4,58 @@
 
 #include "Emulator.hxx"
 
+#include <qfile.h>
+
 #include <QThread>
 #include <QTimer>
 #include <iostream>
 
-Emulator::Emulator(QObject* parent) : QObject(parent), _components(nullptr) {}
-
-void Emulator::loadRom(const QString& path)
+Emulator::Emulator(std::optional<QString> bootRomPath, QObject* parent) : QObject(parent)
 {
-    _components = std::make_unique<Components>();
-    _components->cartridge.load(path.toStdString());
+    if (!bootRomPath.has_value())
+    {
+        _components.bus.setPostBootRomRegisters();
+        _components.cpu.setPostBootRomRegisters();
+        _components.ppu.setPostBootRomRegisters();
+        return;
+    }
+
+    QFile                      file{bootRomPath.value()};
+    std::array<uint8_t, 0x100> bootRom{};
+
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        throw std::system_error();
+    }
+
+    if (static_cast<size_t>(file.size()) > bootRom.size())
+    {
+        throw std::runtime_error("Boot ROM size is too large (max 256 bytes)");
+    }
+
+    if (const auto readBytes{file.read(reinterpret_cast<char*>(bootRom.data()), bootRom.size())};
+        readBytes != bootRom.size())
+    {
+        throw std::system_error{};
+    }
+
+    _components.bus.loadBootRom(bootRom);
+}
+
+void Emulator::startEmulation(const QString& path)
+{
+    _components.cartridge.load(path.toStdString());
     runFrame();
 }
 
-void Emulator::onKeyPressed(const Key key) const
+void Emulator::onKeyPressed(const Key key)
 {
-    _components->joypad.press(key);
+    _components.joypad.press(key);
 }
 
-void Emulator::onKeyReleased(const Key key) const
+void Emulator::onKeyReleased(const Key key)
 {
-    _components->joypad.release(key);
+    _components.joypad.release(key);
 }
 
 void Emulator::runFrame()
@@ -36,7 +67,7 @@ void Emulator::runFrame()
     try
     {
         /* Run the emulation for a whole frame. A frame = 70,224 dots = 17,556 machine cycles. */
-        _components->cpu.tick(17556);
+        _components.cpu.tick(17556);
 
         const auto now{std::chrono::steady_clock::now()};
 
@@ -45,7 +76,7 @@ void Emulator::runFrame()
             std::this_thread::sleep_for(frameDuration - diff);
         }
 
-        emit frameReady(_components->ppu.getFramebuffer());
+        emit frameReady(_components.ppu.getFramebuffer());
 
         _lastUpdate = now;
     }

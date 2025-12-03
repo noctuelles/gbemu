@@ -12,9 +12,6 @@
 
 PPU::PPU(IAddressable& bus) : _bus(bus)
 {
-    registers.LCDC = 0x91;
-    registers.STAT = 0x85;
-
     objsToDraw.reserve(10);
 
     addrToRegister = {
@@ -313,6 +310,12 @@ void PPU::tick(const size_t machineCycle)
 
         _dots += 1;
     }
+}
+
+void PPU::setPostBootRomRegisters()
+{
+    registers.LCDC = 0x91;
+    registers.STAT = 0x85;
 }
 
 const Graphics::Framebuffer& PPU::getFramebuffer() const noexcept

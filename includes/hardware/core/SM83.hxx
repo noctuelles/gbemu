@@ -126,6 +126,8 @@ class SM83 final : public IComponent
     [[nodiscard]] uint8_t          read(uint16_t address) const override;
     [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 
+    void setPostBootRomRegisters();
+
     void tick(size_t machineCycle) override;
 
     void               applyView(const View& view);

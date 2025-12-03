@@ -16,13 +16,6 @@
 SM83::SM83(EmulationState& emulationState, IAddressable& bus, ITicking& timer, ITicking& ppu)
     : emulationState(emulationState), bus(bus), timer(timer), ppu(ppu)
 {
-    A  = 0x01;
-    C  = 0x13;
-    E  = 0xD8;
-    H  = 0x01;
-    L  = 0x4D;
-    PC = 0x100;
-    SP = 0xFFFE;
 }
 
 void SM83::write(const uint16_t address, const uint8_t value)
@@ -63,6 +56,17 @@ uint8_t SM83::read(const uint16_t address) const
 IAddressable::AddressableRange SM83::getAddressableRange() const noexcept
 {
     return {MemoryMap::IE, MemoryMap::IORegisters::IF, MemoryMap::IORegisters::DMA};
+}
+
+void SM83::setPostBootRomRegisters()
+{
+    A  = 0x01;
+    C  = 0x13;
+    E  = 0xD8;
+    H  = 0x01;
+    L  = 0x4D;
+    PC = 0x100;
+    SP = 0xFFFE;
 }
 
 void SM83::tick(const size_t machineCycle)
@@ -106,8 +110,6 @@ void SM83::tick(const size_t machineCycle)
 
         interrupts();
     }
-
-
 }
 
 void SM83::applyView(const View& view)

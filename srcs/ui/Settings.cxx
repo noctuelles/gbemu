@@ -6,6 +6,30 @@
 
 #include <QSettings>
 
+namespace Settings
+{
+    bool isBootRomEnabled()
+    {
+        return QSettings{}.value("preference/system/enableBootRom", false).toBool();
+    }
+
+    void setBootRomEnabled(const bool enabled)
+    {
+        QSettings{}.setValue("preference/system/enableBootRom", enabled);
+    }
+
+    QString getBootRomPath()
+    {
+        return QSettings{}.value("preference/system/bootRomPath").toString();
+    }
+
+    void    setBootRomPath(const QString& path)
+    {
+        QSettings{}.setValue("preference/system/bootRomPath", path);
+    }
+
+}  // namespace Settings
+
 namespace Settings::Palette
 {
     void set(const Type type, const QColor& color)

@@ -20,8 +20,6 @@
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainWindow)
 {
-    const auto emulator{new Emulator};
-
     _ui->setupUi(this);
 
     _ui->display->setMinimumSize(std::tuple_size_v<Graphics::Framebuffer::value_type> * 2,
@@ -30,20 +28,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
 
     _populateRecentMenu();
     _loadSettings();
-
-    emulator->moveToThread(&_emulatorThread);
-
-    connect(&_emulatorThread, &QThread::finished, emulator, &QObject::deleteLater);
-
-    connect(emulator, &Emulator::frameReady, this, &MainWindow::onFrameReady);
-    connect(emulator, &Emulator::emulationFatalError, this, &MainWindow::onEmulationFatalError);
-
-    connect(this, &MainWindow::requestNextFrame, emulator, &Emulator::runFrame);
-
-    connect(this, &MainWindow::keyPressed, emulator, &Emulator::onKeyPressed);
-    connect(this, &MainWindow::keyReleased, emulator, &Emulator::onKeyReleased);
-
-    connect(this, &MainWindow::requestLoadRom, emulator, &Emulator::loadRom);
 
     /* UI */
 
@@ -54,7 +38,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                     !path.isEmpty())
                 {
                     _addRecentFile(path);
-                    emit requestLoadRom(path);
+                    _startEmulation(path);
                 }
             });
 
@@ -66,14 +50,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                     _loadSettings();
                 }
             });
-
-    _emulatorThread.start();
 }
 
 MainWindow::~MainWindow()
 {
-    _emulatorThread.quit();
-    _emulatorThread.wait();
+    if (_emulatorThread.isRunning())
+    {
+        _emulatorThread.quit();
+        _emulatorThread.wait();
+    }
 
     delete _ui;
 }
@@ -112,7 +97,7 @@ void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
     emit requestNextFrame();
 }
 
-void MainWindow::onEmulationFatalError(const QString& message) const
+void MainWindow::onEmulationFatalError(const QString& message)
 {
     constexpr Graphics::Framebuffer framebuffer{};
 
@@ -130,6 +115,11 @@ void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const
     {
         for (const auto& [x, color] : std::views::enumerate(row))
         {
+            if (color > 3)
+            {
+                continue;
+            }
+
             const auto& rgbColor{_colorMapping[color]};
             img.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
         }
@@ -154,6 +144,36 @@ std::optional<Key> MainWindow::_isAMappedKey(const QKeyEvent* keyEvent) const
     }
 
     return std::nullopt;
+}
+
+void MainWindow::_startEmulation(const QString& romPath)
+{
+    if (_emulatorThread.isRunning())
+    {
+        _emulatorThread.quit();
+        _emulatorThread.wait();
+    }
+
+    auto       bootRomPath{Settings::isBootRomEnabled() ? std::optional{Settings::getBootRomPath()} : std::nullopt};
+    const auto emulator{new Emulator{std::move(bootRomPath)}};
+
+    emulator->moveToThread(&_emulatorThread);
+
+    connect(&_emulatorThread, &QThread::finished, emulator, &QObject::deleteLater);
+
+    connect(emulator, &Emulator::frameReady, this, &MainWindow::onFrameReady);
+    connect(emulator, &Emulator::emulationFatalError, this, &MainWindow::onEmulationFatalError);
+
+    connect(this, &MainWindow::requestNextFrame, emulator, &Emulator::runFrame);
+
+    connect(this, &MainWindow::keyPressed, emulator, &Emulator::onKeyPressed);
+    connect(this, &MainWindow::keyReleased, emulator, &Emulator::onKeyReleased);
+
+    connect(this, &MainWindow::requestStartEmulation, emulator, &Emulator::startEmulation);
+
+    _emulatorThread.start();
+
+    emit requestStartEmulation(romPath);
 }
 
 void MainWindow::_populateRecentMenu()
@@ -192,7 +212,7 @@ void MainWindow::_populateRecentMenu()
                         }
 
                         _addRecentFile(path);
-                        emit requestLoadRom(path);
+                        _startEmulation(path);
                     });
 
             _ui->menuOpen_Recent->addAction(action);

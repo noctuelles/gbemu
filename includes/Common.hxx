@@ -33,6 +33,7 @@ namespace MemoryMap
 {
     using AddressRange = std::pair<uint16_t, uint16_t>;
 
+    constexpr AddressRange BOOT_ROM{0x0000, 0x00FF};
     constexpr AddressRange ROM{0x0000, 0x7FFF};
     constexpr AddressRange VIDEO_RAM{0x8000, 0x9FFF};
     constexpr AddressRange EXT_RAM{0xA000, 0xBFFF};
