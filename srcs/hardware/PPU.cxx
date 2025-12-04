@@ -12,14 +12,14 @@
 
 PPU::PPU(IAddressable& bus) : _bus(bus)
 {
-    objsToDraw.reserve(10);
+    _objsToDraw.reserve(10);
 
     addrToRegister = {
-        {MemoryMap::IORegisters::LY, registers.LY},     {MemoryMap::IORegisters::LYC, registers.LYC},
-        {MemoryMap::IORegisters::LCDC, registers.LCDC}, {MemoryMap::IORegisters::STAT, registers.STAT},
-        {MemoryMap::IORegisters::SCX, registers.SCX},   {MemoryMap::IORegisters::SCY, registers.SCY},
-        {MemoryMap::IORegisters::WX, registers.WX},     {MemoryMap::IORegisters::WY, registers.WY},
-        {MemoryMap::IORegisters::BGP, registers.BGP},
+        {MemoryMap::IORegisters::LY, _registers.LY},     {MemoryMap::IORegisters::LYC, _registers.LYC},
+        {MemoryMap::IORegisters::LCDC, _registers.LCDC}, {MemoryMap::IORegisters::STAT, _registers.STAT},
+        {MemoryMap::IORegisters::SCX, _registers.SCX},   {MemoryMap::IORegisters::SCY, _registers.SCY},
+        {MemoryMap::IORegisters::WX, _registers.WX},     {MemoryMap::IORegisters::WY, _registers.WY},
+        {MemoryMap::IORegisters::BGP, _registers.BGP},
     };
 }
 
@@ -128,7 +128,7 @@ uint8_t PPU::read(const uint16_t address) const
         //     return 0xFF;
         // }
 
-        if ((registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 1)
+        if ((_registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 1)
         {
             return 0xFF;
         }
@@ -176,6 +176,23 @@ void PPU::write(const uint16_t address, const uint8_t value)
     else if (const auto it = addrToRegister.find(address); it != addrToRegister.end())
     {
         it->second.get() = value;
+
+        if (it->second == _registers.LCDC)
+        {
+            if ((_registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 0)
+            {
+                /* The mode report 0 when the PPU is disabled. */
+
+                _dots         = 0;
+                _registers.LY = 0;
+                _x            = 0;
+                _mode         = Mode::Disabled;
+            }
+            else
+            {
+                _mode = Mode::OAMScan;
+            }
+        }
     }
     else
     {
@@ -189,24 +206,16 @@ void PPU::tick(const size_t machineCycle)
 
     for (size_t i{0}; i < machineCycle * 4; ++i)
     {
-        if ((registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 0)
+        if (_registers.LY == _registers.LYC)
         {
-            registers.STAT &= 0xFC;
-            return;
-        }
-
-        if (registers.LY == registers.LYC)
-        {
-            registers.STAT |= Status::LYCCompare;
-
-            // triggerStatInterrupt((registers.STAT & Status::LYC) != 0);
+            _registers.STAT |= Status::LYCCompare;
         }
         else
         {
-            registers.STAT &= ~Status::LYCCompare;
+            _registers.STAT &= ~Status::LYCCompare;
         }
 
-        switch (mode)
+        switch (_mode)
         {
             case Mode::OAMScan:
                 _videoRamAccessible = true;
@@ -223,22 +232,23 @@ void PPU::tick(const size_t machineCycle)
                      * or X ≥ 168 (160 + 8) will hide it, but it will still count towards the limit, possibly causing
                      * another object later in OAM not to be drawn.
                      */
-                    if (const uint8_t objHeight = (registers.LCDC & LCDControlFlags::ObjSize) != 0 ? 16 : 8;
-                        registers.LY >= _currentOamEntry->y && registers.LY < _currentOamEntry->y + objHeight)
-                    {
-                        if (objsToDraw.size() < 10)
-                        {
-                            objsToDraw.push_back(_currentOamEntry);
-                        }
-                    }
-                    _currentOamEntry += 1;
+                    //if (const uint8_t objHeight = (_registers.LCDC & LCDControlFlags::ObjSize) != 0 ? 16 : 8;
+                    //    _registers.LY >= _currentOamEntry->y && _registers.LY < _currentOamEntry->y + objHeight)
+                    //{
+                    //    if (_objsToDraw.size() < 10)
+                    //    {
+                    //        _objsToDraw.push_back(_currentOamEntry);
+                    //    }
+                    //}
+
+                    //_currentOamEntry += 1;
                 }
 
+                _dots += 1;
                 if (_dots == 80)
                 {
-                    transition(Mode::Drawing);
+                    _transition(Mode::Drawing);
                 }
-
                 break;
             case Mode::Drawing:
                 /* Minimum length : 172 dots. */
@@ -246,7 +256,7 @@ void PPU::tick(const size_t machineCycle)
                 _videoRamAccessible = false;
                 _oamAccessible      = false;
 
-                pixelFetcher.tick();
+                _pixelFetcher.tick();
 
                 if (!_backgroundFIFO.empty())
                 {
@@ -258,8 +268,8 @@ void PPU::tick(const size_t machineCycle)
                     {
                         const auto& backgroundPixel{_backgroundFIFO.front()};
 
-                        _framebuffer[registers.LY][_x] =
-                            Graphics::getRealColorIndexFromPaletteRegister(backgroundPixel.color, registers.BGP);
+                        _framebuffer[_registers.LY][_x] =
+                            Graphics::getRealColorIndexFromPaletteRegister(backgroundPixel.color, _registers.BGP);
                         ;
                         _x += 1;
                     }
@@ -267,27 +277,29 @@ void PPU::tick(const size_t machineCycle)
                     _backgroundFIFO.pop();
                 }
 
+                _dots += 1;
                 if (_x == 160)
                 {
-                    transition(Mode::HorizontalBlank);
+                    _transition(Mode::HorizontalBlank);
                 }
                 break;
             case Mode::HorizontalBlank:
                 _videoRamAccessible = true;
                 _oamAccessible      = true;
 
+                _dots += 1;
                 if (_dots == 456)
                 {
                     _dots = 0;
-                    registers.LY += 1;
+                    _registers.LY += 1;
 
-                    if (registers.LY == 144)
+                    if (_registers.LY == 144)
                     {
-                        transition(Mode::VerticalBlank);
+                        _transition(Mode::VerticalBlank);
                     }
                     else
                     {
-                        transition(Mode::OAMScan);
+                        _transition(Mode::OAMScan);
                     }
                 }
                 break;
@@ -295,27 +307,28 @@ void PPU::tick(const size_t machineCycle)
                 _videoRamAccessible = true;
                 _oamAccessible      = true;
 
+                _dots += 1;
                 if (_dots == 456)
                 {
                     _dots = 0;
-                    registers.LY += 1;
+                    _registers.LY += 1;
 
-                    if (registers.LY == 154)
+                    if (_registers.LY == 154)
                     {
-                        transition(Mode::OAMScan);
+                        _transition(Mode::OAMScan);
                     }
                 }
                 break;
+            case Mode::Disabled:
+                return;
         }
-
-        _dots += 1;
     }
 }
 
 void PPU::setPostBootRomRegisters()
 {
-    registers.LCDC = 0x91;
-    registers.STAT = 0x85;
+    _registers.LCDC = 0x91;
+    _registers.STAT = 0x85;
 }
 
 const Graphics::Framebuffer& PPU::getFramebuffer() const noexcept
@@ -333,50 +346,50 @@ IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
             MemoryMap::IORegisters::LCDC};
 }
 
-void PPU::transition(const Mode transitionTo)
+void PPU::_transition(const Mode transitionTo)
 {
-    const auto modeValue{std::to_underlying(mode)};
+    const auto modeValue{std::to_underlying(_mode)};
 
     /* Clear the first two bits and write the current PPU mode. */
-    registers.STAT = (registers.STAT & 0xFC) | modeValue;
+    _registers.STAT = (_registers.STAT & 0xFC) | modeValue;
 
     /* There is no Mode 3 interrupt. */
     if (transitionTo != Mode::Drawing)
     {
-        //triggerStatInterrupt((registers.STAT & (1 << (2 + modeValue))) != 0);
+        // triggerStatInterrupt((registers.STAT & (1 << (2 + modeValue))) != 0);
     }
 
-    if (mode != Mode::OAMScan && transitionTo == Mode::OAMScan)
+    if (_mode != Mode::OAMScan && transitionTo == Mode::OAMScan)
     {
-        objsToDraw.clear();
+        _objsToDraw.clear();
         _currentOamEntry = _oamEntries.cbegin();
     }
-    if (mode == Mode::OAMScan && transitionTo == Mode::Drawing)
+    if (_mode == Mode::OAMScan && transitionTo == Mode::Drawing)
     {
         decltype(_backgroundFIFO) emptyBackgroundFifo{};
 
         std::swap(_backgroundFIFO, emptyBackgroundFifo);
-        pixelFetcher.start();
+        _pixelFetcher.start();
 
-        _pixelsToDiscard = registers.SCX & 0x7;
+        _pixelsToDiscard = _registers.SCX & 0x7;
     }
-    else if (mode == Mode::Drawing && transitionTo == Mode::HorizontalBlank)
+    else if (_mode == Mode::Drawing && transitionTo == Mode::HorizontalBlank)
     {
         _x = 0;
     }
-    else if (mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
+    else if (_mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
     {
         _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | 1 << Interrupts::VBlank);
     }
-    else if (mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
+    else if (_mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
     {
-        registers.LY = 0;
+        _registers.LY = 0;
     }
 
-    mode = transitionTo;
+    _mode = transitionTo;
 }
 
-void PPU::triggerStatInterrupt(const bool value)
+void PPU::_triggerStatInterrupt(const bool value)
 {
     if (value && !_irq)
     {
@@ -391,5 +404,5 @@ void PPU::triggerStatInterrupt(const bool value)
 
 void PPU::off()
 {
-    registers.STAT = registers.STAT & 0xFC;
+    _registers.STAT = _registers.STAT & 0xFC;
 }

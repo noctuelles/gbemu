@@ -93,6 +93,7 @@ class PPU final : public IComponent
         VerticalBlank = 1,
         OAMScan       = 2,
         Drawing       = 3,
+        Disabled      = 4,
     };
 
     struct LCDControlFlags
@@ -230,7 +231,7 @@ class PPU final : public IComponent
 
     [[nodiscard]] uint8_t read(uint16_t address) const override;
     void                  write(uint16_t address, uint8_t value) override;
-    void                  tick(size_t machineCycle = 1) override;
+    void                  tick(size_t machineCycle) override;
     void                  setPostBootRomRegisters();
 
     const Graphics::Framebuffer& getFramebuffer() const noexcept;
@@ -238,8 +239,8 @@ class PPU final : public IComponent
     AddressableRange getAddressableRange() const noexcept override;
 
   private:
-    void transition(Mode transitionTo);
-    void triggerStatInterrupt(bool value);
+    void _transition(Mode transitionTo);
+    void _triggerStatInterrupt(bool value);
     void off();
 
     IAddressable&         _bus;
@@ -255,16 +256,16 @@ class PPU final : public IComponent
     OAMArray                 _oamEntries{};
     OAMArray::const_iterator _currentOamEntry{};
 
-    std::vector<decltype(_currentOamEntry)> objsToDraw{};
+    std::vector<OAMArray::const_iterator> _objsToDraw{};
 
-    Registers    registers{};
-    PixelFetcher pixelFetcher{_backgroundFIFO, _videoRam, registers};
+    Registers    _registers{};
+    PixelFetcher _pixelFetcher{_backgroundFIFO, _videoRam, _registers};
 
     uint16_t _dots{};
     uint8_t  _pixelsToDiscard{};
     uint8_t  _x{};
 
-    Mode mode{};
+    Mode _mode{Mode::Disabled};
 
     friend class MooneyeAcceptance;
 };
