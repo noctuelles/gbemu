@@ -409,11 +409,16 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                         state = State::HALTED;
                     }
                 }
-                if (!IME)
+                else
                 {
                     if ((IE & IF) != 0)
                     {
                         state = State::HALTED_BUG;
+                    }
+                    else
+                    {
+                        /* Future interrupt will not be handled but the CPU will exit HALT state */
+                        state = State::HALTED;
                     }
                 }
                 break;

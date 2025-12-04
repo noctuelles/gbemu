@@ -45,6 +45,9 @@ qt_add_executable(gbemu
         srcs/ui/Preference.ui
         includes/ui/Settings.hxx
         srcs/ui/Settings.cxx
+        srcs/ui/Debugger.cxx
+        includes/ui/Debugger.hxx
+        srcs/ui/Debugger.ui
 )
 
 target_link_libraries(gbemu PRIVATE

@@ -26,8 +26,8 @@ class Timer final : public IComponent
     void                           tick(size_t machineCycle = 1) override;
 
   private:
-    void set_system_counter(uint16_t value);
-    void detect_falling_edge(bool bit);
+    void setSystemCounter(uint16_t value);
+    void detectFallingEdge(bool bit);
 
     IAddressable& bus;
 
@@ -37,7 +37,7 @@ class Timer final : public IComponent
     uint8_t  TAC{};
 
     State state{State::NORMAL};
-    bool  last_bit{};
+    bool  lastBit{};
 
     friend class MooneyeAcceptance;
 };

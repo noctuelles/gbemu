@@ -8,6 +8,7 @@
 #include <QMainWindow>
 #include <QThread>
 
+#include "Debugger.hxx"
 #include "Emulator.hxx"
 
 QT_BEGIN_NAMESPACE
@@ -57,6 +58,8 @@ class MainWindow final : public QMainWindow
 
     QThread         _emulatorThread;
     Ui::MainWindow* _ui;
+
+    Debugger _debugger;
 };
 
 #endif  // GBEMU_MAINWINDOW_HXX

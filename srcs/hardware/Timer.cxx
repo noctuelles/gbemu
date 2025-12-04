@@ -25,7 +25,7 @@ void Timer::write(uint16_t address, const uint8_t value)
              * multiplexer, thus sending a “Timer tick” and/or “DIV-APU event” pulse early.
              */
             (void) value;
-            set_system_counter(0);
+            setSystemCounter(0);
             break;
         case MemoryMap::IORegisters::TIMA:
             switch (state)
@@ -90,7 +90,7 @@ void Timer::write(uint16_t address, const uint8_t value)
             };
 
             bit_set = bit_set && (TAC & 0b100) != 0;
-            if (last_bit == true && bit_set == false)
+            if (lastBit == true && bit_set == false)
             {
                 TIMA += 1;
                 if (TIMA == 0)
@@ -138,19 +138,19 @@ void Timer::tick(const size_t machineCycle)
             case State::SCHEDULE_INTERRUPT_AND_TMA_RELOAD:
                 state = State::RELOADING_TIMA_TO_TMA;
                 TIMA  = TMA;
-                bus.write(0xFF0F, bus.read(0xFF0F) | 1 << 2);
+                bus.write(MemoryMap::IORegisters::IF, bus.read(MemoryMap::IORegisters::IF) | Interrupts::Timer);
                 break;
             case State::RELOADING_TIMA_TO_TMA:
                 state = State::NORMAL;
         }
 
-        set_system_counter(system_counter + 1);
+        setSystemCounter(system_counter + 1);
     }
 }
 
-void Timer::set_system_counter(const uint16_t value)
+void Timer::setSystemCounter(const uint16_t value)
 {
-    auto bit_set{false};
+    uint8_t bitSet{false};
 
     system_counter = value;
 
@@ -158,30 +158,30 @@ void Timer::set_system_counter(const uint16_t value)
     switch (static_cast<uint8_t>(TAC & 0b11))
     {
         case 0b00:
-            bit_set = (system_counter >> 7 & 1) != 0; /* Every 256 M-cycles. */
+            bitSet = (system_counter >> 7) & 1; /* Every 256 M-cycles. */
             break;
         case 0b01:
-            bit_set = (system_counter >> 1 & 1) != 0; /* Every 4 M-cycles */
+            bitSet = (system_counter >> 1) & 1; /* Every 4 M-cycles */
             break;
         case 0b10:
-            bit_set = (system_counter >> 3 & 1) != 0; /* Every 16 M-cycles */
+            bitSet = (system_counter >> 3) & 1; /* Every 16 M-cycles */
             break;
         case 0b11:
-            bit_set = (system_counter >> 5 & 1) != 0; /* Every 64 M-cycles */
+            bitSet = (system_counter >> 5) & 1; /* Every 64 M-cycles */
             break;
     };
 
-    bit_set = bit_set && (TAC & 0b100) != 0;
-    detect_falling_edge(bit_set);
-    last_bit = bit_set;
+    bitSet &= (TAC & 0b100) >> 2;
+    detectFallingEdge(bitSet);
+    lastBit = bitSet;
 }
 
 /**
  * @note Do not interpret a "falling edge" with a clock falling edge! This is different.
  */
-void Timer::detect_falling_edge(const bool bit)
+void Timer::detectFallingEdge(const bool bit)
 {
-    if (last_bit == true && bit == false)
+    if (lastBit == true && bit == false)
     {
         TIMA += 1;
         if (TIMA == 0)

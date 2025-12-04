@@ -18,7 +18,7 @@
 #include "ui/Settings.hxx"
 #include "ui_MainWindow.h"
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainWindow), _debugger(this)
 {
     _ui->setupUi(this);
 
@@ -49,6 +49,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                 {
                     _loadSettings();
                 }
+            });
+    connect(_ui->actionDebugger, &QAction::triggered, this,
+            [this]
+            {
+                _debugger.show();
             });
 }
 

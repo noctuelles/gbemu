@@ -199,7 +199,7 @@ void PPU::tick(const size_t machineCycle)
         {
             registers.STAT |= Status::LYCCompare;
 
-            triggerStatInterrupt((registers.STAT & Status::LYC) != 0);
+            // triggerStatInterrupt((registers.STAT & Status::LYC) != 0);
         }
         else
         {
@@ -343,7 +343,7 @@ void PPU::transition(const Mode transitionTo)
     /* There is no Mode 3 interrupt. */
     if (transitionTo != Mode::Drawing)
     {
-        triggerStatInterrupt((registers.STAT & (1 << (2 + modeValue))) != 0);
+        //triggerStatInterrupt((registers.STAT & (1 << (2 + modeValue))) != 0);
     }
 
     if (mode != Mode::OAMScan && transitionTo == Mode::OAMScan)
@@ -381,7 +381,7 @@ void PPU::triggerStatInterrupt(const bool value)
     if (value && !_irq)
     {
         _irq = true;
-        _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) & (1 << Interrupts::LCD));
+        _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | (1 << Interrupts::LCD));
     }
     else
     {
