@@ -158,7 +158,7 @@ uint8_t PPU::read(const uint16_t address) const
     throw std::logic_error{"Invalid PPU Read"};
 }
 
-void PPU::write(const uint16_t address, const uint8_t value)
+void PPU::write(const uint16_t address, uint8_t value)
 {
     if (Utils::addressIn(address, MemoryMap::VIDEO_RAM))
     {
@@ -180,25 +180,24 @@ void PPU::write(const uint16_t address, const uint8_t value)
     }
     else if (const auto it = addrToRegister.find(address); it != addrToRegister.end())
     {
-        it->second.get() = value;
-
         if (it->second == _registers.LCDC)
         {
-            if ((_registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 0)
+            if ((value & LCDControlFlags::LCDAndPPUEnable) == 0)
             {
-                /* The mode report 0 when the PPU is disabled. */
-
-                _registers.STAT &= 0xFC;
-                _dots         = 0;
-                _registers.LY = 0;
-                _x            = 0;
-                _mode         = Mode::Disabled;
+                _transition(Mode::Disabled);
             }
             else
             {
-                _mode = Mode::OAMScan;
+                _transition(Mode::OAMScan);
             }
         }
+
+        if (it->second == _registers.STAT)
+        {
+            value &= 0b01111000;
+        }
+
+        it->second.get() = value;
     }
     else
     {
@@ -212,6 +211,8 @@ void PPU::tick(const size_t machineCycle)
 
     for (size_t i{0}; i < machineCycle * 4; ++i)
     {
+        _dots += 1;
+
         if (_registers.LY == _registers.LYC)
         {
             _registers.STAT |= Status::LYCCompare;
@@ -250,7 +251,6 @@ void PPU::tick(const size_t machineCycle)
                     //_currentOamEntry += 1;
                 }
 
-                _dots += 1;
                 if (_dots == 80)
                 {
                     _transition(Mode::Drawing);
@@ -283,7 +283,6 @@ void PPU::tick(const size_t machineCycle)
                     _backgroundFIFO.pop();
                 }
 
-                _dots += 1;
                 if (_x == 160)
                 {
                     _transition(Mode::HorizontalBlank);
@@ -293,7 +292,6 @@ void PPU::tick(const size_t machineCycle)
                 _videoRamAccessible = true;
                 _oamAccessible      = true;
 
-                _dots += 1;
                 if (_dots == 456)
                 {
                     _dots = 0;
@@ -301,7 +299,6 @@ void PPU::tick(const size_t machineCycle)
 
                     if (_registers.LY == 144)
                     {
-                        _dotsSoFar = 0;
                         _transition(Mode::VerticalBlank);
                     }
                     else
@@ -314,8 +311,6 @@ void PPU::tick(const size_t machineCycle)
                 _videoRamAccessible = true;
                 _oamAccessible      = true;
 
-                _dots += 1;
-                _dotsSoFar += 1;
                 if (_dots == 456)
                 {
                     _dots = 0;
@@ -356,15 +351,22 @@ IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
 
 void PPU::_transition(const Mode transitionTo)
 {
-    const auto modeValue{std::to_underlying(_mode)};
+    auto modeValue{std::to_underlying(_mode)};
+
+    if (transitionTo == Mode::Disabled)
+    {
+        modeValue     = 0;
+        _dots         = 0;
+        _registers.LY = 0;
+        _x            = 0;
+    }
 
     /* Clear the first two bits and write the current PPU mode. */
     _registers.STAT = (_registers.STAT & 0xFC) | modeValue;
 
-    /* There is no Mode 3 interrupt. */
-    if (transitionTo != Mode::Drawing)
+    if (transitionTo == Mode::OAMScan || transitionTo == Mode::HorizontalBlank || transitionTo == Mode::VerticalBlank)
     {
-        // triggerStatInterrupt((registers.STAT & (1 << (2 + modeValue))) != 0);
+        //_triggerStatInterrupt((_registers.STAT & (1 << (2 + modeValue))) != 0);
     }
 
     if (_mode != Mode::OAMScan && transitionTo == Mode::OAMScan)
