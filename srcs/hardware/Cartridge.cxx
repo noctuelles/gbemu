@@ -288,7 +288,8 @@ uint8_t Cartridge::read(const uint16_t address) const
 
 void Cartridge::write(const uint16_t address, uint8_t value)
 {
-    content[address] = value;
+    (void) address;
+    (void) value;
 }
 
 IAddressable::AddressableRange Cartridge::getAddressableRange() const noexcept

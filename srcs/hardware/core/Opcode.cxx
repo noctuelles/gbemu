@@ -813,7 +813,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 rst(ResetVector::h38);
                 break;
             [[unlikely]] default:
-                throw std::runtime_error(std::format("Illegal opcode: {:02X}", IR));
+                throw std::runtime_error(std::format("Illegal opcode at PC {:#04X}: {:#02X}", PC - 1, IR));
         };
     }
     else

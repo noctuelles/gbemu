@@ -62,7 +62,7 @@ void Emulator::runFrame()
 {
     using namespace std::chrono_literals;
 
-    constexpr auto frameDuration{16740000ns};
+    constexpr auto frameDuration{21740000ns};
 
     try
     {
