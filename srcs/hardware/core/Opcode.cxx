@@ -35,6 +35,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 writeMemory(BC(), A);
                 break;
             case 0x03:
+                onMachineCycle();
                 BC(BC() + 1);
                 break;
             case 0x04:
@@ -61,6 +62,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
             }
             break;
             case 0x09:
+                onMachineCycle();
                 HL(add(HL(), BC()));
                 break;
             case 0x0A:
@@ -94,6 +96,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 writeMemory(DE(), A);
                 break;
             case 0x13:
+                onMachineCycle();
                 DE(DE() + 1);
                 break;
             case 0x14:
@@ -113,6 +116,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 jr();
                 break;
             case 0x19:
+                onMachineCycle();
                 HL(add(HL(), DE()));
                 break;
             case 0x1A:
@@ -147,6 +151,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 HL(HL() + 1);
                 break;
             case 0x23:
+                onMachineCycle();
                 HL(HL() + 1);
                 break;
             case 0x24:
@@ -165,6 +170,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 jr_cc(Conditionals::Z);
                 break;
             case 0x29:
+                onMachineCycle();
                 HL(add(HL(), HL()));
                 break;
             case 0x2A:
@@ -201,6 +207,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 HL(HL() - 1);
                 break;
             case 0x33:
+                onMachineCycle();
                 SP += 1;
                 break;
             case 0x34:
@@ -221,6 +228,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 jr_cc(Conditionals::C);
                 break;
             case 0x39:
+                onMachineCycle();
                 HL(add(HL(), SP));
                 break;
             case 0x3A:
@@ -748,7 +756,9 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 rst(ResetVector::h20);
                 break;
             case 0xE8:
+                onMachineCycle();
                 SP = add(SP, fetchOperand());
+                onMachineCycle();
                 break;
             case 0xE9:
                 PC = HL();
@@ -790,6 +800,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 rst(ResetVector::h30);
                 break;
             case 0xF8:
+                onMachineCycle();
                 HL(add(SP, fetchOperand()));
                 break;
             case 0xF9:

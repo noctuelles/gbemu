@@ -306,8 +306,6 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 
     lhs_lsb = add(lhs_lsb, rhs);
 
-    onMachineCycle();
-
     if (getFlag(Flags::Carry) && !sign)
     {
         lhs_msb += 1;
@@ -318,8 +316,6 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
     }
 
     set_flag(Flags::Zero, false);
-
-    onMachineCycle();
 
     return Utils::to_word(lhs_msb, lhs_lsb);
 }

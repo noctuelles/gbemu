@@ -88,3 +88,8 @@ TEST_F(BlarggInstructions, OperationRegisterA_MemHL_11)
 {
     ASSERT_NO_THROW(executeROM("11-op a,(hl).gb"));
 }
+
+TEST_F(BlarggInstructions, Timing)
+{
+    ASSERT_NO_THROW(executeROM("instr_timing.gb"));
+}
