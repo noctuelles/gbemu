@@ -262,6 +262,7 @@ class PPU final : public IComponent
     PixelFetcher _pixelFetcher{_backgroundFIFO, _videoRam, _registers};
 
     uint16_t _dots{};
+    uint16_t _dotsSoFar{};
     uint8_t  _pixelsToDiscard{};
     uint8_t  _x{};
 

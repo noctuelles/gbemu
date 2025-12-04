@@ -32,6 +32,7 @@ void PPU::PixelFetcher::tick()
 {
     constexpr auto isBackground{true};
 
+    _dots += 1;
     /* Just rendering background tiles. */
     switch (_state)
     {
@@ -45,13 +46,13 @@ void PPU::PixelFetcher::tick()
                     size_t bgTileMapAreaOffset{};
                     /* The background tile map is a 32x32 tile grid. */
 
-                    if ((_registers.LCDC & LCDControlFlags::BGTileMapSelect) == 0)
+                    if (_registers.LCDC & LCDControlFlags::BGTileMapSelect)
                     {
-                        bgTileMapAreaOffset = 0x1800;
+                        bgTileMapAreaOffset = 0x1C00;
                     }
                     else
                     {
-                        bgTileMapAreaOffset = 0x1C00;
+                        bgTileMapAreaOffset = 0x1800;
                     }
 
                     tileOffset = ((_registers.SCX >> 3) + _x) & 0x1F;
@@ -66,10 +67,16 @@ void PPU::PixelFetcher::tick()
         case State::GetTileDataLow:
             if (_dots == 4)
             {
-                _tileDataAddress = 0;
-
-                /* Select the proper tile. */
-                _tileDataAddress += _tileMapNbr * 16;
+                if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
+                {
+                    /* Uses 0x8000 as a base address. Tile numbers are unsigned. */
+                    _tileDataAddress = _tileMapNbr * 16;
+                }
+                else
+                {
+                    /* Uses 0x8800 as a base address. Tile numbers are signed. */
+                    _tileDataAddress = 0x1000 + static_cast<int8_t>(_tileMapNbr) * 16;
+                }
 
                 /* Select the proper row within that tile. There are 2 bytes per row. */
                 _tileDataAddress += 2 * ((_registers.LY + _registers.SCY) & 0x7);
@@ -108,8 +115,6 @@ void PPU::PixelFetcher::tick()
             }
             break;
     }
-
-    _dots += 1;
 }
 
 void PPU::PixelFetcher::start()
@@ -183,6 +188,7 @@ void PPU::write(const uint16_t address, const uint8_t value)
             {
                 /* The mode report 0 when the PPU is disabled. */
 
+                _registers.STAT &= 0xFC;
                 _dots         = 0;
                 _registers.LY = 0;
                 _x            = 0;
@@ -232,14 +238,14 @@ void PPU::tick(const size_t machineCycle)
                      * or X ≥ 168 (160 + 8) will hide it, but it will still count towards the limit, possibly causing
                      * another object later in OAM not to be drawn.
                      */
-                    //if (const uint8_t objHeight = (_registers.LCDC & LCDControlFlags::ObjSize) != 0 ? 16 : 8;
-                    //    _registers.LY >= _currentOamEntry->y && _registers.LY < _currentOamEntry->y + objHeight)
+                    // if (const uint8_t objHeight = (_registers.LCDC & LCDControlFlags::ObjSize) != 0 ? 16 : 8;
+                    //     _registers.LY >= _currentOamEntry->y && _registers.LY < _currentOamEntry->y + objHeight)
                     //{
-                    //    if (_objsToDraw.size() < 10)
-                    //    {
-                    //        _objsToDraw.push_back(_currentOamEntry);
-                    //    }
-                    //}
+                    //     if (_objsToDraw.size() < 10)
+                    //     {
+                    //         _objsToDraw.push_back(_currentOamEntry);
+                    //     }
+                    // }
 
                     //_currentOamEntry += 1;
                 }
@@ -295,6 +301,7 @@ void PPU::tick(const size_t machineCycle)
 
                     if (_registers.LY == 144)
                     {
+                        _dotsSoFar = 0;
                         _transition(Mode::VerticalBlank);
                     }
                     else
@@ -308,6 +315,7 @@ void PPU::tick(const size_t machineCycle)
                 _oamAccessible      = true;
 
                 _dots += 1;
+                _dotsSoFar += 1;
                 if (_dots == 456)
                 {
                     _dots = 0;
