@@ -75,41 +75,46 @@ void SM83::tick(const size_t machineCycle)
 
     while (_machineCyclesElapsed < machineCycle)
     {
-        switch (state)
-        {
-            case State::NORMAL:
-            {
-                if (requestIme != 0)
-                {
-                    requestIme -= 1;
-                    if (requestIme == 0)
-                    {
-                        IME = true;
-                    }
-                }
-
-                fetchInstruction();
-                decodeExecuteInstruction();
-
-                break;
-            }
-            case State::STOPPED:
-            case State::HALTED:
-                onMachineCycle();
-                if ((IE & IF) != 0)
-                {
-                    state = State::NORMAL;
-                }
-                break;
-            case State::HALTED_BUG:
-                fetchInstruction();
-                PC--;
-                decodeExecuteInstruction();
-                break;
-        }
-
-        interrupts();
+        runInstruction();
     }
+}
+
+void SM83::runInstruction()
+{
+    switch (state)
+    {
+        case State::NORMAL:
+        {
+            if (requestIme != 0)
+            {
+                requestIme -= 1;
+                if (requestIme == 0)
+                {
+                    IME = true;
+                }
+            }
+
+            fetchInstruction();
+            decodeExecuteInstruction();
+
+            break;
+        }
+        case State::STOPPED:
+        case State::HALTED:
+            onMachineCycle();
+            if ((IE & IF) != 0)
+            {
+                state = State::NORMAL;
+            }
+            break;
+        case State::HALTED_BUG:
+            fetchInstruction();
+            PC--;
+            decodeExecuteInstruction();
+            break;
+    }
+
+    interrupts();
 }
 
 void SM83::applyView(const View& view)

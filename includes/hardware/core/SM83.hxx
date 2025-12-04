@@ -129,6 +129,7 @@ class SM83 final : public IComponent
     void setPostBootRomRegisters();
 
     void tick(size_t machineCycle) override;
+    void runInstruction();
 
     void               applyView(const View& view);
     [[nodiscard]] View getView() const;
