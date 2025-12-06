@@ -4,7 +4,6 @@
 #include "hardware/PPU.hxx"
 
 #include <Utils.hxx>
-#include <iostream>
 #include <stdexcept>
 
 #include "graphics/Tile.hxx"
@@ -13,146 +12,53 @@
 PPU::PPU(IAddressable& bus) : _bus(bus)
 {
     _objsToDraw.reserve(10);
-
-    addrToRegister = {
-        {MemoryMap::IORegisters::LY, _registers.LY},     {MemoryMap::IORegisters::LYC, _registers.LYC},
-        {MemoryMap::IORegisters::LCDC, _registers.LCDC}, {MemoryMap::IORegisters::STAT, _registers.STAT},
-        {MemoryMap::IORegisters::SCX, _registers.SCX},   {MemoryMap::IORegisters::SCY, _registers.SCY},
-        {MemoryMap::IORegisters::WX, _registers.WX},     {MemoryMap::IORegisters::WY, _registers.WY},
-        {MemoryMap::IORegisters::BGP, _registers.BGP},
-    };
-}
-
-PPU::PixelFetcher::PixelFetcher(std::queue<FIFOEntry>& backgroundFifo, const VideoRAM& videoRam, Registers& registers)
-    : _backgroundFIFO(backgroundFifo), _registers(registers), _videoRam{videoRam}, _dots(0)
-{
-}
-
-void PPU::PixelFetcher::tick()
-{
-    constexpr auto isBackground{true};
-
-    _dots += 1;
-    /* Just rendering background tiles. */
-    switch (_state)
-    {
-        case State::GetTile:
-            /* Get tile number. */
-            if (_dots == 2)
-            {
-                if (isBackground)
-                {
-                    size_t tileOffset{};
-                    size_t bgTileMapAreaOffset{};
-                    /* The background tile map is a 32x32 tile grid. */
-
-                    if (_registers.LCDC & LCDControlFlags::BGTileMapSelect)
-                    {
-                        bgTileMapAreaOffset = 0x1C00;
-                    }
-                    else
-                    {
-                        bgTileMapAreaOffset = 0x1800;
-                    }
-
-                    tileOffset = ((_registers.SCX >> 3) + _x) & 0x1F;
-                    tileOffset += 32 * (((_registers.LY + _registers.SCY) & 0xFF) >> 3);
-
-                    _tileMapNbr = _videoRam[bgTileMapAreaOffset + tileOffset];
-                }
-
-                _state = State::GetTileDataLow;
-            }
-            break;
-        case State::GetTileDataLow:
-            if (_dots == 4)
-            {
-                if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
-                {
-                    /* Uses 0x8000 as a base address. Tile numbers are unsigned. */
-                    _tileDataAddress = _tileMapNbr * 16;
-                }
-                else
-                {
-                    /* Uses 0x8800 as a base address. Tile numbers are signed. */
-                    _tileDataAddress = 0x1000 + static_cast<int8_t>(_tileMapNbr) * 16;
-                }
-
-                /* Select the proper row within that tile. There are 2 bytes per row. */
-                _tileDataAddress += 2 * ((_registers.LY + _registers.SCY) & 0x7);
-                _tileDataLow = _videoRam[_tileDataAddress];
-
-                _state = State::GetTileDataHigh;
-            }
-            break;
-        case State::GetTileDataHigh:
-            if (_dots == 6)
-            {
-                _tileDataHigh = _videoRam[_tileDataAddress + 1];
-                _state        = State::Sleep;
-            }
-            break;
-        case State::Sleep:
-            if (_dots == 8)
-            {
-                _state = State::Push;
-            }
-            break;
-        case State::Push:
-            if (_backgroundFIFO.empty())
-            {
-                /* If the tile is flipped horizontally? */
-
-                for (ssize_t i = 7; i >= 0; --i)
-                {
-                    const uint8_t value = (((_tileDataLow >> i) & 1) << 1) | ((_tileDataHigh >> i) & 1);
-                    _backgroundFIFO.emplace(FIFOEntry{value, 0, false});
-                }
-
-                _state = State::GetTile;
-                _dots  = 0;
-                _x += 1;
-            }
-            break;
-    }
-}
-
-void PPU::PixelFetcher::start()
-{
-    _x     = 0;
-    _dots  = 0;
-    _state = State::GetTile;
 }
 
 uint8_t PPU::read(const uint16_t address) const
 {
     if (Utils::addressIn(address, MemoryMap::VIDEO_RAM))
     {
-        // if (!_videoRamAccessible)
-        // {
-        //     return 0xFF;
-        // }
-
-        if ((_registers.LCDC & LCDControlFlags::LCDAndPPUEnable) == 1)
-        {
-            return 0xFF;
-        }
-
         return _videoRam[address - 0x8000];
     }
     if (Utils::addressIn(address, MemoryMap::OAM))
     {
-        // if (!_oamAccessible)
-        // {
-        //     return 0xFF;
-        // }
-
         return reinterpret_cast<const uint8_t*>(_oamEntries.data())[address - MemoryMap::OAM.first];
     }
-
-    if (const auto it = addrToRegister.find(address); it != addrToRegister.end())
+    if (address == MemoryMap::IORegisters::LY)
     {
-        return it->second;
+        return _registers.LY;
+    }
+    if (address == MemoryMap::IORegisters::LYC)
+    {
+        return _registers.LYC;
+    }
+    if (address == MemoryMap::IORegisters::SCY)
+    {
+        return _registers.SCY;
+    }
+    if (address == MemoryMap::IORegisters::SCX)
+    {
+        return _registers.SCX;
+    }
+    if (address == MemoryMap::IORegisters::WX)
+    {
+        return _registers.WX;
+    }
+    if (address == MemoryMap::IORegisters::WY)
+    {
+        return _registers.WY;
+    }
+    if (address == MemoryMap::IORegisters::BGP)
+    {
+        return _registers.BGP;
+    }
+    if (address == MemoryMap::IORegisters::STAT)
+    {
+        return _registers.STAT;
+    }
+    if (address == MemoryMap::IORegisters::LCDC)
+    {
+        return _registers.LCDC;
     }
 
     throw std::logic_error{"Invalid PPU Read"};
@@ -162,42 +68,55 @@ void PPU::write(const uint16_t address, uint8_t value)
 {
     if (Utils::addressIn(address, MemoryMap::VIDEO_RAM))
     {
-        if (!_videoRamAccessible)
-        {
-            return;
-        }
-
         _videoRam[address - 0x8000] = value;
     }
     else if (Utils::addressIn(address, MemoryMap::OAM))
     {
-        if (!_oamAccessible)
-        {
-            return;
-        }
-
         reinterpret_cast<uint8_t*>(_oamEntries.data())[address - MemoryMap::OAM.first] = value;
     }
-    else if (const auto it = addrToRegister.find(address); it != addrToRegister.end())
+    else if (address == MemoryMap::IORegisters::LY)
     {
-        if (it->second == _registers.LCDC)
-        {
-            if ((value & LCDControlFlags::LCDAndPPUEnable) == 0)
-            {
-                _transition(Mode::Disabled);
-            }
-            else
-            {
-                _transition(Mode::OAMScan);
-            }
-        }
+    }
+    else if (address == MemoryMap::IORegisters::LYC)
+    {
+        _registers.LYC = value;
+    }
+    else if (address == MemoryMap::IORegisters::SCY)
+    {
+        _registers.SCY = value;
+    }
+    else if (address == MemoryMap::IORegisters::SCX)
+    {
+        _registers.SCX = value;
+    }
+    else if (address == MemoryMap::IORegisters::WX)
+    {
+        _registers.WX = value;
+    }
+    else if (address == MemoryMap::IORegisters::WY)
+    {
+        _registers.WY = value;
+    }
+    else if (address == MemoryMap::IORegisters::BGP)
+    {
+        _registers.BGP = value;
+    }
+    else if (address == MemoryMap::IORegisters::STAT)
+    {
+        _registers.STAT = value & 0b01111000;
+    }
+    else if (address == MemoryMap::IORegisters::LCDC)
+    {
+        _registers.LCDC = value;
 
-        if (it->second == _registers.STAT)
+        if (value & LCDControlFlags::LCDAndPPUEnable)
         {
-            value &= 0b01111000;
+            _transition(Mode::OAMScan);
         }
-
-        it->second.get() = value;
+        else
+        {
+            _transition(Mode::Disabled);
+        }
     }
     else
     {
@@ -239,16 +158,6 @@ void PPU::tick(const size_t machineCycle)
                      * or X ≥ 168 (160 + 8) will hide it, but it will still count towards the limit, possibly causing
                      * another object later in OAM not to be drawn.
                      */
-                    // if (const uint8_t objHeight = (_registers.LCDC & LCDControlFlags::ObjSize) != 0 ? 16 : 8;
-                    //     _registers.LY >= _currentOamEntry->y && _registers.LY < _currentOamEntry->y + objHeight)
-                    //{
-                    //     if (_objsToDraw.size() < 10)
-                    //     {
-                    //         _objsToDraw.push_back(_currentOamEntry);
-                    //     }
-                    // }
-
-                    //_currentOamEntry += 1;
                 }
 
                 if (_dots == 80)
@@ -257,34 +166,14 @@ void PPU::tick(const size_t machineCycle)
                 }
                 break;
             case Mode::Drawing:
-                /* Minimum length : 172 dots. */
 
                 _videoRamAccessible = false;
                 _oamAccessible      = false;
 
-                _pixelFetcher.tick();
-
-                if (!_backgroundFIFO.empty())
+                /* Minimum length : 172 dots. */
+                if (_dots == 252)
                 {
-                    if (_pixelsToDiscard != 0)
-                    {
-                        _pixelsToDiscard -= 1;
-                    }
-                    else
-                    {
-                        const auto& backgroundPixel{_backgroundFIFO.front()};
-
-                        _framebuffer[_registers.LY][_x] =
-                            Graphics::getRealColorIndexFromPaletteRegister(backgroundPixel.color, _registers.BGP);
-                        ;
-                        _x += 1;
-                    }
-
-                    _backgroundFIFO.pop();
-                }
-
-                if (_x == 160)
-                {
+                    _drawLine();
                     _transition(Mode::HorizontalBlank);
                 }
                 break;
@@ -295,6 +184,7 @@ void PPU::tick(const size_t machineCycle)
                 if (_dots == 456)
                 {
                     _dots = 0;
+
                     _registers.LY += 1;
 
                     if (_registers.LY == 144)
@@ -349,6 +239,76 @@ IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
             MemoryMap::IORegisters::LCDC};
 }
 
+void PPU::_drawLine()
+{
+    uint8_t tileDataLow{};
+    uint8_t tileDataHigh{};
+
+    for (uint8_t x{0}; x < 160; ++x)
+    {
+        uint8_t pixelOffset{};
+        uint8_t pixel{};
+
+        /* Load tile data every 8 pixels. */
+        if (x % 8 == 0)
+        {
+            uint8_t tileNumber{};
+
+            {
+                /* Get the tile number off the background tile map. */
+
+                uint16_t bgTileMapAreaOffset{};
+                uint8_t  colTileMap{};
+                uint8_t  rowTileMap{};
+                uint8_t  rowOffset{};
+                uint8_t  colOffset{};
+
+                if (_registers.LCDC & LCDControlFlags::BGTileMapSelect)
+                {
+                    bgTileMapAreaOffset = 0x1C00;
+                }
+                else
+                {
+                    bgTileMapAreaOffset = 0x1800;
+                }
+
+                colOffset  = _registers.SCX + x;
+                rowOffset  = _registers.SCY + _registers.LY;
+                colTileMap = colOffset / Graphics::TILE_SIZE;
+                rowTileMap = rowOffset / Graphics::TILE_SIZE;
+
+                tileNumber = _videoRam[bgTileMapAreaOffset + colTileMap + Graphics::TILE_MAP_SIZE * rowTileMap];
+            }
+
+            {
+                /* Get tile data from video ram using the tile number. */
+
+                uint16_t tileDataAddress{};
+                size_t   rowOffset{};
+
+                if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
+                {
+                    tileDataAddress = tileNumber * Graphics::BYTES_PER_LINE;
+                }
+                else
+                {
+                    tileDataAddress = 0x1000 + static_cast<int8_t>(tileNumber) * Graphics::BYTES_PER_LINE;
+                }
+
+                rowOffset       = 2 * ((_registers.SCY + _registers.LY) % Graphics::TILE_SIZE);
+                tileDataAddress = tileDataAddress + rowOffset;
+
+                tileDataLow  = _videoRam[tileDataAddress];
+                tileDataHigh = _videoRam[tileDataAddress + 1];
+            }
+        }
+
+        pixelOffset = 7 - (x % Graphics::TILE_SIZE);
+        pixel       = (((tileDataHigh >> pixelOffset) & 1) << 1) | ((tileDataLow >> pixelOffset) & 1);
+        _framebuffer[_registers.LY][x] = Graphics::getRealColorIndexFromPaletteRegister(pixel, _registers.BGP);
+    }
+}
+
 void PPU::_transition(const Mode transitionTo)
 {
     auto modeValue{std::to_underlying(_mode)};
@@ -376,11 +336,6 @@ void PPU::_transition(const Mode transitionTo)
     }
     if (_mode == Mode::OAMScan && transitionTo == Mode::Drawing)
     {
-        decltype(_backgroundFIFO) emptyBackgroundFifo{};
-
-        std::swap(_backgroundFIFO, emptyBackgroundFifo);
-        _pixelFetcher.start();
-
         _pixelsToDiscard = _registers.SCX & 0x7;
     }
     else if (_mode == Mode::Drawing && transitionTo == Mode::HorizontalBlank)

@@ -15,59 +15,7 @@
 
 class PPU final : public IComponent
 {
-  private:
-    struct Registers
-    {
-        /**
-         * @brief LCD Control (R/W).
-         */
-        uint8_t LCDC{};
-
-        /**
-         * @brief LCDC Status (R/W).
-         */
-        uint8_t STAT{};
-
-        /**
-         * @brief Background viewport Y position (R/W).
-         */
-        uint8_t SCY{};
-
-        /**
-         * @brief Background viewport X position X (R/W).
-         */
-        uint8_t SCX{};
-
-        /**
-         * @brief LY indicates the current horizontal line, which might be about to be drawn, being drawn, or just been
-         * drawn. LY can hold any value from 0 to 153, with values from 144 to 153 indicating the VBlank period (R).
-         */
-        uint8_t LY{};
-
-        /**
-         * @brief The Game Boy constantly compares the value of the LYC and LY registers. When both values are
-         identical, the “LYC=LY” flag in the STAT register is set, and (if enabled) a STAT interrupt is requested.
-         */
-        uint8_t LYC{};
-        uint8_t DMA{};
-        uint8_t BGP{};
-        uint8_t OBP0{};
-        uint8_t OBP1{};
-        uint8_t WY{};
-        uint8_t WX{};
-    };
-
-    using RegistersMap = std::unordered_map<uint16_t, std::reference_wrapper<uint8_t>>;
-
-    RegistersMap addrToRegister;
-
   public:
-    using OnFramebufferReadyCallback = std::function<void()>;
-
-    static constexpr std::size_t LCD_HEIGHT{144};
-    static constexpr std::size_t LCD_WIDTH{144};
-    static constexpr std::size_t VERTICAL_BLANK_SCANLINE{10};
-
     explicit PPU(IAddressable& bus);
 
     struct Status
@@ -182,72 +130,68 @@ class PPU final : public IComponent
         uint8_t priority : 1 {};
     } __attribute__((packed));
 
-    struct FIFOEntry
-    {
-        /**
-         * @brief Color index ignoring palette.
-         */
-        uint8_t color{};
-        uint8_t palette{};
-        bool    backgroundPriority{};
-    };
-
     using OAMArray = std::array<OAMEntry, 40>;
     using VideoRAM = std::array<uint8_t, 0x2000>;
-
-    class PixelFetcher
-    {
-      public:
-        enum class State : uint8_t
-        {
-            GetTile,
-            GetTileDataLow,
-            GetTileDataHigh,
-            Sleep,
-            Push
-        };
-
-        PixelFetcher(std::queue<FIFOEntry>& backgroundFIFO, const VideoRAM& videoRam, Registers& registers);
-
-        void tick();
-        void start();
-
-      private:
-        std::queue<FIFOEntry>& _backgroundFIFO;
-
-        uint8_t _x{}, _y{};
-        uint8_t _tileMapNbr{};
-
-        uint16_t _tileDataAddress{};
-        uint8_t  _tileDataHigh{};
-        uint8_t  _tileDataLow{};
-
-        Registers&      _registers;
-        const VideoRAM& _videoRam;
-        size_t          _dots;
-
-        State _state{State::GetTile};
-    };
 
     [[nodiscard]] uint8_t read(uint16_t address) const override;
     void                  write(uint16_t address, uint8_t value) override;
     void                  tick(size_t machineCycle) override;
     void                  setPostBootRomRegisters();
 
-    const Graphics::Framebuffer& getFramebuffer() const noexcept;
+    [[nodiscard]] const Graphics::Framebuffer& getFramebuffer() const noexcept;
 
-    AddressableRange getAddressableRange() const noexcept override;
+    [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 
   private:
+    struct Registers
+    {
+        /**
+         * @brief LCD Control (R/W).
+         */
+        uint8_t LCDC{};
+
+        /**
+         * @brief LCDC Status (R/W).
+         */
+        uint8_t STAT{};
+
+        /**
+         * @brief Background viewport Y position (R/W).
+         */
+        uint8_t SCY{};
+
+        /**
+         * @brief Background viewport X position X (R/W).
+         */
+        uint8_t SCX{};
+
+        /**
+         * @brief LY indicates the current horizontal line, which might be about to be drawn, being drawn, or just been
+         * drawn. LY can hold any value from 0 to 153, with values from 144 to 153 indicating the VBlank period (R).
+         */
+        uint8_t LY{};
+
+        /**
+         * @brief The Game Boy constantly compares the value of the LYC and LY registers. When both values are
+         identical, the “LYC=LY” flag in the STAT register is set, and (if enabled) a STAT interrupt is requested.
+         */
+        uint8_t LYC{};
+        uint8_t DMA{};
+        uint8_t BGP{};
+        uint8_t OBP0{};
+        uint8_t OBP1{};
+        uint8_t WY{};
+        uint8_t WX{};
+    };
+
+    void _drawLine();
+
     void _transition(Mode transitionTo);
     void _triggerStatInterrupt(bool value);
     void off();
 
     IAddressable&         _bus;
-    Graphics::Framebuffer _framebuffer;
-
-    std::queue<FIFOEntry> _backgroundFIFO{};
-    std::queue<FIFOEntry> _spriteFIFO{};
+    Graphics::Framebuffer _framebuffer{};
 
     bool                     _irq{};
     bool                     _videoRamAccessible{true};
@@ -258,8 +202,7 @@ class PPU final : public IComponent
 
     std::vector<OAMArray::const_iterator> _objsToDraw{};
 
-    Registers    _registers{};
-    PixelFetcher _pixelFetcher{_backgroundFIFO, _videoRam, _registers};
+    Registers _registers{};
 
     uint16_t _dots{};
     uint16_t _dotsSoFar{};
