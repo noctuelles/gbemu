@@ -93,6 +93,8 @@ add_executable(gbemu_test
         srcs/tests/roms/MooneyeAcceptance.cxx
 )
 
+add_compile_options(-Wall -Wextra -Wpedantic -g)
+
 target_compile_definitions(gbemu_test PUBLIC ROMS_PATH="${CMAKE_SOURCE_DIR}/roms")
 
 target_link_libraries(gbemu PRIVATE
@@ -103,7 +105,6 @@ target_link_libraries(gbemu_test PRIVATE
         GTest::gtest_main
 )
 
-target_compile_options(gbemu PRIVATE -Wall -Wextra -Wpedantic -g)
 
 include(GoogleTest)
 gtest_discover_tests(gbemu_test)

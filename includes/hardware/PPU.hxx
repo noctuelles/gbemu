@@ -87,12 +87,12 @@ class PPU final : public IComponent
          * least significant bit of the tile index is ignored; that is, the top 8×8 tile is “NN & $FE”, and the bottom
          * 8×8 tile is “NN | $01”.
          */
-        uint8_t tile_index{};
+        uint8_t tileIndex{};
 
         /*
          * @brief [CGB Mode Only]: Which of OBP0–7 to use.
          */
-        uint8_t cbg_palette : 3 {};
+        uint8_t cbgPalette : 3 {};
 
         /**
          * @brief [CGB Mode Only]:
@@ -106,21 +106,21 @@ class PPU final : public IComponent
          * - 0 = OBP0
          * - 1 = OBP1.
          */
-        uint8_t dmg_palette : 1 {};
+        uint8_t dmgPalette : 1 {};
 
         /**
          * @brief X Flip flag.
          * - 0 = Normal
          * - 1 = Entire OBJ is horizontally mirrored
          */
-        uint8_t x_flip : 1 {};
+        uint8_t xFlip : 1 {};
 
         /**
          * @brief Y Flip flag.
          * - 0 = Normal
          * - 1 = Entire OBJ is vertically mirrored
          */
-        uint8_t y_flip : 1 {};
+        uint8_t yFlip : 1 {};
 
         /**
          * @brief Priotity flag.
@@ -197,6 +197,7 @@ class PPU final : public IComponent
     bool                     _videoRamAccessible{true};
     VideoRAM                 _videoRam{};
     bool                     _oamAccessible{true};
+
     OAMArray                 _oamEntries{};
     OAMArray::const_iterator _currentOamEntry{};
 

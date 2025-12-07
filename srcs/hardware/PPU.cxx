@@ -147,21 +147,22 @@ void PPU::tick(const size_t machineCycle)
                 _videoRamAccessible = true;
                 _oamAccessible      = false;
 
-                if (_dots % 2 == 0 && _dots != 0)
-                {
-                    /**
-                     * During each scanline’s OAM scan, the PPU compares LY (using LCDC bit 2 to determine their size)
-                     * to each object’s Y position to select up to 10 objects to be drawn on that line. The PPU scans
-                     * OAM sequentially (from $FE00 to $FE9F), selecting the first (up to) 10 suitably-positioned
-                     * objects. Since the PPU only checks the Y coordinate to select objects, even off-screen objects
-                     * count towards the 10-objects-per-scanline limit. Merely setting an object’s X coordinate to X = 0
-                     * or X ≥ 168 (160 + 8) will hide it, but it will still count towards the limit, possibly causing
-                     * another object later in OAM not to be drawn.
-                     */
-                }
-
                 if (_dots == 80)
                 {
+                    for (auto oamEntry{_oamEntries.cbegin()}; oamEntry != _oamEntries.cend(); oamEntry++)
+                    {
+                        const auto objSize{_registers.LCDC & LCDControlFlags::ObjSize ? 16 : 8};
+                        const auto lowerLimit{oamEntry->y - 16};
+                        const auto upperLimit{oamEntry->y - 16 + objSize};
+
+                        if (_registers.LY >= lowerLimit && _registers.LY < upperLimit)
+                        {
+                            if (_objsToDraw.size() < 10)
+                            {
+                                _objsToDraw.emplace_back(oamEntry);
+                            }
+                        }
+                    }
                     _transition(Mode::Drawing);
                 }
                 break;
@@ -241,11 +242,38 @@ IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
 
 void PPU::_drawLine()
 {
-    uint8_t tileDataLow{};
-    uint8_t tileDataHigh{};
+    uint8_t bgTileDataLow{};
+    uint8_t bgTileDataHigh{};
+
+    uint8_t objTileDataLow{};
+    uint8_t objTileDataHigh{};
 
     for (uint8_t x{0}; x < 160; ++x)
     {
+        auto objFetched{_oamEntries.cend()};
+
+        if (_registers.LCDC & LCDControlFlags::ObjEnable)
+        {
+            for (const auto& objToDraw : _objsToDraw)
+            {
+                const auto lowerLimit{objToDraw->x - 8};
+                const auto upperLimit{objToDraw->x};
+
+                if (x >= lowerLimit && x < upperLimit)
+                {
+                    const auto rowOffset{2 * (_registers.LY % Graphics::TILE_SIZE)};
+                    uint16_t   tileDataAddress{};
+
+                    tileDataAddress = objToDraw->tileIndex * 16 + rowOffset;
+                    objTileDataLow  = _videoRam[tileDataAddress];
+                    objTileDataHigh = _videoRam[tileDataAddress + 1];
+
+                    objFetched = objToDraw;
+                    break;
+                }
+            }
+        }
+
         uint8_t pixelOffset{};
         uint8_t pixel{};
 
@@ -298,13 +326,22 @@ void PPU::_drawLine()
                 rowOffset       = 2 * ((_registers.SCY + _registers.LY) % Graphics::TILE_SIZE);
                 tileDataAddress = tileDataAddress + rowOffset;
 
-                tileDataLow  = _videoRam[tileDataAddress];
-                tileDataHigh = _videoRam[tileDataAddress + 1];
+                bgTileDataLow  = _videoRam[tileDataAddress];
+                bgTileDataHigh = _videoRam[tileDataAddress + 1];
             }
         }
 
         pixelOffset = 7 - (x % Graphics::TILE_SIZE);
-        pixel       = (((tileDataHigh >> pixelOffset) & 1) << 1) | ((tileDataLow >> pixelOffset) & 1);
+
+        if (objFetched != _oamEntries.cend())
+        {
+            pixel = (((objTileDataHigh >> pixelOffset) & 1) << 1) | ((objTileDataLow >> pixelOffset) & 1);
+        }
+        else
+        {
+            pixel = (((bgTileDataHigh >> pixelOffset) & 1) << 1) | ((bgTileDataLow >> pixelOffset) & 1);
+        }
+
         _framebuffer[_registers.LY][x] = Graphics::getRealColorIndexFromPaletteRegister(pixel, _registers.BGP);
     }
 }
@@ -341,6 +378,7 @@ void PPU::_transition(const Mode transitionTo)
     else if (_mode == Mode::Drawing && transitionTo == Mode::HorizontalBlank)
     {
         _x = 0;
+        _objsToDraw.clear();
     }
     else if (_mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
     {
