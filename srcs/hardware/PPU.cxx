@@ -259,10 +259,10 @@ void PPU::_drawLine()
             {
                 if (x + 8 >= objToDraw->x && x + 8 < objToDraw->x + 8)
                 {
-                    const auto rowOffset{2 * (_registers.LY % Graphics::TILE_SIZE)};
+                    const auto rowOffset{2 * ((_registers.LY + 16 - objToDraw->y) % Graphics::TILE_SIZE)};
                     uint16_t   tileDataAddress{};
 
-                    tileDataAddress = objToDraw->tileIndex * 16 + rowOffset;
+                    tileDataAddress = (objToDraw->tileIndex * 16) + rowOffset;
                     objTileDataLow  = _videoRam[tileDataAddress];
                     objTileDataHigh = _videoRam[tileDataAddress + 1];
 
@@ -331,7 +331,14 @@ void PPU::_drawLine()
             }
         }
 
-        pixelOffset = 7 - (x % Graphics::TILE_SIZE);
+        if (objFetched != _oamEntries.cend())
+        {
+            pixelOffset = 7 - (((x + 8) - objFetched->x) % Graphics::TILE_SIZE);
+        }
+        else
+        {
+            pixelOffset = 7 - (x % Graphics::TILE_SIZE);
+        }
 
         objPixel = (((objTileDataHigh >> pixelOffset) & 1) << 1) | ((objTileDataLow >> pixelOffset) & 1);
         bgPixel  = (((bgTileDataHigh >> pixelOffset) & 1) << 1) | ((bgTileDataLow >> pixelOffset) & 1);
@@ -347,6 +354,7 @@ void PPU::_drawLine()
                 {
                     finalPixel = bgPixel;
                 }
+                /* But not when the background pixel is 0 (transparent). */
                 else
                 {
                     finalPixel = objPixel;
@@ -354,7 +362,14 @@ void PPU::_drawLine()
             }
             else
             {
-                finalPixel = objPixel;
+                if (objPixel == 0b00)
+                {
+                    finalPixel = bgPixel;
+                }
+                else
+                {
+                    finalPixel = objPixel;
+                }
             }
         }
         else
