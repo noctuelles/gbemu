@@ -247,11 +247,14 @@ void PPU::_drawLine()
 
     for (uint8_t x{0}; x < 160; ++x)
     {
-        uint8_t pixelOffset{};
+        uint8_t bgColOffset{};
         uint8_t bgPixel{};
+
+        uint8_t objColOffset{};
         uint8_t objPixel{};
-        uint8_t finalPixel{};
         auto    objFetched{_oamEntries.cend()};
+
+        uint8_t finalPixel{};
 
         if (_registers.LCDC & LCDControlFlags::ObjEnable)
         {
@@ -259,6 +262,8 @@ void PPU::_drawLine()
             {
                 if (x + 8 >= objToDraw->x && x + 8 < objToDraw->x + 8)
                 {
+                    objFetched = objToDraw;
+
                     const auto rowOffset{2 * ((_registers.LY + 16 - objToDraw->y) % Graphics::TILE_SIZE)};
                     uint16_t   tileDataAddress{};
 
@@ -266,7 +271,13 @@ void PPU::_drawLine()
                     objTileDataLow  = _videoRam[tileDataAddress];
                     objTileDataHigh = _videoRam[tileDataAddress + 1];
 
-                    objFetched = objToDraw;
+                    if (objFetched->xFlip)
+                    {
+                        objTileDataLow = Graphics::horizontalFlip(objTileDataLow);
+                        objTileDataHigh = Graphics::horizontalFlip(objTileDataHigh);
+                    }
+
+                    objColOffset = 7 - (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
 
                     /* Stop at the first (highest priority) object found for this pixel. */
                     break;
@@ -329,19 +340,12 @@ void PPU::_drawLine()
                     bgTileDataHigh = _videoRam[tileDataAddress + 1];
                 }
             }
+
+            bgColOffset = 7 - (x % Graphics::TILE_SIZE);
         }
 
-        if (objFetched != _oamEntries.cend())
-        {
-            pixelOffset = 7 - (((x + 8) - objFetched->x) % Graphics::TILE_SIZE);
-        }
-        else
-        {
-            pixelOffset = 7 - (x % Graphics::TILE_SIZE);
-        }
-
-        objPixel = (((objTileDataHigh >> pixelOffset) & 1) << 1) | ((objTileDataLow >> pixelOffset) & 1);
-        bgPixel  = (((bgTileDataHigh >> pixelOffset) & 1) << 1) | ((bgTileDataLow >> pixelOffset) & 1);
+        objPixel = (((objTileDataHigh >> objColOffset) & 1) << 1) | ((objTileDataLow >> objColOffset) & 1);
+        bgPixel  = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
 
         /* Pixel mixing. */
 
