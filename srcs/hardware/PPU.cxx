@@ -151,11 +151,8 @@ void PPU::tick(const size_t machineCycle)
                 {
                     for (auto oamEntry{_oamEntries.cbegin()}; oamEntry != _oamEntries.cend(); oamEntry++)
                     {
-                        const auto objSize{_registers.LCDC & LCDControlFlags::ObjSize ? 16 : 8};
-                        const auto lowerLimit{oamEntry->y - 16};
-                        const auto upperLimit{oamEntry->y - 16 + objSize};
-
-                        if (_registers.LY >= lowerLimit && _registers.LY < upperLimit)
+                        if (const auto objSize{_registers.LCDC & LCDControlFlags::ObjSize ? 16 : 8};
+                            _registers.LY + 16 >= oamEntry->y && _registers.LY + 16 < oamEntry->y + objSize)
                         {
                             if (_objsToDraw.size() < 10)
                             {
@@ -250,16 +247,17 @@ void PPU::_drawLine()
 
     for (uint8_t x{0}; x < 160; ++x)
     {
-        auto objFetched{_oamEntries.cend()};
+        uint8_t pixelOffset{};
+        uint8_t bgPixel{};
+        uint8_t objPixel{};
+        uint8_t finalPixel{};
+        auto    objFetched{_oamEntries.cend()};
 
         if (_registers.LCDC & LCDControlFlags::ObjEnable)
         {
             for (const auto& objToDraw : _objsToDraw)
             {
-                const auto lowerLimit{objToDraw->x - 8};
-                const auto upperLimit{objToDraw->x};
-
-                if (x >= lowerLimit && x < upperLimit)
+                if (x + 8 >= objToDraw->x && x + 8 < objToDraw->x + 8)
                 {
                     const auto rowOffset{2 * (_registers.LY % Graphics::TILE_SIZE)};
                     uint16_t   tileDataAddress{};
@@ -273,9 +271,6 @@ void PPU::_drawLine()
                 }
             }
         }
-
-        uint8_t pixelOffset{};
-        uint8_t pixel{};
 
         /* Load tile data every 8 pixels. */
         if (x % 8 == 0)
@@ -333,16 +328,34 @@ void PPU::_drawLine()
 
         pixelOffset = 7 - (x % Graphics::TILE_SIZE);
 
+        objPixel = (((objTileDataHigh >> pixelOffset) & 1) << 1) | ((objTileDataLow >> pixelOffset) & 1);
+        bgPixel  = (((bgTileDataHigh >> pixelOffset) & 1) << 1) | ((bgTileDataLow >> pixelOffset) & 1);
+
         if (objFetched != _oamEntries.cend())
         {
-            pixel = (((objTileDataHigh >> pixelOffset) & 1) << 1) | ((objTileDataLow >> pixelOffset) & 1);
+            if (objFetched->priority)
+            {
+                /* Background has priority over object. */
+                if (bgPixel >= 0b01 && bgPixel <= 0b11)
+                {
+                    finalPixel = bgPixel;
+                }
+                else
+                {
+                    finalPixel = objPixel;
+                }
+            }
+            else
+            {
+                finalPixel = objPixel;
+            }
         }
         else
         {
-            pixel = (((bgTileDataHigh >> pixelOffset) & 1) << 1) | ((bgTileDataLow >> pixelOffset) & 1);
+            finalPixel = bgPixel;
         }
 
-        _framebuffer[_registers.LY][x] = Graphics::getRealColorIndexFromPaletteRegister(pixel, _registers.BGP);
+        _framebuffer[_registers.LY][x] = _registers.BGP >> (2 * finalPixel) & 0b11;
     }
 }
 
