@@ -273,7 +273,6 @@ void Cartridge::load(const std::filesystem::path& path)
     switch (type)
     {
         case std::to_underlying<Type>(Type::ROM_ONLY):
-        case std::to_underlying<Type>(Type::MBC1):
             this->type = static_cast<Type>(type);
             break;
         default:

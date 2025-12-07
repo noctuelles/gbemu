@@ -19,19 +19,6 @@ namespace Graphics
     {
         return paletteRegister >> (2 * color) & 0b11;
     }
-    inline uint8_t horizontalFlip(const uint8_t byte)
-    {
-        uint8_t result{};
-
-        for (uint8_t i{0}; i < 8; i++)
-        {
-            const auto bit{(byte & (1 << i)) != 0};
-
-            result |= bit << (7 - i);
-        }
-
-        return result;
-    }
 }  // namespace Graphics
 
 #endif  // GBEMU_TILE_HXX

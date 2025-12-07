@@ -10,7 +10,7 @@
 #include <QTimer>
 #include <iostream>
 
-Emulator::Emulator(std::optional<QString> bootRomPath, QObject* parent) : QObject(parent)
+Emulator::Emulator(const std::optional<QString>& bootRomPath, QObject* parent) : QObject(parent)
 {
     if (!bootRomPath.has_value())
     {
@@ -44,7 +44,16 @@ Emulator::Emulator(std::optional<QString> bootRomPath, QObject* parent) : QObjec
 
 void Emulator::startEmulation(const QString& path)
 {
-    _components.cartridge.load(path.toStdString());
+    try
+    {
+        _components.cartridge.load(path.toStdString());
+    }
+    catch (const std::exception& e)
+    {
+        emit emulationFatalError(e.what());
+        return;
+    }
+
     runFrame();
 }
 
@@ -62,7 +71,7 @@ void Emulator::runFrame()
 {
     using namespace std::chrono_literals;
 
-    constexpr auto frameDuration{21740000ns};
+    constexpr auto frameDuration{24740000ns};
 
     try
     {

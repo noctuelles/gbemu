@@ -20,7 +20,7 @@ class Emulator final : public QObject
     Q_OBJECT
 
   public:
-    explicit Emulator(std::optional<QString> bootRom = std::nullopt, QObject* parent = nullptr);
+    explicit Emulator(const std::optional<QString>& bootRom = std::nullopt, QObject* parent = nullptr);
 
   public slots:
     void startEmulation(const QString& path);

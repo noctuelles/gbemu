@@ -241,7 +241,6 @@ void PPU::_drawLine()
 {
     uint8_t bgTileDataLow{};
     uint8_t bgTileDataHigh{};
-
     uint8_t objTileDataLow{};
     uint8_t objTileDataHigh{};
 
@@ -262,24 +261,42 @@ void PPU::_drawLine()
             {
                 if (x + 8 >= objToDraw->x && x + 8 < objToDraw->x + 8)
                 {
+                    uint8_t  rowOffset{};
+                    uint16_t tileDataAddress{};
+
                     objFetched = objToDraw;
 
-                    const auto rowOffset{2 * ((_registers.LY + 16 - objToDraw->y) % Graphics::TILE_SIZE)};
-                    uint16_t   tileDataAddress{};
+                    if (objFetched->yFlip)
+                    {
+                        /* Instead of fetching from the first line, fetch starting from the last line and advance
+                         * backward. */
 
-                    tileDataAddress = (objToDraw->tileIndex * 16) + rowOffset;
-                    objTileDataLow  = _videoRam[tileDataAddress];
-                    objTileDataHigh = _videoRam[tileDataAddress + 1];
+                        rowOffset = 14 - 2 * ((_registers.LY + 16 - objFetched->y) % Graphics::TILE_SIZE);
+                    }
+                    else
+                    {
+                        rowOffset = 2 * ((_registers.LY + 16 - objFetched->y) % Graphics::TILE_SIZE);
+                    }
 
                     if (objFetched->xFlip)
                     {
-                        objTileDataLow = Graphics::horizontalFlip(objTileDataLow);
-                        objTileDataHigh = Graphics::horizontalFlip(objTileDataHigh);
+                        /* Same logic as yFlip,but  instead of fetching from the leftmost pixel, start from the
+                         * rightmost, and advance backward.
+                         */
+
+                        objColOffset = (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
+                    }
+                    else
+                    {
+                        objColOffset = 7 - (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
                     }
 
-                    objColOffset = 7 - (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
+                    tileDataAddress = objToDraw->tileIndex * 16 + rowOffset;
+                    objTileDataLow  = _videoRam[tileDataAddress];
+                    objTileDataHigh = _videoRam[tileDataAddress + 1];
 
                     /* Stop at the first (highest priority) object found for this pixel. */
+
                     break;
                 }
             }

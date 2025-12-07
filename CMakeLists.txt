@@ -85,13 +85,13 @@ add_executable(gbemu_test
         includes/hardware/Timer.hxx
         includes/hardware/WorkRAM.hxx
 
-        srcs/tests/graphics/Tile.cxx
         srcs/tests/roms/BlarggInstructions.cxx
         srcs/tests/DummyComponent.cxx
         includes/tests/DummyComponent.hxx
         srcs/tests/roms/TestRom.cxx
         includes/tests/roms/TestRom.hxx
         srcs/tests/roms/MooneyeAcceptance.cxx
+        srcs/tests/Utils.cxx
 )
 
 add_compile_options(-Wall -Wextra -Wpedantic -g)
