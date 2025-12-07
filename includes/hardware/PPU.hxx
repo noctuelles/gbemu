@@ -28,6 +28,28 @@ class PPU final : public IComponent
         static constexpr uint8_t LYC{1 << 6};
     };
 
+    struct LCDControlFlags
+    {
+        static constexpr uint8_t BGWindowEnableOrPriority{1 << 0};
+        static constexpr uint8_t ObjEnable{1 << 1};
+        static constexpr uint8_t ObjSize{1 << 2};
+        static constexpr uint8_t BGTileMapSelect{1 << 3};
+        static constexpr uint8_t BGAndWindowTileDataArea{1 << 4};
+        static constexpr uint8_t WindowEnable{1 << 5};
+        static constexpr uint8_t WindowTileMapSelect{1 << 6};
+        static constexpr uint8_t LCDAndPPUEnable{1 << 7};
+    };
+
+    [[nodiscard]] uint8_t read(uint16_t address) const override;
+    void                  write(uint16_t address, uint8_t value) override;
+    void                  tick(size_t machineCycle) override;
+    void                  setPostBootRomRegisters();
+
+    [[nodiscard]] const Graphics::Framebuffer& getFramebuffer() const noexcept;
+
+    [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
+
+  private:
     enum class Mode : uint8_t
     {
         /**
@@ -44,16 +66,45 @@ class PPU final : public IComponent
         Disabled      = 4,
     };
 
-    struct LCDControlFlags
+    struct Registers
     {
-        static constexpr uint8_t BGWindowEnableOrPriority{1 << 0};
-        static constexpr uint8_t ObjEnable{1 << 1};
-        static constexpr uint8_t ObjSize{1 << 2};
-        static constexpr uint8_t BGTileMapSelect{1 << 3};
-        static constexpr uint8_t BGAndWindowTileDataArea{1 << 4};
-        static constexpr uint8_t WindowEnable{1 << 5};
-        static constexpr uint8_t WindowTileMapSelect{1 << 6};
-        static constexpr uint8_t LCDAndPPUEnable{1 << 7};
+        /**
+         * @brief LCD Control (R/W).
+         */
+        uint8_t LCDC{};
+
+        /**
+         * @brief LCDC Status (R/W).
+         */
+        uint8_t STAT{};
+
+        /**
+         * @brief Background viewport Y position (R/W).
+         */
+        uint8_t SCY{};
+
+        /**
+         * @brief Background viewport X position X (R/W).
+         */
+        uint8_t SCX{};
+
+        /**
+         * @brief LY indicates the current horizontal line, which might be about to be drawn, being drawn, or just been
+         * drawn. LY can hold any value from 0 to 153, with values from 144 to 153 indicating the VBlank period (R).
+         */
+        uint8_t LY{};
+
+        /**
+         * @brief The Game Boy constantly compares the value of the LYC and LY registers. When both values are
+         identical, the “LYC=LY” flag in the STAT register is set, and (if enabled) a STAT interrupt is requested.
+         */
+        uint8_t LYC{};
+        uint8_t DMA{};
+        uint8_t BGP{};
+        uint8_t OBP0{};
+        uint8_t OBP1{};
+        uint8_t WY{};
+        uint8_t WX{};
     };
 
     struct OAMEntry
@@ -128,89 +179,29 @@ class PPU final : public IComponent
          * - 1 = BG and Window color indices 1–3 are drawn over this OBJ
          */
         uint8_t priority : 1 {};
-    } __attribute__((packed));
+    };
 
     using OAMArray = std::array<OAMEntry, 40>;
     using VideoRAM = std::array<uint8_t, 0x2000>;
 
-    [[nodiscard]] uint8_t read(uint16_t address) const override;
-    void                  write(uint16_t address, uint8_t value) override;
-    void                  tick(size_t machineCycle) override;
-    void                  setPostBootRomRegisters();
-
-    [[nodiscard]] const Graphics::Framebuffer& getFramebuffer() const noexcept;
-
-    [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
-
-  private:
-    struct Registers
-    {
-        /**
-         * @brief LCD Control (R/W).
-         */
-        uint8_t LCDC{};
-
-        /**
-         * @brief LCDC Status (R/W).
-         */
-        uint8_t STAT{};
-
-        /**
-         * @brief Background viewport Y position (R/W).
-         */
-        uint8_t SCY{};
-
-        /**
-         * @brief Background viewport X position X (R/W).
-         */
-        uint8_t SCX{};
-
-        /**
-         * @brief LY indicates the current horizontal line, which might be about to be drawn, being drawn, or just been
-         * drawn. LY can hold any value from 0 to 153, with values from 144 to 153 indicating the VBlank period (R).
-         */
-        uint8_t LY{};
-
-        /**
-         * @brief The Game Boy constantly compares the value of the LYC and LY registers. When both values are
-         identical, the “LYC=LY” flag in the STAT register is set, and (if enabled) a STAT interrupt is requested.
-         */
-        uint8_t LYC{};
-        uint8_t DMA{};
-        uint8_t BGP{};
-        uint8_t OBP0{};
-        uint8_t OBP1{};
-        uint8_t WY{};
-        uint8_t WX{};
-    };
+    static_assert(sizeof(OAMEntry) == 4, "There should be no padding!");
 
     void _drawLine();
-
     void _transition(Mode transitionTo);
     void _triggerStatInterrupt(bool value);
-    void off();
 
-    IAddressable&         _bus;
-    Graphics::Framebuffer _framebuffer{};
-
-    bool                     _irq{};
-    bool                     _videoRamAccessible{true};
-    VideoRAM                 _videoRam{};
-    bool                     _oamAccessible{true};
-
-    OAMArray                 _oamEntries{};
-    OAMArray::const_iterator _currentOamEntry{};
-
-    std::vector<OAMArray::const_iterator> _objsToDraw{};
-
-    Registers _registers{};
-
-    uint16_t _dots{};
-    uint16_t _dotsSoFar{};
-    uint8_t  _pixelsToDiscard{};
-    uint8_t  _x{};
-
-    Mode _mode{Mode::Disabled};
+    IAddressable&                         _bus;
+    Graphics::Framebuffer                 _framebuffer{};
+    bool                                  _irq{};
+    VideoRAM                              _videoRam{};
+    bool                                  _videoRamAccessible{true};
+    OAMArray                              _oamEntries{};
+    std::vector<OAMArray::const_iterator> _oamEntriesToDraw{};
+    bool                                  _oamAccessible{true};
+    Registers                             _registers{};
+    uint16_t                              _dots{};
+    uint8_t                               _pixelsToDiscard{};
+    Mode                                  _mode{Mode::Disabled};
 
     friend class MooneyeAcceptance;
 };

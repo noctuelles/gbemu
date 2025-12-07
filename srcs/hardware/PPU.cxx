@@ -11,7 +11,7 @@
 
 PPU::PPU(IAddressable& bus) : _bus(bus)
 {
-    _objsToDraw.reserve(10);
+    _oamEntriesToDraw.reserve(10);
 }
 
 uint8_t PPU::read(const uint16_t address) const
@@ -154,12 +154,13 @@ void PPU::tick(const size_t machineCycle)
                         if (const auto objSize{_registers.LCDC & LCDControlFlags::ObjSize ? 16 : 8};
                             _registers.LY + 16 >= oamEntry->y && _registers.LY + 16 < oamEntry->y + objSize)
                         {
-                            if (_objsToDraw.size() < 10)
+                            if (_oamEntriesToDraw.size() < 10)
                             {
-                                _objsToDraw.emplace_back(oamEntry);
+                                _oamEntriesToDraw.emplace_back(oamEntry);
                             }
                         }
                     }
+
                     _transition(Mode::Drawing);
                 }
                 break;
@@ -237,6 +238,10 @@ IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
             MemoryMap::IORegisters::LCDC};
 }
 
+/**
+ * @brief This is a scanline rendering and is not a fifo implementation.
+ * Thus, timing is not 100% accurate and some games might not run correctly.
+ */
 void PPU::_drawLine()
 {
     uint8_t bgTileDataLow{};
@@ -257,14 +262,14 @@ void PPU::_drawLine()
 
         if (_registers.LCDC & LCDControlFlags::ObjEnable)
         {
-            for (const auto& objToDraw : _objsToDraw)
+            for (const auto& oamEntryToDraw : _oamEntriesToDraw)
             {
-                if (x + 8 >= objToDraw->x && x + 8 < objToDraw->x + 8)
+                if (x + 8 >= oamEntryToDraw->x && x + 8 < oamEntryToDraw->x + 8)
                 {
                     uint8_t  rowOffset{};
                     uint16_t tileDataAddress{};
 
-                    objFetched = objToDraw;
+                    objFetched = oamEntryToDraw;
 
                     if (objFetched->yFlip)
                     {
@@ -280,9 +285,8 @@ void PPU::_drawLine()
 
                     if (objFetched->xFlip)
                     {
-                        /* Same logic as yFlip,but  instead of fetching from the leftmost pixel, start from the
-                         * rightmost, and advance backward.
-                         */
+                        /* Same logic as yFlip, but instead of fetching from the leftmost pixel, start from the
+                         * rightmost, and advance backward. */
 
                         objColOffset = (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
                     }
@@ -291,7 +295,7 @@ void PPU::_drawLine()
                         objColOffset = 7 - (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
                     }
 
-                    tileDataAddress = objToDraw->tileIndex * 16 + rowOffset;
+                    tileDataAddress = oamEntryToDraw->tileIndex * 16 + rowOffset;
                     objTileDataLow  = _videoRam[tileDataAddress];
                     objTileDataHigh = _videoRam[tileDataAddress + 1];
 
@@ -411,7 +415,6 @@ void PPU::_transition(const Mode transitionTo)
         modeValue     = 0;
         _dots         = 0;
         _registers.LY = 0;
-        _x            = 0;
     }
 
     /* Clear the first two bits and write the current PPU mode. */
@@ -422,19 +425,13 @@ void PPU::_transition(const Mode transitionTo)
         //_triggerStatInterrupt((_registers.STAT & (1 << (2 + modeValue))) != 0);
     }
 
-    if (_mode != Mode::OAMScan && transitionTo == Mode::OAMScan)
-    {
-        _objsToDraw.clear();
-        _currentOamEntry = _oamEntries.cbegin();
-    }
     if (_mode == Mode::OAMScan && transitionTo == Mode::Drawing)
     {
         _pixelsToDiscard = _registers.SCX & 0x7;
     }
     else if (_mode == Mode::Drawing && transitionTo == Mode::HorizontalBlank)
     {
-        _x = 0;
-        _objsToDraw.clear();
+        _oamEntriesToDraw.clear();
     }
     else if (_mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
     {
@@ -459,9 +456,4 @@ void PPU::_triggerStatInterrupt(const bool value)
     {
         _irq = false;
     }
-}
-
-void PPU::off()
-{
-    _registers.STAT = _registers.STAT & 0xFC;
 }
