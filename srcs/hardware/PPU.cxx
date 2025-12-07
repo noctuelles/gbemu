@@ -60,6 +60,14 @@ uint8_t PPU::read(const uint16_t address) const
     {
         return _registers.LCDC;
     }
+    if (address == MemoryMap::IORegisters::OBP0)
+    {
+        return _registers.OBP0;
+    }
+    if (address == MemoryMap::IORegisters::OBP1)
+    {
+        return _registers.OBP1;
+    }
 
     throw std::logic_error{"Invalid PPU Read"};
 }
@@ -117,6 +125,14 @@ void PPU::write(const uint16_t address, uint8_t value)
         {
             _transition(Mode::Disabled);
         }
+    }
+    else if (address == MemoryMap::IORegisters::OBP0)
+    {
+        _registers.OBP0 = value;
+    }
+    else if (address == MemoryMap::IORegisters::OBP1)
+    {
+        _registers.OBP1 = value;
     }
     else
     {
@@ -230,12 +246,13 @@ const Graphics::Framebuffer& PPU::getFramebuffer() const noexcept
 
 IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
 {
-    return {MemoryMap::VIDEO_RAM,        MemoryMap::OAM,
-            MemoryMap::IORegisters::SCX, MemoryMap::IORegisters::SCY,
-            MemoryMap::IORegisters::WX,  MemoryMap::IORegisters::WY,
-            MemoryMap::IORegisters::BGP, MemoryMap::IORegisters::LY,
-            MemoryMap::IORegisters::LYC, MemoryMap::IORegisters::STAT,
-            MemoryMap::IORegisters::LCDC};
+    return {MemoryMap::VIDEO_RAM,         MemoryMap::OAM,
+            MemoryMap::IORegisters::SCX,  MemoryMap::IORegisters::SCY,
+            MemoryMap::IORegisters::WX,   MemoryMap::IORegisters::WY,
+            MemoryMap::IORegisters::BGP,  MemoryMap::IORegisters::LY,
+            MemoryMap::IORegisters::LYC,  MemoryMap::IORegisters::STAT,
+            MemoryMap::IORegisters::LCDC, MemoryMap::IORegisters::OBP0,
+            MemoryMap::IORegisters::OBP1};
 }
 
 /**
@@ -259,6 +276,7 @@ void PPU::_drawLine()
         auto    objFetched{_oamEntries.cend()};
 
         uint8_t finalPixel{};
+        uint8_t finalPalette{};
 
         if (_registers.LCDC & LCDControlFlags::ObjEnable)
         {
@@ -402,7 +420,16 @@ void PPU::_drawLine()
             finalPixel = bgPixel;
         }
 
-        _framebuffer[_registers.LY][x] = _registers.BGP >> (2 * finalPixel) & 0b11;
+        if (finalPixel == bgPixel)
+        {
+            finalPalette = _registers.BGP;
+        }
+        else
+        {
+            finalPalette = objFetched->dmgPalette == 0 ? _registers.OBP0 : _registers.OBP1;
+        }
+
+        _framebuffer[_registers.LY][x] = finalPalette >> (2 * finalPixel) & 0b11;
     }
 }
 

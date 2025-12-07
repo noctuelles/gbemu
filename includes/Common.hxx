@@ -62,6 +62,8 @@ namespace MemoryMap
         constexpr uint16_t LY{0xFF44};
         constexpr uint16_t DMA{0xFF46};
         constexpr uint16_t BGP{0xFF47};
+        constexpr uint16_t OBP0{0xFF48};
+        constexpr uint16_t OBP1{0xFF49};
         constexpr uint16_t WY{0xFF4A};
         constexpr uint16_t WX{0xFF4B};
         constexpr uint16_t BOOTM{0xFF50};
