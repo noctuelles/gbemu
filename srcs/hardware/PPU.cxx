@@ -146,24 +146,23 @@ void PPU::tick(const size_t machineCycle)
 {
     using namespace Utils;
 
+    if (_registers.LY == _registers.LYC)
+    {
+        // if (_registers.STAT & Status::LYC)
+        //{
+        // _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | (1 << Interrupts::LCD));
+        // }
+
+        _registers.STAT |= Status::LYCCompare;
+    }
+    else
+    {
+        _registers.STAT &= ~Status::LYCCompare;
+    }
+
     for (size_t i{0}; i < machineCycle * 4; ++i)
     {
         _dots += 1;
-
-        if (_registers.LY == _registers.LYC)
-        {
-            // if (_registers.STAT & Status::LYC)
-            //{
-            //     _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | (1 <<
-            //     Interrupts::LCD));
-            // }
-
-            _registers.STAT |= Status::LYCCompare;
-        }
-        else
-        {
-            _registers.STAT &= ~Status::LYCCompare;
-        }
 
         switch (_mode)
         {
@@ -294,6 +293,7 @@ void PPU::_drawLine()
             {
                 if (x + 8 >= oamEntryToDraw->x && x + 8 < oamEntryToDraw->x + 8)
                 {
+                    uint8_t  objHeight{};
                     uint8_t  rowOffset{};
                     uint16_t tileDataAddress{};
                     uint8_t  tileIndex{};
@@ -302,16 +302,27 @@ void PPU::_drawLine()
 
                     objFetched = oamEntryToDraw;
 
+                    if (_registers.LCDC & LCDControlFlags::ObjSize)
+                    {
+                        objHeight = 8;
+                        tileIndex = objFetched->tileIndex & 0xFE;
+                    }
+                    else
+                    {
+                        objHeight = 8;
+                        tileIndex = objFetched->tileIndex;
+                    }
+
                     if (objFetched->yFlip)
                     {
                         /* Instead of fetching from the first line, fetch starting from the last line and advance
                          * backward. */
 
-                        rowOffset = 14 - 2 * ((_registers.LY + 16 - objFetched->y) % Graphics::TILE_SIZE);
+                        rowOffset = ((objHeight * 2) - 2) - 2 * ((_registers.LY + 16 - objFetched->y) % objHeight);
                     }
                     else
                     {
-                        rowOffset = 2 * ((_registers.LY + 16 - objFetched->y) % Graphics::TILE_SIZE);
+                        rowOffset = 2 * ((_registers.LY + 16 - objFetched->y) % objHeight);
                     }
 
                     if (objFetched->xFlip)
@@ -326,20 +337,12 @@ void PPU::_drawLine()
                         objColOffset = 7 - (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
                     }
 
-                    if (_registers.LCDC & LCDControlFlags::ObjSize)
-                    {
-                        tileIndex = objFetched->tileIndex & 0xFE;
-                    }
-                    else
-                    {
-                        tileIndex = objFetched->tileIndex;
-                    }
-
                     tileDataAddress = tileIndex * 16 + rowOffset;
                     objTileDataLow  = _videoRam[tileDataAddress];
                     objTileDataHigh = _videoRam[tileDataAddress + 1];
 
                     objPixel = (((objTileDataHigh >> objColOffset) & 1) << 1) | ((objTileDataLow >> objColOffset) & 1);
+
                     /* Stop at the first (highest priority) object found for this pixel. */
 
                     break;
