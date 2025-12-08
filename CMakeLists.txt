@@ -60,6 +60,9 @@ qt_add_executable(gbemu
         srcs/ui/Debugger.ui
         includes/tests/roms/BlarggInstructions.hxx
         includes/tests/roms/MooneyeAcceptance.hxx
+        includes/QtRenderer.hxx
+        includes/IRenderer.hxx
+        srcs/QtRenderer.cxx
 )
 
 add_executable(gbemu_test

@@ -10,7 +10,8 @@
 #include <QTimer>
 #include <iostream>
 
-Emulator::Emulator(const std::optional<QString>& bootRomPath, QObject* parent) : QObject(parent)
+Emulator::Emulator(const std::optional<QString>& bootRomPath, QObject* parent)
+    : QObject(parent), _renderer(new QtRenderer(this)), _components(*_renderer)
 {
     if (!bootRomPath.has_value())
     {
@@ -19,6 +20,8 @@ Emulator::Emulator(const std::optional<QString>& bootRomPath, QObject* parent) :
         _components.ppu.setPostBootRomRegisters();
         return;
     }
+
+    connect(_renderer, &QtRenderer::frameReady, this, &Emulator::onRender, Qt::DirectConnection);
 
     QFile                      file{bootRomPath.value()};
     std::array<uint8_t, 0x100> bootRom{};
@@ -70,33 +73,41 @@ void Emulator::onKeyReleased(const Key key)
 void Emulator::runFrame()
 {
     using namespace std::chrono_literals;
-
     constexpr auto frameDuration{24740000ns};
+
+    _running = true;
+
+    const auto now{std::chrono::steady_clock::now()};
 
     try
     {
-        /* Run the emulation for a whole frame. A frame = 70,224 dots = 17,556 machine cycles. */
-        _components.cpu.tick(17556);
-
-        const auto now{std::chrono::steady_clock::now()};
-
-        if (const auto diff{now - _lastUpdate}; diff < frameDuration)
+        while (_running)
         {
-            std::this_thread::sleep_for(frameDuration - diff);
+            _components.cpu.runInstruction();
         }
-
-        emit frameReady(_components.ppu.getFramebuffer());
-
-        _lastUpdate = now;
     }
     catch (const std::exception& e)
     {
         emit emulationFatalError(e.what());
     }
+
+    if (const auto diff{now - _lastUpdate}; diff < frameDuration)
+    {
+        std::this_thread::sleep_for(frameDuration - diff);
+    }
+
+    emit frameReady(_renderer->getFramebuffer());
+
+    _lastUpdate = now;
 }
 
-Emulator::Components::Components()
-    : _state(), bus(_state), timer(bus), ppu(bus), cpu(_state, bus, timer, ppu), echoRam(workRam)
+void Emulator::onRender()
+{
+    _running = false;
+}
+
+Emulator::Components::Components(IRenderer& renderer)
+    : _state(), bus(_state), timer(bus), ppu(bus, renderer), cpu(_state, bus, timer, ppu), echoRam(workRam)
 {
     bus.attach(cartridge);
     bus.attach(timer);

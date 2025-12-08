@@ -7,6 +7,7 @@
 
 #include <QObject>
 
+#include "QtRenderer.hxx"
 #include "hardware/Bus.hxx"
 #include "hardware/Cartridge.hxx"
 #include "hardware/EchoRAM.hxx"
@@ -24,10 +25,11 @@ class Emulator final : public QObject
 
   public slots:
     void startEmulation(const QString& path);
-
     void onKeyPressed(Key key);
     void onKeyReleased(Key key);
     void runFrame();
+  private slots:
+    void onRender();
 
   signals:
     void frameReady(const Graphics::Framebuffer& framebuffer);
@@ -39,7 +41,7 @@ class Emulator final : public QObject
         EmulationState _state;
 
       public:
-        Components();
+        explicit Components(IRenderer& renderer);
 
         Bus       bus;
         Cartridge cartridge;
@@ -52,10 +54,11 @@ class Emulator final : public QObject
         Joypad    joypad;
     };
 
-    Components _components;
+    bool        _running{true};
+    QtRenderer* _renderer;
+    Components  _components;
 
     std::chrono::steady_clock::time_point _lastUpdate;
-    bool                                  _running{true};
 };
 
 #endif  // GBEMU_EMULATOR_HXX

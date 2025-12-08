@@ -11,7 +11,7 @@
 #include "graphics/Tile.hxx"
 #include "hardware/core/SM83.hxx"
 
-PPU::PPU(IAddressable& bus) : _bus(bus)
+PPU::PPU(IAddressable& bus, IRenderer& renderer) : _bus(bus), _renderer(renderer)
 {
     _oamEntriesToDraw.reserve(10);
 }
@@ -253,11 +253,6 @@ void PPU::setPostBootRomRegisters()
     _registers.STAT = 0x85;
 }
 
-const Graphics::Framebuffer& PPU::getFramebuffer() const noexcept
-{
-    return _framebuffer;
-}
-
 IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
 {
     return {MemoryMap::VIDEO_RAM,         MemoryMap::OAM,
@@ -412,7 +407,7 @@ void PPU::_drawLine()
             bgPixel     = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
         }
 
-        _framebuffer[_registers.LY][x] = _colorMixing(objFetched, objPixel, bgPixel);
+        _renderer.setPixel(x, _registers.LY, _colorMixing(objFetched, objPixel, bgPixel));
     }
 }
 
@@ -503,6 +498,8 @@ void PPU::_transition(const Mode transitionTo)
     else if (_mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
     {
         _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | 1 << Interrupts::VBlank);
+
+        _renderer.render();
     }
     else if (_mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
     {

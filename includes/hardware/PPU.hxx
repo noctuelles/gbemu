@@ -6,17 +6,16 @@
 #define PPU_HXX
 
 #include <array>
-#include <functional>
 #include <queue>
-#include <unordered_map>
 
+#include "IRenderer.hxx"
 #include "graphics/Framebuffer.hxx"
 #include "hardware/IAddressable.hxx"
 
 class PPU final : public IComponent
 {
   public:
-    explicit PPU(IAddressable& bus);
+    explicit PPU(IAddressable& bus, IRenderer& renderer);
 
     struct Status
     {
@@ -44,8 +43,6 @@ class PPU final : public IComponent
     void                  write(uint16_t address, uint8_t value) override;
     void                  tick(size_t machineCycle) override;
     void                  setPostBootRomRegisters();
-
-    [[nodiscard]] const Graphics::Framebuffer& getFramebuffer() const noexcept;
 
     [[nodiscard]] AddressableRange getAddressableRange() const noexcept override;
 
@@ -192,18 +189,18 @@ class PPU final : public IComponent
     void    _transition(Mode transitionTo);
     void    _triggerStatInterrupt(bool value);
 
-    IAddressable&         _bus;
-    Graphics::Framebuffer _framebuffer{};
-    bool                  _irq{};
-    VideoRAM              _videoRam{};
-    bool                  _videoRamAccessible{true};
-    OAMArray              _oamEntries{};
-    OAMArrayItVector      _oamEntriesToDraw{};
-    bool                  _oamAccessible{true};
-    Registers             _registers{};
-    uint16_t              _dots{};
-    uint8_t               _pixelsToDiscard{};
-    Mode                  _mode{Mode::Disabled};
+    IAddressable&    _bus;
+    IRenderer&       _renderer;
+    bool             _irq{};
+    VideoRAM         _videoRam{};
+    bool             _videoRamAccessible{true};
+    OAMArray         _oamEntries{};
+    OAMArrayItVector _oamEntriesToDraw{};
+    bool             _oamAccessible{true};
+    Registers        _registers{};
+    uint16_t         _dots{};
+    uint8_t          _pixelsToDiscard{};
+    Mode             _mode{Mode::Disabled};
 
     friend class MooneyeAcceptance;
 };
