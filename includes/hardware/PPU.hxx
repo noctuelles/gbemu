@@ -181,27 +181,29 @@ class PPU final : public IComponent
         uint8_t priority : 1 {};
     };
 
-    using OAMArray = std::array<OAMEntry, 40>;
-    using VideoRAM = std::array<uint8_t, 0x2000>;
+    using OAMArray         = std::array<OAMEntry, 40>;
+    using OAMArrayItVector = std::vector<OAMArray::const_iterator>;
+    using VideoRAM         = std::array<uint8_t, 0x2000>;
 
     static_assert(sizeof(OAMEntry) == 4, "There should be no padding!");
 
-    void _drawLine();
-    void _transition(Mode transitionTo);
-    void _triggerStatInterrupt(bool value);
+    void    _drawLine();
+    uint8_t _colorMixing(OAMArray::const_iterator objFetched, uint8_t objPixel, uint8_t bgPixel) const;
+    void    _transition(Mode transitionTo);
+    void    _triggerStatInterrupt(bool value);
 
-    IAddressable&                         _bus;
-    Graphics::Framebuffer                 _framebuffer{};
-    bool                                  _irq{};
-    VideoRAM                              _videoRam{};
-    bool                                  _videoRamAccessible{true};
-    OAMArray                              _oamEntries{};
-    std::vector<OAMArray::const_iterator> _oamEntriesToDraw{};
-    bool                                  _oamAccessible{true};
-    Registers                             _registers{};
-    uint16_t                              _dots{};
-    uint8_t                               _pixelsToDiscard{};
-    Mode                                  _mode{Mode::Disabled};
+    IAddressable&         _bus;
+    Graphics::Framebuffer _framebuffer{};
+    bool                  _irq{};
+    VideoRAM              _videoRam{};
+    bool                  _videoRamAccessible{true};
+    OAMArray              _oamEntries{};
+    OAMArrayItVector      _oamEntriesToDraw{};
+    bool                  _oamAccessible{true};
+    Registers             _registers{};
+    uint16_t              _dots{};
+    uint8_t               _pixelsToDiscard{};
+    Mode                  _mode{Mode::Disabled};
 
     friend class MooneyeAcceptance;
 };

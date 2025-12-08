@@ -4,6 +4,8 @@
 #include "hardware/PPU.hxx"
 
 #include <Utils.hxx>
+#include <algorithm>
+#include <cassert>
 #include <stdexcept>
 
 #include "graphics/Tile.hxx"
@@ -150,6 +152,12 @@ void PPU::tick(const size_t machineCycle)
 
         if (_registers.LY == _registers.LYC)
         {
+            // if (_registers.STAT & Status::LYC)
+            //{
+            //     _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | (1 <<
+            //     Interrupts::LCD));
+            // }
+
             _registers.STAT |= Status::LYCCompare;
         }
         else
@@ -176,6 +184,13 @@ void PPU::tick(const size_t machineCycle)
                             }
                         }
                     }
+
+                    /*
+                     * In Non-CGB mode, the smaller the X coordinate, the higher the priority. When X coordinates are
+                     * identical, the object located first in OAM has higher priority.
+                     * A stable sort preserves the original order of the OAM if two OAM entries X position are equal.
+                     */
+                    std::ranges::stable_sort(_oamEntriesToDraw, {}, &OAMEntry::x);
 
                     _transition(Mode::Drawing);
                 }
@@ -263,29 +278,27 @@ void PPU::_drawLine()
 {
     uint8_t bgTileDataLow{};
     uint8_t bgTileDataHigh{};
-    uint8_t objTileDataLow{};
-    uint8_t objTileDataHigh{};
 
     for (uint8_t x{0}; x < 160; ++x)
     {
-        uint8_t bgColOffset{};
+        auto objFetched{_oamEntries.cend()};
+
         uint8_t bgPixel{};
-
-        uint8_t objColOffset{};
         uint8_t objPixel{};
-        auto    objFetched{_oamEntries.cend()};
-
-        uint8_t finalPixel{};
-        uint8_t finalPalette{};
 
         if (_registers.LCDC & LCDControlFlags::ObjEnable)
         {
+            uint8_t objColOffset{};
+
             for (const auto& oamEntryToDraw : _oamEntriesToDraw)
             {
                 if (x + 8 >= oamEntryToDraw->x && x + 8 < oamEntryToDraw->x + 8)
                 {
                     uint8_t  rowOffset{};
                     uint16_t tileDataAddress{};
+                    uint8_t  tileIndex{};
+                    uint8_t  objTileDataLow{};
+                    uint8_t  objTileDataHigh{};
 
                     objFetched = oamEntryToDraw;
 
@@ -313,10 +326,20 @@ void PPU::_drawLine()
                         objColOffset = 7 - (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
                     }
 
-                    tileDataAddress = oamEntryToDraw->tileIndex * 16 + rowOffset;
+                    if (_registers.LCDC & LCDControlFlags::ObjSize)
+                    {
+                        tileIndex = objFetched->tileIndex & 0xFE;
+                    }
+                    else
+                    {
+                        tileIndex = objFetched->tileIndex;
+                    }
+
+                    tileDataAddress = tileIndex * 16 + rowOffset;
                     objTileDataLow  = _videoRam[tileDataAddress];
                     objTileDataHigh = _videoRam[tileDataAddress + 1];
 
+                    objPixel = (((objTileDataHigh >> objColOffset) & 1) << 1) | ((objTileDataLow >> objColOffset) & 1);
                     /* Stop at the first (highest priority) object found for this pixel. */
 
                     break;
@@ -326,6 +349,8 @@ void PPU::_drawLine()
 
         if (_registers.LCDC & LCDControlFlags::BGWindowEnableOrPriority)
         {
+            uint8_t bgColOffset{};
+
             /* Load tile data every 8 pixels. */
             if (x % 8 == 0)
             {
@@ -381,56 +406,68 @@ void PPU::_drawLine()
             }
 
             bgColOffset = 7 - (x % Graphics::TILE_SIZE);
+            bgPixel     = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
         }
 
-        objPixel = (((objTileDataHigh >> objColOffset) & 1) << 1) | ((objTileDataLow >> objColOffset) & 1);
-        bgPixel  = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
+        _framebuffer[_registers.LY][x] = _colorMixing(objFetched, objPixel, bgPixel);
+    }
+}
 
-        /* Pixel mixing. */
+uint8_t PPU::_colorMixing(const OAMArray::const_iterator objFetched, const uint8_t objPixel,
+                          const uint8_t bgPixel) const
+{
+    const uint8_t* finalPixel{};
+    uint8_t        finalPalette{};
 
-        if (objFetched != _oamEntries.cend())
+    if (objFetched != _oamEntries.cend())
+    {
+        if (objFetched->priority)
         {
-            if (objFetched->priority)
+            /* Background has priority over object. */
+            if (bgPixel >= 0b01 && bgPixel <= 0b11)
             {
-                /* Background has priority over object. */
-                if (bgPixel >= 0b01 && bgPixel <= 0b11)
-                {
-                    finalPixel = bgPixel;
-                }
-                /* But not when the background pixel is 0 (transparent). */
-                else
-                {
-                    finalPixel = objPixel;
-                }
+                finalPixel = &bgPixel;
+            }
+            /* But not when the background pixel is 0 (transparent). */
+            else
+            {
+                finalPixel = &objPixel;
+            }
+        }
+        else
+        {
+            if (objPixel == 0b00)
+            {
+                finalPixel = &bgPixel;
             }
             else
             {
-                if (objPixel == 0b00)
-                {
-                    finalPixel = bgPixel;
-                }
-                else
-                {
-                    finalPixel = objPixel;
-                }
+                finalPixel = &objPixel;
             }
         }
-        else
-        {
-            finalPixel = bgPixel;
-        }
-
-        if (finalPixel == bgPixel)
-        {
-            finalPalette = _registers.BGP;
-        }
-        else
-        {
-            finalPalette = objFetched->dmgPalette == 0 ? _registers.OBP0 : _registers.OBP1;
-        }
-
-        _framebuffer[_registers.LY][x] = finalPalette >> (2 * finalPixel) & 0b11;
     }
+    else
+    {
+        finalPixel = &bgPixel;
+    }
+
+    if (finalPixel == &bgPixel)
+    {
+        finalPalette = _registers.BGP;
+    }
+    else
+    {
+        if (objFetched->dmgPalette)
+        {
+            finalPalette = _registers.OBP1;
+        }
+        else
+        {
+            finalPalette = _registers.OBP0;
+        }
+    }
+
+    return finalPalette >> (2 * *finalPixel) & 0b11;
 }
 
 void PPU::_transition(const Mode transitionTo)
