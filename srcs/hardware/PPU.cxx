@@ -146,20 +146,6 @@ void PPU::tick(const size_t machineCycle)
 {
     using namespace Utils;
 
-    if (_registers.LY == _registers.LYC)
-    {
-        // if (_registers.STAT & Status::LYC)
-        //{
-        //     _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | (1 << Interrupts::LCD));
-        // }
-
-        _registers.STAT |= Status::LYCCompare;
-    }
-    else
-    {
-        _registers.STAT &= ~Status::LYCCompare;
-    }
-
     for (size_t i{0}; i < machineCycle * 4; ++i)
     {
         _dots += 1;
@@ -216,6 +202,21 @@ void PPU::tick(const size_t machineCycle)
 
                     _registers.LY += 1;
 
+                    if (_registers.LY == _registers.LYC)
+                    {
+                        if (_registers.STAT & Status::LYC)
+                        {
+                            _bus.write(MemoryMap::IORegisters::IF,
+                                       _bus.read(MemoryMap::IORegisters::IF) | (1 << Interrupts::LCD));
+                        }
+
+                        _registers.STAT |= Status::LYCCompare;
+                    }
+                    else
+                    {
+                        _registers.STAT &= ~Status::LYCCompare;
+                    }
+
                     if (_registers.LY == 144)
                     {
                         _transition(Mode::VerticalBlank);
@@ -271,6 +272,7 @@ IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
 void PPU::_drawLine()
 {
     uint8_t bgTileDataLow{};
+    bool    hasWndPixel{false};
     uint8_t bgTileDataHigh{};
 
     for (uint8_t x{0}; x < 160; ++x)
@@ -352,60 +354,125 @@ void PPU::_drawLine()
             /* Load tile data every 8 pixels. */
             uint8_t tileNumber{};
 
+            if (_registers.LCDC & LCDControlFlags::WindowEnable && _registers.WX != 0 && _registers.WY != 0 &&
+                _registers.LY >= _registers.WY && x + 7 >= _registers.WX)
             {
-                /* Get the tile number off the background tile map. */
+                hasWndPixel = true;
 
-                uint16_t bgTileMapAreaOffset{};
-                uint8_t  colTileMap{};
-                uint8_t  rowTileMap{};
-                uint8_t  rowOffset{};
-                uint8_t  colOffset{};
-
-                if (_registers.LCDC & LCDControlFlags::BGTileMapSelect)
                 {
-                    bgTileMapAreaOffset = 0x1C00;
+                    /* Get the tile number off the background tile map. */
+
+                    uint16_t windowTileMapAreaOffset{};
+                    uint8_t  colTileMap{};
+                    uint8_t  rowTileMap{};
+                    uint8_t  rowOffset{};
+                    uint8_t  colOffset{};
+
+                    if (_registers.LCDC & LCDControlFlags::WindowTileMapSelect)
+                    {
+                        windowTileMapAreaOffset = 0x1C00;
+                    }
+                    else
+                    {
+                        windowTileMapAreaOffset = 0x1800;
+                    }
+
+                    colOffset  = x - (_registers.WX - 7);
+                    rowOffset  = _windowLineCounter;
+                    colTileMap = colOffset / Graphics::TILE_SIZE;
+                    rowTileMap = rowOffset / Graphics::TILE_SIZE;
+
+                    tileNumber = _videoRam[windowTileMapAreaOffset + colTileMap + Graphics::TILE_MAP_SIZE * rowTileMap];
                 }
-                else
+
                 {
-                    bgTileMapAreaOffset = 0x1800;
+                    /* Get tile data from video ram using the tile number. */
+
+                    uint16_t tileDataAddress{};
+                    size_t   rowOffset{};
+
+                    if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
+                    {
+                        tileDataAddress = tileNumber * Graphics::BYTES_PER_LINE;
+                    }
+                    else
+                    {
+                        tileDataAddress = 0x1000 + static_cast<int8_t>(tileNumber) * Graphics::BYTES_PER_LINE;
+                    }
+
+                    rowOffset       = 2 * (_windowLineCounter % Graphics::TILE_SIZE);
+                    tileDataAddress = tileDataAddress + rowOffset;
+
+                    bgTileDataLow  = _videoRam[tileDataAddress];
+                    bgTileDataHigh = _videoRam[tileDataAddress + 1];
                 }
 
-                colOffset  = _registers.SCX + x;
-                rowOffset  = _registers.SCY + _registers.LY;
-                colTileMap = colOffset / Graphics::TILE_SIZE;
-                rowTileMap = rowOffset / Graphics::TILE_SIZE;
+                bgColOffset = 7 - ((x - (_registers.WX - 7)) % Graphics::TILE_SIZE);
 
-                tileNumber = _videoRam[bgTileMapAreaOffset + colTileMap + Graphics::TILE_MAP_SIZE * rowTileMap];
+                bgPixel = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
             }
-
+            else
             {
-                /* Get tile data from video ram using the tile number. */
-
-                uint16_t tileDataAddress{};
-                size_t   rowOffset{};
-
-                if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
                 {
-                    tileDataAddress = tileNumber * Graphics::BYTES_PER_LINE;
+                    /* Get the tile number off the background tile map. */
+
+                    uint16_t bgTileMapAreaOffset{};
+                    uint8_t  colTileMap{};
+                    uint8_t  rowTileMap{};
+                    uint8_t  rowOffset{};
+                    uint8_t  colOffset{};
+
+                    if (_registers.LCDC & LCDControlFlags::BGTileMapSelect)
+                    {
+                        bgTileMapAreaOffset = 0x1C00;
+                    }
+                    else
+                    {
+                        bgTileMapAreaOffset = 0x1800;
+                    }
+
+                    colOffset  = _registers.SCX + x;
+                    rowOffset  = _registers.SCY + _registers.LY;
+                    colTileMap = colOffset / Graphics::TILE_SIZE;
+                    rowTileMap = rowOffset / Graphics::TILE_SIZE;
+
+                    tileNumber = _videoRam[bgTileMapAreaOffset + colTileMap + Graphics::TILE_MAP_SIZE * rowTileMap];
                 }
-                else
+
                 {
-                    tileDataAddress = 0x1000 + static_cast<int8_t>(tileNumber) * Graphics::BYTES_PER_LINE;
+                    /* Get tile data from video ram using the tile number. */
+
+                    uint16_t tileDataAddress{};
+                    size_t   rowOffset{};
+
+                    if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
+                    {
+                        tileDataAddress = tileNumber * Graphics::BYTES_PER_LINE;
+                    }
+                    else
+                    {
+                        tileDataAddress = 0x1000 + static_cast<int8_t>(tileNumber) * Graphics::BYTES_PER_LINE;
+                    }
+
+                    rowOffset       = 2 * ((_registers.SCY + _registers.LY) % Graphics::TILE_SIZE);
+                    tileDataAddress = tileDataAddress + rowOffset;
+
+                    bgTileDataLow  = _videoRam[tileDataAddress];
+                    bgTileDataHigh = _videoRam[tileDataAddress + 1];
                 }
 
-                rowOffset       = 2 * ((_registers.SCY + _registers.LY) % Graphics::TILE_SIZE);
-                tileDataAddress = tileDataAddress + rowOffset;
+                bgColOffset = 7 - ((x + _pixelsToDiscard) % Graphics::TILE_SIZE);
 
-                bgTileDataLow  = _videoRam[tileDataAddress];
-                bgTileDataHigh = _videoRam[tileDataAddress + 1];
+                bgPixel = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
             }
-
-            bgColOffset = 7 - ((x + _pixelsToDiscard) % Graphics::TILE_SIZE);
-
-            bgPixel = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
         }
 
         _renderer.setPixel(x, _registers.LY, _colorMixing(objFetched, objPixel, bgPixel));
+    }
+
+    if (hasWndPixel)
+    {
+        _windowLineCounter += 1;
     }
 }
 
@@ -495,6 +562,8 @@ void PPU::_transition(const Mode transitionTo)
     }
     else if (_mode == Mode::HorizontalBlank && transitionTo == Mode::VerticalBlank)
     {
+        _windowLineCounter = 0;
+
         _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | 1 << Interrupts::VBlank);
 
         _renderer.render();

@@ -200,6 +200,7 @@ class PPU final : public IComponent
     Registers        _registers{};
     uint16_t         _dots{};
     uint8_t          _pixelsToDiscard{};
+    uint8_t          _windowLineCounter{};
     Mode             _mode{Mode::Disabled};
     bool             _isFirstTile{};
 

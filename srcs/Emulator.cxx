@@ -73,7 +73,7 @@ void Emulator::onKeyReleased(const Key key)
 void Emulator::runFrame()
 {
     using namespace std::chrono_literals;
-    constexpr auto frameDuration{24740000ns};
+    constexpr auto frameDuration{29740000ns};
 
     _running = true;
 
