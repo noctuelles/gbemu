@@ -150,7 +150,7 @@ void PPU::tick(const size_t machineCycle)
     {
         // if (_registers.STAT & Status::LYC)
         //{
-        // _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | (1 << Interrupts::LCD));
+        //     _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | (1 << Interrupts::LCD));
         // }
 
         _registers.STAT |= Status::LYCCompare;
@@ -299,7 +299,7 @@ void PPU::_drawLine()
 
                     if (_registers.LCDC & LCDControlFlags::ObjSize)
                     {
-                        objHeight = 8;
+                        objHeight = 16;
                         tileIndex = objFetched->tileIndex & 0xFE;
                     }
                     else
@@ -350,61 +350,59 @@ void PPU::_drawLine()
             uint8_t bgColOffset{};
 
             /* Load tile data every 8 pixels. */
-            if (x % 8 == 0)
+            uint8_t tileNumber{};
+
             {
-                uint8_t tileNumber{};
+                /* Get the tile number off the background tile map. */
 
+                uint16_t bgTileMapAreaOffset{};
+                uint8_t  colTileMap{};
+                uint8_t  rowTileMap{};
+                uint8_t  rowOffset{};
+                uint8_t  colOffset{};
+
+                if (_registers.LCDC & LCDControlFlags::BGTileMapSelect)
                 {
-                    /* Get the tile number off the background tile map. */
-
-                    uint16_t bgTileMapAreaOffset{};
-                    uint8_t  colTileMap{};
-                    uint8_t  rowTileMap{};
-                    uint8_t  rowOffset{};
-                    uint8_t  colOffset{};
-
-                    if (_registers.LCDC & LCDControlFlags::BGTileMapSelect)
-                    {
-                        bgTileMapAreaOffset = 0x1C00;
-                    }
-                    else
-                    {
-                        bgTileMapAreaOffset = 0x1800;
-                    }
-
-                    colOffset  = _registers.SCX + x;
-                    rowOffset  = _registers.SCY + _registers.LY;
-                    colTileMap = colOffset / Graphics::TILE_SIZE;
-                    rowTileMap = rowOffset / Graphics::TILE_SIZE;
-
-                    tileNumber = _videoRam[bgTileMapAreaOffset + colTileMap + Graphics::TILE_MAP_SIZE * rowTileMap];
+                    bgTileMapAreaOffset = 0x1C00;
+                }
+                else
+                {
+                    bgTileMapAreaOffset = 0x1800;
                 }
 
-                {
-                    /* Get tile data from video ram using the tile number. */
+                colOffset  = _registers.SCX + x;
+                rowOffset  = _registers.SCY + _registers.LY;
+                colTileMap = colOffset / Graphics::TILE_SIZE;
+                rowTileMap = rowOffset / Graphics::TILE_SIZE;
 
-                    uint16_t tileDataAddress{};
-                    size_t   rowOffset{};
-
-                    if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
-                    {
-                        tileDataAddress = tileNumber * Graphics::BYTES_PER_LINE;
-                    }
-                    else
-                    {
-                        tileDataAddress = 0x1000 + static_cast<int8_t>(tileNumber) * Graphics::BYTES_PER_LINE;
-                    }
-
-                    rowOffset       = 2 * ((_registers.SCY + _registers.LY) % Graphics::TILE_SIZE);
-                    tileDataAddress = tileDataAddress + rowOffset;
-
-                    bgTileDataLow  = _videoRam[tileDataAddress];
-                    bgTileDataHigh = _videoRam[tileDataAddress + 1];
-                }
+                tileNumber = _videoRam[bgTileMapAreaOffset + colTileMap + Graphics::TILE_MAP_SIZE * rowTileMap];
             }
 
-            bgColOffset = 7 - (x % Graphics::TILE_SIZE);
-            bgPixel     = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
+            {
+                /* Get tile data from video ram using the tile number. */
+
+                uint16_t tileDataAddress{};
+                size_t   rowOffset{};
+
+                if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
+                {
+                    tileDataAddress = tileNumber * Graphics::BYTES_PER_LINE;
+                }
+                else
+                {
+                    tileDataAddress = 0x1000 + static_cast<int8_t>(tileNumber) * Graphics::BYTES_PER_LINE;
+                }
+
+                rowOffset       = 2 * ((_registers.SCY + _registers.LY) % Graphics::TILE_SIZE);
+                tileDataAddress = tileDataAddress + rowOffset;
+
+                bgTileDataLow  = _videoRam[tileDataAddress];
+                bgTileDataHigh = _videoRam[tileDataAddress + 1];
+            }
+
+            bgColOffset = 7 - ((x + _pixelsToDiscard) % Graphics::TILE_SIZE);
+
+            bgPixel = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
         }
 
         _renderer.setPixel(x, _registers.LY, _colorMixing(objFetched, objPixel, bgPixel));

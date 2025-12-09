@@ -201,6 +201,7 @@ class PPU final : public IComponent
     uint16_t         _dots{};
     uint8_t          _pixelsToDiscard{};
     Mode             _mode{Mode::Disabled};
+    bool             _isFirstTile{};
 
     friend class MooneyeAcceptance;
 };

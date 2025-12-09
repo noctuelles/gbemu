@@ -22,7 +22,7 @@ class QtRenderer final : public QObject, public IRenderer
     [[nodiscard]] const Graphics::Framebuffer& getFramebuffer() const;
 
   signals:
-    void frameReady();
+    void onRender(const Graphics::Framebuffer& framebuffer);
 
   private:
     Graphics::Framebuffer _framebuffer{};

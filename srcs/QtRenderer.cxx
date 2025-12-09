@@ -9,8 +9,9 @@ void QtRenderer::setPixel(const uint8_t x, const uint8_t y, const uint8_t pixel)
 
 void QtRenderer::render()
 {
-    emit frameReady();
+    emit onRender(_framebuffer);
 }
+
 const Graphics::Framebuffer& QtRenderer::getFramebuffer() const
 {
     return _framebuffer;

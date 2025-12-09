@@ -21,7 +21,7 @@ Emulator::Emulator(const std::optional<QString>& bootRomPath, QObject* parent)
         return;
     }
 
-    connect(_renderer, &QtRenderer::frameReady, this, &Emulator::onRender, Qt::DirectConnection);
+    connect(_renderer, &QtRenderer::onRender, this, &Emulator::onRender, Qt::DirectConnection);
 
     QFile                      file{bootRomPath.value()};
     std::array<uint8_t, 0x100> bootRom{};
@@ -96,14 +96,16 @@ void Emulator::runFrame()
         std::this_thread::sleep_for(frameDuration - diff);
     }
 
-    emit frameReady(_renderer->getFramebuffer());
-
     _lastUpdate = now;
 }
 
-void Emulator::onRender()
+void Emulator::onRender(const Graphics::Framebuffer& framebuffer)
 {
     _running = false;
+
+    /* This signal will be delivered via a QueuedConnection and won't block here. */
+
+    emit frameReady(framebuffer);
 }
 
 Emulator::Components::Components(IRenderer& renderer)

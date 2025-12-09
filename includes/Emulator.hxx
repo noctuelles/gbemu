@@ -28,8 +28,9 @@ class Emulator final : public QObject
     void onKeyPressed(Key key);
     void onKeyReleased(Key key);
     void runFrame();
+
   private slots:
-    void onRender();
+    void onRender(const Graphics::Framebuffer& framebuffer);
 
   signals:
     void frameReady(const Graphics::Framebuffer& framebuffer);
