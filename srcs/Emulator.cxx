@@ -72,15 +72,12 @@ void Emulator::onKeyReleased(const Key key)
 
 void Emulator::runFrame()
 {
-    using namespace std::chrono_literals;
-    constexpr auto frameDuration{29740000ns};
-
-    _running = true;
-
-    const auto now{std::chrono::steady_clock::now()};
+    const auto frameStart{std::chrono::steady_clock::now()};
 
     try
     {
+        _running = true;
+
         while (_running)
         {
             _components.cpu.runInstruction();
@@ -89,14 +86,17 @@ void Emulator::runFrame()
     catch (const std::exception& e)
     {
         emit emulationFatalError(e.what());
+        return;
     }
 
-    if (const auto diff{now - _lastUpdate}; diff < frameDuration)
+    const auto frameEnd{std::chrono::steady_clock::now()};
+
+    if (const auto emulationTime{frameEnd - frameStart}; emulationTime < _frameDuration)
     {
-        std::this_thread::sleep_for(frameDuration - diff);
+        /* Not using QT sleep function here. The event loop is blocked, but this is not an issue. */
+        const auto sleepTime{_frameDuration - emulationTime};
+        std::this_thread::sleep_for(sleepTime);
     }
-
-    _lastUpdate = now;
 }
 
 void Emulator::onRender(const Graphics::Framebuffer& framebuffer)
@@ -104,7 +104,6 @@ void Emulator::onRender(const Graphics::Framebuffer& framebuffer)
     _running = false;
 
     /* This signal will be delivered via a QueuedConnection and won't block here. */
-
     emit frameReady(framebuffer);
 }
 

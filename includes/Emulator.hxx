@@ -16,6 +16,8 @@
 #include "hardware/WorkRAM.hxx"
 #include "hardware/core/SM83.hxx"
 
+using namespace std::chrono_literals;
+
 class Emulator final : public QObject
 {
     Q_OBJECT
@@ -55,11 +57,11 @@ class Emulator final : public QObject
         Joypad    joypad;
     };
 
-    bool        _running{true};
-    QtRenderer* _renderer;
-    Components  _components;
+    volatile bool _running{true};
+    QtRenderer*   _renderer;
+    Components    _components;
 
-    std::chrono::steady_clock::time_point _lastUpdate;
+    std::chrono::nanoseconds _frameDuration{16740000ns};
 };
 
 #endif  // GBEMU_EMULATOR_HXX

@@ -19,8 +19,6 @@ class QtRenderer final : public QObject, public IRenderer
     void setPixel(uint8_t x, uint8_t y, uint8_t pixel) noexcept override;
     void render() override;
 
-    [[nodiscard]] const Graphics::Framebuffer& getFramebuffer() const;
-
   signals:
     void onRender(const Graphics::Framebuffer& framebuffer);
 

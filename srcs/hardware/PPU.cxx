@@ -20,7 +20,7 @@ uint8_t PPU::read(const uint16_t address) const
 {
     if (Utils::addressIn(address, MemoryMap::VIDEO_RAM))
     {
-        return _videoRam[address - 0x8000];
+        return _videoRam[address & 0x7FFF];
     }
     if (Utils::addressIn(address, MemoryMap::OAM))
     {
@@ -78,7 +78,7 @@ void PPU::write(const uint16_t address, uint8_t value)
 {
     if (Utils::addressIn(address, MemoryMap::VIDEO_RAM))
     {
-        _videoRam[address - 0x8000] = value;
+        _videoRam[address & 0x7FFF] = value;
     }
     else if (Utils::addressIn(address, MemoryMap::OAM))
     {
@@ -181,7 +181,6 @@ void PPU::tick(const size_t machineCycle)
                 }
                 break;
             case Mode::Drawing:
-
                 _videoRamAccessible = false;
                 _oamAccessible      = false;
 

@@ -10,6 +10,7 @@
 #include <QFileInfo>
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QMetaEnum>
 #include <QSettings>
 #include <iostream>
 
@@ -26,8 +27,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                                  std::tuple_size_v<Graphics::Framebuffer> * 2);
     resize(_ui->display->minimumSize());
 
+    _emulationStatus = new QLabel{statusBar()};
+    statusBar()->addPermanentWidget(_emulationStatus);
+    _updateEmulationStatus(Status::Stopped);
+
     _populateRecentMenu();
     _loadSettings();
+
+    installEventFilter(this);
 
     /* UI */
 
@@ -50,11 +57,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                     _loadSettings();
                 }
             });
-    connect(_ui->actionDebugger, &QAction::triggered, this,
-            [this]
-            {
-                _debugger.show();
-            });
+
+    connect(_ui->actionDebugger, &QAction::triggered, this, [this] { _debugger.show(); });
 }
 
 MainWindow::~MainWindow()
@@ -96,19 +100,29 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event)
     QMainWindow::keyReleaseEvent(event);
 }
 
+bool MainWindow::eventFilter(QObject* watched, QEvent* event)
+{
+    if (event->type() == QEvent::Show)
+    {
+        qDebug() << "Show event";
+    }
+    return QMainWindow::eventFilter(watched, event);
+}
+
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
 {
     _updateDisplay(framebuffer);
     emit requestNextFrame();
 }
 
-void MainWindow::onEmulationFatalError(const QString& message)
+void MainWindow::onEmulationFatalError(const QString& message) const
 {
     constexpr Graphics::Framebuffer framebuffer{};
 
     QMessageBox::critical(nullptr, tr("Emulation fatal error"), QString{"%1\nHalting."}.arg(message));
 
     _updateDisplay(framebuffer);
+    _updateEmulationStatus(Status::Stopped);
 }
 
 void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const
@@ -159,8 +173,8 @@ void MainWindow::_startEmulation(const QString& romPath)
         _emulatorThread.wait();
     }
 
-    auto       bootRomPath{Settings::isBootRomEnabled() ? std::optional{Settings::getBootRomPath()} : std::nullopt};
-    const auto emulator{new Emulator{std::move(bootRomPath)}};
+    const auto bootRomPath{Settings::isBootRomEnabled() ? std::optional{Settings::getBootRomPath()} : std::nullopt};
+    const auto emulator{new Emulator{bootRomPath}};
 
     emulator->moveToThread(&_emulatorThread);
 
@@ -177,8 +191,17 @@ void MainWindow::_startEmulation(const QString& romPath)
     connect(this, &MainWindow::requestStartEmulation, emulator, &Emulator::startEmulation);
 
     _emulatorThread.start();
+    _updateEmulationStatus(Status::Running);
 
     emit requestStartEmulation(romPath);
+}
+
+void MainWindow::_updateEmulationStatus(const Status status) const
+{
+    const auto metaEnum{QMetaEnum::fromType<Status>()};
+    const auto text{metaEnum.valueToKey(std::to_underlying(status))};
+
+    _emulationStatus->setText(text);
 }
 
 void MainWindow::_populateRecentMenu()

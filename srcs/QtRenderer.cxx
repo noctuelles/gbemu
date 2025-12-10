@@ -11,8 +11,3 @@ void QtRenderer::render()
 {
     emit onRender(_framebuffer);
 }
-
-const Graphics::Framebuffer& QtRenderer::getFramebuffer() const
-{
-    return _framebuffer;
-}
