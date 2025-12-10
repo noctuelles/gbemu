@@ -265,209 +265,31 @@ IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
             MemoryMap::IORegisters::OBP1};
 }
 
-/**
- * @brief This is a scanline rendering and is not a fifo implementation.
- * Thus, timing is not 100% accurate and some games might not run correctly.
- */
 void PPU::_drawLine()
 {
-    uint8_t bgTileDataLow{};
-    bool    hasWndPixel{false};
-    uint8_t bgTileDataHigh{};
+    bool hasWndPixel{};
 
     for (uint8_t x{0}; x < 160; ++x)
     {
-        auto objFetched{_oamEntries.cend()};
-
-        uint8_t bgPixel{};
-        uint8_t objPixel{};
+        ObjPixel objPixel{_oamEntries.cend(), 0};
+        BgPixel  bgPixel{false, 0};
 
         if (_registers.LCDC & LCDControlFlags::ObjEnable)
         {
-            uint8_t objColOffset{};
-
-            for (const auto& oamEntryToDraw : _oamEntriesToDraw)
-            {
-                if (x + 8 >= oamEntryToDraw->x && x + 8 < oamEntryToDraw->x + 8)
-                {
-                    uint8_t  objHeight{};
-                    uint8_t  rowOffset{};
-                    uint16_t tileDataAddress{};
-                    uint8_t  tileIndex{};
-                    uint8_t  objTileDataLow{};
-                    uint8_t  objTileDataHigh{};
-
-                    objFetched = oamEntryToDraw;
-
-                    if (_registers.LCDC & LCDControlFlags::ObjSize)
-                    {
-                        objHeight = 16;
-                        tileIndex = objFetched->tileIndex & 0xFE;
-                    }
-                    else
-                    {
-                        objHeight = 8;
-                        tileIndex = objFetched->tileIndex;
-                    }
-
-                    if (objFetched->yFlip)
-                    {
-                        /* Instead of fetching from the first line, fetch starting from the last line and advance
-                         * backward. */
-
-                        rowOffset = ((objHeight * 2) - 2) - 2 * ((_registers.LY + 16 - objFetched->y) % objHeight);
-                    }
-                    else
-                    {
-                        rowOffset = 2 * ((_registers.LY + 16 - objFetched->y) % objHeight);
-                    }
-
-                    if (objFetched->xFlip)
-                    {
-                        /* Same logic as yFlip, but instead of fetching from the leftmost pixel, start from the
-                         * rightmost, and advance backward. */
-
-                        objColOffset = (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
-                    }
-                    else
-                    {
-                        objColOffset = 7 - (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
-                    }
-
-                    tileDataAddress = tileIndex * 16 + rowOffset;
-                    objTileDataLow  = _videoRam[tileDataAddress];
-                    objTileDataHigh = _videoRam[tileDataAddress + 1];
-
-                    objPixel = (((objTileDataHigh >> objColOffset) & 1) << 1) | ((objTileDataLow >> objColOffset) & 1);
-
-                    /* Stop at the first (highest priority) object found for this pixel. */
-
-                    break;
-                }
-            }
+            objPixel = _spriteFetch(x);
         }
 
         if (_registers.LCDC & LCDControlFlags::BGWindowEnableOrPriority)
         {
-            uint8_t bgColOffset{};
-
-            /* Load tile data every 8 pixels. */
-            uint8_t tileNumber{};
-
-            if (_registers.LCDC & LCDControlFlags::WindowEnable && _registers.WX != 0 && _registers.WY != 0 &&
-                _registers.LY >= _registers.WY && x + 7 >= _registers.WX)
-            {
-                hasWndPixel = true;
-
-                {
-                    /* Get the tile number off the background tile map. */
-
-                    uint16_t windowTileMapAreaOffset{};
-                    uint8_t  colTileMap{};
-                    uint8_t  rowTileMap{};
-                    uint8_t  rowOffset{};
-                    uint8_t  colOffset{};
-
-                    if (_registers.LCDC & LCDControlFlags::WindowTileMapSelect)
-                    {
-                        windowTileMapAreaOffset = 0x1C00;
-                    }
-                    else
-                    {
-                        windowTileMapAreaOffset = 0x1800;
-                    }
-
-                    colOffset  = x - (_registers.WX - 7);
-                    rowOffset  = _windowLineCounter;
-                    colTileMap = colOffset / Graphics::TILE_SIZE;
-                    rowTileMap = rowOffset / Graphics::TILE_SIZE;
-
-                    tileNumber = _videoRam[windowTileMapAreaOffset + colTileMap + Graphics::TILE_MAP_SIZE * rowTileMap];
-                }
-
-                {
-                    /* Get tile data from video ram using the tile number. */
-
-                    uint16_t tileDataAddress{};
-                    size_t   rowOffset{};
-
-                    if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
-                    {
-                        tileDataAddress = tileNumber * Graphics::BYTES_PER_LINE;
-                    }
-                    else
-                    {
-                        tileDataAddress = 0x1000 + static_cast<int8_t>(tileNumber) * Graphics::BYTES_PER_LINE;
-                    }
-
-                    rowOffset       = 2 * (_windowLineCounter % Graphics::TILE_SIZE);
-                    tileDataAddress = tileDataAddress + rowOffset;
-
-                    bgTileDataLow  = _videoRam[tileDataAddress];
-                    bgTileDataHigh = _videoRam[tileDataAddress + 1];
-                }
-
-                bgColOffset = 7 - ((x - (_registers.WX - 7)) % Graphics::TILE_SIZE);
-
-                bgPixel = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
-            }
-            else
-            {
-                {
-                    /* Get the tile number off the background tile map. */
-
-                    uint16_t bgTileMapAreaOffset{};
-                    uint8_t  colTileMap{};
-                    uint8_t  rowTileMap{};
-                    uint8_t  rowOffset{};
-                    uint8_t  colOffset{};
-
-                    if (_registers.LCDC & LCDControlFlags::BGTileMapSelect)
-                    {
-                        bgTileMapAreaOffset = 0x1C00;
-                    }
-                    else
-                    {
-                        bgTileMapAreaOffset = 0x1800;
-                    }
-
-                    colOffset  = _registers.SCX + x;
-                    rowOffset  = _registers.SCY + _registers.LY;
-                    colTileMap = colOffset / Graphics::TILE_SIZE;
-                    rowTileMap = rowOffset / Graphics::TILE_SIZE;
-
-                    tileNumber = _videoRam[bgTileMapAreaOffset + colTileMap + Graphics::TILE_MAP_SIZE * rowTileMap];
-                }
-
-                {
-                    /* Get tile data from video ram using the tile number. */
-
-                    uint16_t tileDataAddress{};
-                    size_t   rowOffset{};
-
-                    if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
-                    {
-                        tileDataAddress = tileNumber * Graphics::BYTES_PER_LINE;
-                    }
-                    else
-                    {
-                        tileDataAddress = 0x1000 + static_cast<int8_t>(tileNumber) * Graphics::BYTES_PER_LINE;
-                    }
-
-                    rowOffset       = 2 * ((_registers.SCY + _registers.LY) % Graphics::TILE_SIZE);
-                    tileDataAddress = tileDataAddress + rowOffset;
-
-                    bgTileDataLow  = _videoRam[tileDataAddress];
-                    bgTileDataHigh = _videoRam[tileDataAddress + 1];
-                }
-
-                bgColOffset = 7 - ((x + _pixelsToDiscard) % Graphics::TILE_SIZE);
-
-                bgPixel = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
-            }
+            bgPixel = _bgFetch(x);
         }
 
-        _renderer.setPixel(x, _registers.LY, _colorMixing(objFetched, objPixel, bgPixel));
+        if (bgPixel.first)
+        {
+            hasWndPixel = true;
+        }
+
+        _renderer.setPixel(x, _registers.LY, _pixelMixing(objPixel, bgPixel));
     }
 
     if (hasWndPixel)
@@ -476,51 +298,244 @@ void PPU::_drawLine()
     }
 }
 
-uint8_t PPU::_colorMixing(const OAMArray::const_iterator objFetched, const uint8_t objPixel,
-                          const uint8_t bgPixel) const
+PPU::ObjPixel PPU::_spriteFetch(const uint8_t x) const
+{
+    auto    objFetched{_oamEntries.cend()};
+    uint8_t objPixel{};
+    uint8_t objColOffset{};
+
+    for (const auto oamEntryToDraw : _oamEntriesToDraw)
+    {
+        if (x + 8 >= oamEntryToDraw->x && x + 8 < oamEntryToDraw->x + 8)
+        {
+            uint8_t  objHeight{};
+            uint8_t  rowOffset{};
+            uint16_t tileDataAddress{};
+            uint8_t  tileIndex{};
+            uint8_t  objTileDataLow{};
+            uint8_t  objTileDataHigh{};
+
+            objFetched = oamEntryToDraw;
+
+            if (_registers.LCDC & LCDControlFlags::ObjSize)
+            {
+                objHeight = 16;
+                tileIndex = objFetched->tileIndex & 0xFE;
+            }
+            else
+            {
+                objHeight = 8;
+                tileIndex = objFetched->tileIndex;
+            }
+
+            if (objFetched->yFlip)
+            {
+                /* Instead of fetching from the first line, fetch starting from the last line and advance
+                 * backward. */
+
+                rowOffset = ((objHeight * 2) - 2) - 2 * ((_registers.LY + 16 - objFetched->y) % objHeight);
+            }
+            else
+            {
+                rowOffset = 2 * ((_registers.LY + 16 - objFetched->y) % objHeight);
+            }
+
+            if (objFetched->xFlip)
+            {
+                /* Same logic as yFlip, but instead of fetching from the leftmost pixel, start from the
+                 * rightmost, and advance backward. */
+
+                objColOffset = (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
+            }
+            else
+            {
+                objColOffset = 7 - (x + 8 - objFetched->x) % Graphics::TILE_SIZE;
+            }
+
+            tileDataAddress = tileIndex * 16 + rowOffset;
+            objTileDataLow  = _videoRam[tileDataAddress];
+            objTileDataHigh = _videoRam[tileDataAddress + 1];
+
+            objPixel = (((objTileDataHigh >> objColOffset) & 1) << 1) | ((objTileDataLow >> objColOffset) & 1);
+
+            /* Stop at the first (highest priority) object found for this pixel. */
+
+            break;
+        }
+    }
+
+    return {objFetched, objPixel};
+}
+
+PPU::BgPixel PPU::_bgFetch(uint8_t x) const
+{
+    uint8_t bgPixel{};
+    bool    isWnd{};
+
+    uint8_t tileNumber{};
+    uint8_t bgTileDataLow{};
+    uint8_t bgTileDataHigh{};
+    uint8_t bgColOffset{};
+
+    if (_registers.LCDC & LCDControlFlags::WindowEnable && _registers.WX != 0 && _registers.WY != 0 &&
+        _registers.LY >= _registers.WY && x + 7 >= _registers.WX)
+    {
+        isWnd = true;
+
+        {
+            /* Get the tile number off the background tile map. */
+
+            uint16_t windowTileMapAreaOffset{};
+            uint8_t  colTileMap{};
+            uint8_t  rowTileMap{};
+            uint8_t  rowOffset{};
+            uint8_t  colOffset{};
+
+            if (_registers.LCDC & LCDControlFlags::WindowTileMapSelect)
+            {
+                windowTileMapAreaOffset = 0x1C00;
+            }
+            else
+            {
+                windowTileMapAreaOffset = 0x1800;
+            }
+
+            colOffset  = x - (_registers.WX - 7);
+            rowOffset  = _windowLineCounter;
+            colTileMap = colOffset / Graphics::TILE_SIZE;
+            rowTileMap = rowOffset / Graphics::TILE_SIZE;
+
+            tileNumber = _videoRam[windowTileMapAreaOffset + colTileMap + Graphics::TILE_MAP_SIZE * rowTileMap];
+        }
+
+        {
+            /* Get tile data from video ram using the tile number. */
+
+            uint16_t tileDataAddress{};
+            size_t   rowOffset{};
+
+            if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
+            {
+                tileDataAddress = tileNumber * Graphics::BYTES_PER_LINE;
+            }
+            else
+            {
+                tileDataAddress = 0x1000 + static_cast<int8_t>(tileNumber) * Graphics::BYTES_PER_LINE;
+            }
+
+            rowOffset       = 2 * (_windowLineCounter % Graphics::TILE_SIZE);
+            tileDataAddress = tileDataAddress + rowOffset;
+
+            bgTileDataLow  = _videoRam[tileDataAddress];
+            bgTileDataHigh = _videoRam[tileDataAddress + 1];
+        }
+
+        bgColOffset = 7 - ((x - (_registers.WX - 7)) % Graphics::TILE_SIZE);
+
+        bgPixel = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
+    }
+    else
+    {
+        {
+            /* Get the tile number off the background tile map. */
+
+            uint16_t bgTileMapAreaOffset{};
+            uint8_t  colTileMap{};
+            uint8_t  rowTileMap{};
+            uint8_t  rowOffset{};
+            uint8_t  colOffset{};
+
+            if (_registers.LCDC & LCDControlFlags::BGTileMapSelect)
+            {
+                bgTileMapAreaOffset = 0x1C00;
+            }
+            else
+            {
+                bgTileMapAreaOffset = 0x1800;
+            }
+
+            colOffset  = _registers.SCX + x;
+            rowOffset  = _registers.SCY + _registers.LY;
+            colTileMap = colOffset / Graphics::TILE_SIZE;
+            rowTileMap = rowOffset / Graphics::TILE_SIZE;
+
+            tileNumber = _videoRam[bgTileMapAreaOffset + colTileMap + Graphics::TILE_MAP_SIZE * rowTileMap];
+        }
+
+        {
+            /* Get tile data from video ram using the tile number. */
+
+            uint16_t tileDataAddress{};
+            size_t   rowOffset{};
+
+            if (_registers.LCDC & LCDControlFlags::BGAndWindowTileDataArea)
+            {
+                tileDataAddress = tileNumber * Graphics::BYTES_PER_LINE;
+            }
+            else
+            {
+                tileDataAddress = 0x1000 + static_cast<int8_t>(tileNumber) * Graphics::BYTES_PER_LINE;
+            }
+
+            rowOffset       = 2 * ((_registers.SCY + _registers.LY) % Graphics::TILE_SIZE);
+            tileDataAddress = tileDataAddress + rowOffset;
+
+            bgTileDataLow  = _videoRam[tileDataAddress];
+            bgTileDataHigh = _videoRam[tileDataAddress + 1];
+        }
+
+        bgColOffset = 7 - ((x + _pixelsToDiscard) % Graphics::TILE_SIZE);
+
+        bgPixel = (((bgTileDataHigh >> bgColOffset) & 1) << 1) | ((bgTileDataLow >> bgColOffset) & 1);
+    }
+
+    return {isWnd, bgPixel};
+}
+
+uint8_t PPU::_pixelMixing(const ObjPixel& objPixel, const BgPixel& bgPixel) const
 {
     const uint8_t* finalPixel{};
     uint8_t        finalPalette{};
 
-    if (objFetched != _oamEntries.cend())
+    if (objPixel.first != _oamEntries.cend())
     {
-        if (objFetched->priority)
+        if (objPixel.first->priority)
         {
             /* Background has priority over object. */
-            if (bgPixel >= 0b01 && bgPixel <= 0b11)
+            if (bgPixel.second >= 0b01 && bgPixel.second <= 0b11)
             {
-                finalPixel = &bgPixel;
+                finalPixel = &bgPixel.second;
             }
             /* But not when the background pixel is 0 (transparent). */
             else
             {
-                finalPixel = &objPixel;
+                finalPixel = &objPixel.second;
             }
         }
         else
         {
-            if (objPixel == 0b00)
+            if (objPixel.second == 0b00)
             {
-                finalPixel = &bgPixel;
+                finalPixel = &bgPixel.second;
             }
             else
             {
-                finalPixel = &objPixel;
+                finalPixel = &objPixel.second;
             }
         }
     }
     else
     {
-        finalPixel = &bgPixel;
+        finalPixel = &bgPixel.second;
     }
 
-    if (finalPixel == &bgPixel)
+    if (finalPixel == &bgPixel.second)
     {
         finalPalette = _registers.BGP;
     }
     else
     {
-        if (objFetched->dmgPalette)
+        if (objPixel.first->dmgPalette)
         {
             finalPalette = _registers.OBP1;
         }
