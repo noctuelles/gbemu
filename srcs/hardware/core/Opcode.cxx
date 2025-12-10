@@ -49,7 +49,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 break;
             case 0x07:
                 A = rotate_left(A, true);
-                set_flag(Flags::Zero, false);
+                setFlag(Flags::Zero, false);
                 break;
             case 0x08:
             {
@@ -83,7 +83,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 break;
             case 0x0F:
                 A = rotate_right(A, true);
-                set_flag(Flags::Zero, false);
+                setFlag(Flags::Zero, false);
                 break;
             case 0x10:
                 state = State::STOPPED;
@@ -110,7 +110,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 break;
             case 0x17:
                 A = rotate_left(A, false);
-                set_flag(Flags::Zero, false);
+                setFlag(Flags::Zero, false);
                 break;
             case 0x18:
                 jr();
@@ -137,7 +137,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 break;
             case 0x1F:
                 A = rotate_right(A, false);
-                set_flag(Flags::Zero, false);
+                setFlag(Flags::Zero, false);
                 break;
             case 0x20:
                 jr_cc(Conditionals::NZ);
@@ -192,8 +192,8 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 break;
             case 0x2F:
                 A = ~A;
-                set_flag(Flags::Subtract, true);
-                set_flag(Flags::HalfCarry, true);
+                setFlag(Flags::Subtract, true);
+                setFlag(Flags::HalfCarry, true);
                 break;
             case 0x30:
                 jr_cc(Conditionals::NC);
@@ -220,9 +220,9 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 writeMemory(HL(), fetchOperand());
                 break;
             case 0x37:
-                set_flag(Flags::Subtract, false);
-                set_flag(Flags::HalfCarry, false);
-                set_flag(Flags::Carry, true);
+                setFlag(Flags::Subtract, false);
+                setFlag(Flags::HalfCarry, false);
+                setFlag(Flags::Carry, true);
                 break;
             case 0x38:
                 jr_cc(Conditionals::C);
@@ -249,9 +249,9 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
                 A = fetchOperand();
                 break;
             case 0x3F:
-                set_flag(Flags::Subtract, false);
-                set_flag(Flags::HalfCarry, false);
-                set_flag(Flags::Carry, !getFlag(Flags::Carry));
+                setFlag(Flags::Subtract, false);
+                setFlag(Flags::HalfCarry, false);
+                setFlag(Flags::Carry, !getFlag(Flags::Carry));
                 break;
             case 0x40:
                 break;

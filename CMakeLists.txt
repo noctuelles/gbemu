@@ -63,6 +63,7 @@ qt_add_executable(gbemu
         includes/QtRenderer.hxx
         includes/IRenderer.hxx
         srcs/QtRenderer.cxx
+        srcs/Debugger.cxx
 )
 
 add_executable(gbemu_test

@@ -135,6 +135,15 @@ void SM83::applyView(const View& view)
 
     SP = view.registers.SP;
     PC = view.registers.PC;
+
+    setFlag(Flags::Carry, view.flags.carry);
+    setFlag(Flags::Subtract, view.flags.subtract);
+    setFlag(Flags::HalfCarry, view.flags.halfCarry);
+    setFlag(Flags::Zero, view.flags.zero);
+
+    IE  = view.interrupts.IE;
+    IF  = view.interrupts.IF;
+    IME = view.interrupts.IME;
 }
 
 SM83::View SM83::getView() const
@@ -157,6 +166,15 @@ SM83::View SM83::getView() const
 
     view.registers.SP = SP;
     view.registers.PC = PC;
+
+    view.flags.carry     = getFlag(Flags::Carry);
+    view.flags.subtract  = getFlag(Flags::Subtract);
+    view.flags.halfCarry = getFlag(Flags::HalfCarry);
+    view.flags.zero      = getFlag(Flags::Zero);
+
+    view.interrupts.IE  = IE;
+    view.interrupts.IF  = IF;
+    view.interrupts.IME = IME;
 
     return view;
 }
@@ -279,10 +297,10 @@ uint8_t SM83::add(const uint8_t lhs, const uint8_t rhs, const bool carry)
     const auto add_carry{static_cast<uint8_t>(carry ? getFlag(Flags::Carry) : 0)};
     const auto result{static_cast<uint16_t>(lhs + rhs + add_carry)};
 
-    set_flag(Flags::Zero, (result & 0xFF) == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, (lhs & 0x0F) + (rhs & 0x0F) + add_carry > 0x0F);
-    set_flag(Flags::Carry, result > 0xFF);
+    setFlag(Flags::Zero, (result & 0xFF) == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, (lhs & 0x0F) + (rhs & 0x0F) + add_carry > 0x0F);
+    setFlag(Flags::Carry, result > 0xFF);
 
     return static_cast<uint8_t>(result & 0xFF);
 }
@@ -291,9 +309,9 @@ uint16_t SM83::add(const uint16_t lhs, const uint16_t rhs)
 {
     const int32_t result{lhs + rhs};
 
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, (lhs & 0x0FFF) + (rhs & 0x0FFF) > 0x0FFF);
-    set_flag(Flags::Carry, result > 0xFFFF);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, (lhs & 0x0FFF) + (rhs & 0x0FFF) > 0x0FFF);
+    setFlag(Flags::Carry, result > 0xFFFF);
 
     return static_cast<uint16_t>(result);
 }
@@ -315,7 +333,7 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
         lhs_msb -= 1;
     }
 
-    set_flag(Flags::Zero, false);
+    setFlag(Flags::Zero, false);
 
     return Utils::to_word(lhs_msb, lhs_lsb);
 }
@@ -331,7 +349,7 @@ void SM83::daa()
     if ((!getFlag(Flags::Subtract) && A > 0x99) || getFlag(Flags::Carry))
     {
         adj |= 0x60;
-        set_flag(Flags::Carry, true);
+        setFlag(Flags::Carry, true);
     }
     if (!getFlag(Flags::Subtract))
     {
@@ -342,8 +360,8 @@ void SM83::daa()
         A -= adj;
     }
 
-    set_flag(Flags::HalfCarry, false);
-    set_flag(Flags::Zero, A == 0);
+    setFlag(Flags::HalfCarry, false);
+    setFlag(Flags::Zero, A == 0);
 }
 
 uint8_t SM83::sub(const uint8_t lhs, const uint8_t rhs, const bool borrow)
@@ -351,10 +369,10 @@ uint8_t SM83::sub(const uint8_t lhs, const uint8_t rhs, const bool borrow)
     const auto sub_borrow{static_cast<uint8_t>(borrow ? getFlag(Flags::Carry) : 0)};
     const auto result{static_cast<uint16_t>(lhs - rhs - sub_borrow)};
 
-    set_flag(Flags::Zero, (result & 0xFF) == 0);
-    set_flag(Flags::Subtract, true);
-    set_flag(Flags::HalfCarry, (lhs & 0x0F) < (rhs & 0x0F) + sub_borrow);
-    set_flag(Flags::Carry, lhs < rhs + sub_borrow);
+    setFlag(Flags::Zero, (result & 0xFF) == 0);
+    setFlag(Flags::Subtract, true);
+    setFlag(Flags::HalfCarry, (lhs & 0x0F) < (rhs & 0x0F) + sub_borrow);
+    setFlag(Flags::Carry, lhs < rhs + sub_borrow);
 
     return static_cast<uint8_t>(result & 0xFF);
 }
@@ -363,10 +381,10 @@ uint8_t SM83::bitwiseAnd(const uint8_t lhs, const uint8_t rhs)
 {
     const uint8_t result = lhs & rhs;
 
-    set_flag(Flags::Zero, result == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, true);
-    set_flag(Flags::Carry, false);
+    setFlag(Flags::Zero, result == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, true);
+    setFlag(Flags::Carry, false);
 
     return result;
 }
@@ -375,10 +393,10 @@ uint8_t SM83::bitwiseOr(const uint8_t lhs, const uint8_t rhs)
 {
     const uint8_t result = lhs | rhs;
 
-    set_flag(Flags::Zero, result == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, false);
-    set_flag(Flags::Carry, false);
+    setFlag(Flags::Zero, result == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, false);
+    setFlag(Flags::Carry, false);
 
     return result;
 }
@@ -386,10 +404,10 @@ uint8_t SM83::bitwiseOr(const uint8_t lhs, const uint8_t rhs)
 uint8_t SM83::bitwise_xor(const uint8_t lhs, const uint8_t rhs)
 {
     const uint8_t result = lhs ^ rhs;
-    set_flag(Flags::Zero, result == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, false);
-    set_flag(Flags::Carry, false);
+    setFlag(Flags::Zero, result == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, false);
+    setFlag(Flags::Carry, false);
     return result;
 }
 
@@ -403,10 +421,10 @@ uint8_t SM83::rotate_left(uint8_t op, const bool circular)
         op |= 0x01;
     }
 
-    set_flag(Flags::Zero, op == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, false);
-    set_flag(Flags::Carry, new_carry);
+    setFlag(Flags::Zero, op == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, false);
+    setFlag(Flags::Carry, new_carry);
 
     return op;
 }
@@ -421,10 +439,10 @@ uint8_t SM83::rotate_right(uint8_t op, const bool circular)
         op |= 0x80;
     }
 
-    set_flag(Flags::Zero, op == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, false);
-    set_flag(Flags::Carry, new_carry);
+    setFlag(Flags::Zero, op == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, false);
+    setFlag(Flags::Carry, new_carry);
 
     return op;
 }
@@ -436,10 +454,10 @@ uint8_t SM83::shift_right(uint8_t op, const bool arithmetic)
 
     op = op >> 1 | (sign && arithmetic ? 0x80 : 0);
 
-    set_flag(Flags::Zero, op == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, false);
-    set_flag(Flags::Carry, new_carry);
+    setFlag(Flags::Zero, op == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, false);
+    setFlag(Flags::Carry, new_carry);
 
     return op;
 }
@@ -450,19 +468,19 @@ uint8_t SM83::shift_left(uint8_t op)
 
     op <<= 1;
 
-    set_flag(Flags::Zero, op == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, false);
-    set_flag(Flags::Carry, new_carry);
+    setFlag(Flags::Zero, op == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, false);
+    setFlag(Flags::Carry, new_carry);
 
     return op;
 }
 
 void SM83::bit(const uint8_t op, const std::size_t bit)
 {
-    set_flag(Flags::Zero, (op & 1 << bit) == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, true);
+    setFlag(Flags::Zero, (op & 1 << bit) == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, true);
 }
 
 uint8_t SM83::res(const uint8_t op, const std::size_t bit)
@@ -479,10 +497,10 @@ uint8_t SM83::swap(const uint8_t op)
 {
     const auto result{static_cast<uint8_t>((op & 0x0F) << 4 | (op & 0xF0) >> 4)};
 
-    set_flag(Flags::Zero, result == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, false);
-    set_flag(Flags::Carry, false);
+    setFlag(Flags::Zero, result == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, false);
+    setFlag(Flags::Carry, false);
 
     return result;
 }
@@ -501,9 +519,9 @@ uint8_t SM83::inc(uint8_t value)
 {
     value += 1;
 
-    set_flag(Flags::Zero, value == 0);
-    set_flag(Flags::Subtract, false);
-    set_flag(Flags::HalfCarry, (value & 0x0F) == 0);
+    setFlag(Flags::Zero, value == 0);
+    setFlag(Flags::Subtract, false);
+    setFlag(Flags::HalfCarry, (value & 0x0F) == 0);
 
     return value;
 }
@@ -512,9 +530,9 @@ uint8_t SM83::dec(uint8_t value)
 {
     value -= 1;
 
-    set_flag(Flags::Zero, value == 0);
-    set_flag(Flags::Subtract, true);
-    set_flag(Flags::HalfCarry, (value & 0x0F) == 0x0F);
+    setFlag(Flags::Zero, value == 0);
+    setFlag(Flags::Subtract, true);
+    setFlag(Flags::HalfCarry, (value & 0x0F) == 0x0F);
 
     return value;
 }
@@ -635,7 +653,7 @@ void SM83::pop(uint16_t& value)
     value = Utils::to_word(msb, lsb);
 }
 
-void SM83::set_flag(const Flags flag, const bool value)
+void SM83::setFlag(const Flags flag, const bool value)
 {
     const auto bit{std::to_underlying(flag)};
     F = (F & ~bit) | (value ? bit : 0);

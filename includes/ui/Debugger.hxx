@@ -22,6 +22,14 @@ class Debugger : public QMainWindow
     explicit Debugger(QWidget* parent = nullptr);
     ~Debugger() override;
 
+  signals:
+
+    void pauseExecution();
+    void continueExecution();
+    void stepIn();
+    void stepOver();
+    void stepOut();
+
   private:
     Ui::Debugger* ui;
 };

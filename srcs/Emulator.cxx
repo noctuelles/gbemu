@@ -4,14 +4,13 @@
 
 #include "Emulator.hxx"
 
-#include <qfile.h>
-
+#include <QFile>
 #include <QThread>
 #include <QTimer>
 #include <iostream>
 
 Emulator::Emulator(const std::optional<QString>& bootRomPath, QObject* parent)
-    : QObject(parent), _renderer(new QtRenderer(this)), _components(*_renderer)
+    : QObject(parent), _renderer(new QtRenderer(this)), _components(*_renderer), _debugger(_components.cpu)
 {
     if (!bootRomPath.has_value())
     {
@@ -70,6 +69,11 @@ void Emulator::onKeyReleased(const Key key)
     _components.joypad.release(key);
 }
 
+void Emulator::setBreakpoint(const uint16_t address)
+{
+    _debugger.addBreakpoint(address);
+}
+
 void Emulator::runFrame()
 {
     const auto frameStart{std::chrono::steady_clock::now()};
@@ -80,7 +84,10 @@ void Emulator::runFrame()
 
         while (_running)
         {
-            _components.cpu.runInstruction();
+            if (stepInstruction())
+            {
+                return;
+            }
         }
     }
     catch (const std::exception& e)
@@ -97,6 +104,19 @@ void Emulator::runFrame()
         const auto sleepTime{_frameDuration - emulationTime};
         std::this_thread::sleep_for(sleepTime);
     }
+}
+
+bool Emulator::stepInstruction()
+{
+    _components.cpu.runInstruction();
+
+    if (_debugger.shouldBreak())
+    {
+        emit breakpointHit();
+        return true;
+    }
+
+    return false;
 }
 
 void Emulator::onRender(const Graphics::Framebuffer& framebuffer)

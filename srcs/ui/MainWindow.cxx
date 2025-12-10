@@ -27,8 +27,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                                  std::tuple_size_v<Graphics::Framebuffer> * 2);
     resize(_ui->display->minimumSize());
 
-    _emulationStatus = new QLabel{statusBar()};
-    statusBar()->addPermanentWidget(_emulationStatus);
+    _emulationStatusLabel = new QLabel{statusBar()};
+    statusBar()->addPermanentWidget(_emulationStatusLabel);
     _updateEmulationStatus(Status::Stopped);
 
     _populateRecentMenu();
@@ -59,6 +59,27 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
             });
 
     connect(_ui->actionDebugger, &QAction::triggered, this, [this] { _debugger.show(); });
+
+    connect(&_debugger, &Debugger::pauseExecution, this,
+            [this]
+            {
+                if (_emulationStatus == Status::Running)
+                {
+                    _updateEmulationStatus(Status::Paused);
+                }
+            });
+
+    connect(&_debugger, &Debugger::continueExecution, this,
+            [this]
+            {
+                if (_emulationStatus == Status::Paused)
+                {
+                    _updateEmulationStatus(Status::Running);
+                    emit requestNextFrame();
+                }
+            });
+
+    connect(&_debugger, &Debugger::stepIn, this, [this] { emit requestSetBreakpoint(0x100); });
 }
 
 MainWindow::~MainWindow()
@@ -77,6 +98,7 @@ void MainWindow::showEvent(QShowEvent* event)
     constexpr Graphics::Framebuffer framebuffer{};
 
     QMainWindow::showEvent(event);
+
     _updateDisplay(framebuffer);
 }
 
@@ -100,6 +122,17 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event)
     QMainWindow::keyReleaseEvent(event);
 }
 
+void MainWindow::resizeEvent(QResizeEvent* event)
+{
+    QMainWindow::resizeEvent(event);
+
+    if (_emulationStatus == Status::Paused)
+    {
+        assert(_framebuffer != nullptr);
+        _updateDisplay(*_framebuffer);
+    }
+}
+
 bool MainWindow::eventFilter(QObject* watched, QEvent* event)
 {
     if (event->type() == QEvent::Show)
@@ -109,13 +142,26 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
     return QMainWindow::eventFilter(watched, event);
 }
 
+void MainWindow::onBreakpointHit()
+{
+    _updateEmulationStatus(Status::Paused);
+}
+
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
 {
     _updateDisplay(framebuffer);
+
+    _framebuffer = &framebuffer;
+
+    if (_emulationStatus == Status::Paused)
+    {
+        return;
+    }
+
     emit requestNextFrame();
 }
 
-void MainWindow::onEmulationFatalError(const QString& message) const
+void MainWindow::onEmulationFatalError(const QString& message)
 {
     constexpr Graphics::Framebuffer framebuffer{};
 
@@ -182,6 +228,7 @@ void MainWindow::_startEmulation(const QString& romPath)
 
     connect(emulator, &Emulator::frameReady, this, &MainWindow::onFrameReady);
     connect(emulator, &Emulator::emulationFatalError, this, &MainWindow::onEmulationFatalError);
+    connect(emulator, &Emulator::breakpointHit, this, &MainWindow::onBreakpointHit);
 
     connect(this, &MainWindow::requestNextFrame, emulator, &Emulator::runFrame);
 
@@ -189,6 +236,7 @@ void MainWindow::_startEmulation(const QString& romPath)
     connect(this, &MainWindow::keyReleased, emulator, &Emulator::onKeyReleased);
 
     connect(this, &MainWindow::requestStartEmulation, emulator, &Emulator::startEmulation);
+    connect(this, &MainWindow::requestSetBreakpoint, emulator, &Emulator::setBreakpoint);
 
     _emulatorThread.start();
     _updateEmulationStatus(Status::Running);
@@ -196,12 +244,13 @@ void MainWindow::_startEmulation(const QString& romPath)
     emit requestStartEmulation(romPath);
 }
 
-void MainWindow::_updateEmulationStatus(const Status status) const
+void MainWindow::_updateEmulationStatus(const Status status)
 {
     const auto metaEnum{QMetaEnum::fromType<Status>()};
     const auto text{metaEnum.valueToKey(std::to_underlying(status))};
 
-    _emulationStatus->setText(text);
+    _emulationStatus = status;
+    _emulationStatusLabel->setText(text);
 }
 
 void MainWindow::_populateRecentMenu()

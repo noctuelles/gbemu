@@ -118,6 +118,21 @@ class SM83 final : public IComponent
             uint16_t SP{};
             uint16_t PC{};
         } registers;
+
+        struct Flags
+        {
+            bool zero{};
+            bool subtract{};
+            bool halfCarry{};
+            bool carry{};
+        } flags;
+
+        struct Interrupts
+        {
+            bool    IME{};
+            uint8_t IE{};
+            uint8_t IF{};
+        } interrupts;
     };
 
     SM83(EmulationState& emulationState, IAddressable& bus, ITicking& timer, ITicking& ppu);
@@ -276,7 +291,7 @@ class SM83 final : public IComponent
 
     /* Misc */
 
-    void                  set_flag(Flags flag, bool value);
+    void                  setFlag(Flags flag, bool value);
     [[nodiscard]] bool    getFlag(Flags flag) const;
     [[nodiscard]] bool    isConditionMet(Conditionals conditional) const;
     [[nodiscard]] uint8_t getInterruptRequest() const;
@@ -334,9 +349,9 @@ class SM83 final : public IComponent
     uint8_t  oamDmaElapsedMachineCycles{};
 
     EmulationState& emulationState;
-    IAddressable&    bus;
-    ITicking&        timer;
-    ITicking&        ppu;
+    IAddressable&   bus;
+    ITicking&       timer;
+    ITicking&       ppu;
 
     size_t _machineCyclesElapsed{};
 

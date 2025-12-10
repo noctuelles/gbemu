@@ -11,6 +11,10 @@
 Debugger::Debugger(QWidget* parent) : QMainWindow(parent), ui(new Ui::Debugger)
 {
     ui->setupUi(this);
+
+    connect(ui->actionPause, &QAction::triggered, this, &Debugger::pauseExecution);
+    connect(ui->actionContinue, &QAction::triggered, this, &Debugger::continueExecution);
+    connect(ui->actionStep_In, &QAction::triggered, this, &Debugger::stepIn);
 }
 
 Debugger::~Debugger()
