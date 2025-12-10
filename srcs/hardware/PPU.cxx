@@ -495,6 +495,9 @@ uint8_t PPU::_pixelMixing(const ObjPixel& objPixel, const BgPixel& bgPixel) cons
 {
     const uint8_t* finalPixel{};
     uint8_t        finalPalette{};
+    uint8_t        palettedPixel{};
+
+    /* Which pixel should we display ? */
 
     if (objPixel.first != _oamEntries.cend())
     {
@@ -528,6 +531,8 @@ uint8_t PPU::_pixelMixing(const ObjPixel& objPixel, const BgPixel& bgPixel) cons
         finalPixel = &bgPixel.second;
     }
 
+    /* Which palette should we apply ? */
+
     if (finalPixel == &bgPixel.second)
     {
         finalPalette = _registers.BGP;
@@ -544,7 +549,25 @@ uint8_t PPU::_pixelMixing(const ObjPixel& objPixel, const BgPixel& bgPixel) cons
         }
     }
 
-    return finalPalette >> (2 * *finalPixel) & 0b11;
+    palettedPixel = finalPalette >> (2 * *finalPixel) & 0b11;
+
+    /* Apply additional information for debugging. */
+
+    if (finalPixel == &bgPixel.second)
+    {
+        if (bgPixel.first)
+        {
+            palettedPixel |= Graphics::PixelType::Window << 2;
+        }
+
+        /* Background is a no-op (0). */
+    }
+    else
+    {
+        palettedPixel |= Graphics::PixelType::Object << 2;
+    }
+
+    return palettedPixel;
 }
 
 void PPU::_transition(const Mode transitionTo)
