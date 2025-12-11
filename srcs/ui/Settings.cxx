@@ -23,9 +23,58 @@ namespace Settings
         return QSettings{}.value("preference/system/bootRomPath").toString();
     }
 
-    void    setBootRomPath(const QString& path)
+    void setBootRomPath(const QString& path)
     {
         QSettings{}.setValue("preference/system/bootRomPath", path);
+    }
+
+    bool Graphics::isWindowEnabled()
+    {
+        return QSettings{}.value("preference/graphics/enableWindow", true).toBool();
+    }
+
+    bool Graphics::isBackgroundEnabled()
+    {
+        return QSettings{}.value("preference/graphics/enableBackground", true).toBool();
+    }
+
+    bool Graphics::areObjectsEnabled()
+    {
+        return QSettings{}.value("preference/graphics/enableObjects", true).toBool();
+    }
+    bool Graphics::useFastTransformation()
+    {
+        return QSettings{}.value("preference/graphics/useFastTransformation", true).toBool();
+    }
+
+    bool Graphics::keepAspectRatio()
+    {
+        return QSettings{}.value("preference/graphics/keepAspectRatio", false).toBool();
+    }
+
+    void Graphics::setWindowEnabled(const bool enabled)
+    {
+        QSettings{}.setValue("preference/graphics/enableWindow", enabled);
+    }
+
+    void Graphics::setBackgroundEnabled(const bool enabled)
+    {
+        QSettings{}.setValue("preference/graphics/enableBackground", enabled);
+    }
+
+    void Graphics::setObjectsEnabled(const bool enabled)
+    {
+        QSettings{}.setValue("preference/graphics/enableObjects", enabled);
+    }
+
+    void Graphics::setFastTransformation(const bool enabled)
+    {
+        QSettings{}.setValue("preference/graphics/useFastTransformation", enabled);
+    }
+
+    void Graphics::setKeepAspectRatio(const bool enabled)
+    {
+        QSettings{}.setValue("preference/graphics/keepAspectRatio", enabled);
     }
 
 }  // namespace Settings

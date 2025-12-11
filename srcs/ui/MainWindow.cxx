@@ -181,23 +181,20 @@ void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const
         for (const auto& [x, color] : std::views::enumerate(row))
         {
             const auto pixelType{(color & 0x0C) >> 2};
+            auto       rgbColor{_colorMapping[0]};
             /* Only extract the pixel and leave out the debugging information. */
 
-            if (pixelType == Graphics::PixelType::Object)
+            if (_layersToDisplay[pixelType])
             {
-                const auto& rgbColor{_colorMapping[color & 0b11]};
-                img.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
+                rgbColor = _colorMapping[color & 0b11];
             }
-            else
-            {
-                const auto& rgbColor{_colorMapping[0]};
-                img.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
-            }
+
+            img.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
         }
     }
 
     _ui->display->setPixmap(
-        QPixmap::fromImage(img.scaled(_ui->display->size(), Qt::IgnoreAspectRatio, Qt::FastTransformation)));
+        QPixmap::fromImage(img.scaled(_ui->display->size(), _aspectRatioMode, _transformationMode)));
 }
 
 std::optional<Key> MainWindow::_isAMappedKey(const QKeyEvent* keyEvent) const
@@ -343,6 +340,17 @@ void MainWindow::_loadSettings()
         _colorMapping[1] = get(Type::Color1);
         _colorMapping[2] = get(Type::Color2);
         _colorMapping[3] = get(Type::Color3);
+    }
+
+    {
+        using namespace Settings::Graphics;
+
+        _layersToDisplay[Graphics::PixelType::Background] = isBackgroundEnabled();
+        _layersToDisplay[Graphics::PixelType::Object]     = areObjectsEnabled();
+        _layersToDisplay[Graphics::PixelType::Window]     = isWindowEnabled();
+
+        _transformationMode   = useFastTransformation() ? Qt::FastTransformation : Qt::SmoothTransformation;
+        _aspectRatioMode = keepAspectRatio() ? Qt::KeepAspectRatio : Qt::IgnoreAspectRatio;
     }
 }
 

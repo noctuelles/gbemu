@@ -13,8 +13,12 @@
 
 namespace Settings
 {
+    Q_NAMESPACE
+
     namespace Palette
     {
+        Q_NAMESPACE
+
         enum class Type : uint8_t
         {
             Color0,
@@ -58,6 +62,22 @@ namespace Settings
 
     QString getBootRomPath();
     void    setBootRomPath(const QString& path);
+
+    namespace Graphics
+    {
+        bool isWindowEnabled();
+        bool isBackgroundEnabled();
+        bool areObjectsEnabled();
+        bool useFastTransformation();
+        bool keepAspectRatio();
+
+        void setWindowEnabled(bool enabled);
+        void setBackgroundEnabled(bool enabled);
+        void setObjectsEnabled(bool enabled);
+        void setFastTransformation(bool enabled);
+        void setKeepAspectRatio(bool enabled);
+
+    }  // namespace Graphics
 
 }  // namespace Settings
 

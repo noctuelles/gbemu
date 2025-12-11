@@ -128,6 +128,16 @@ Preference::Preference(QWidget* parent) : QDialog(parent), _ui(new Ui::Preferenc
                     setBtnBackgroundColor(_ui->color3, DEFAULT_COLORS[3]);
                 });
     }
+
+    {
+        using namespace Settings::Graphics;
+
+        _ui->showBackground->setChecked(isBackgroundEnabled());
+        _ui->showObjects->setChecked(areObjectsEnabled());
+        _ui->showWindow->setChecked(isWindowEnabled());
+        _ui->keepAspectRatio->setChecked(keepAspectRatio());
+        _ui->fastTransformation->setChecked(useFastTransformation());
+    }
 }
 
 Preference::~Preference()
@@ -160,6 +170,16 @@ void Preference::accept()
         set(Type::Color1, _ui->color1->palette().color(QPalette::Button));
         set(Type::Color2, _ui->color2->palette().color(QPalette::Button));
         set(Type::Color3, _ui->color3->palette().color(QPalette::Button));
+    }
+
+    {
+        using namespace Settings::Graphics;
+
+        setBackgroundEnabled(_ui->showBackground->isChecked());
+        setObjectsEnabled(_ui->showObjects->isChecked());
+        setWindowEnabled(_ui->showWindow->isChecked());
+        setKeepAspectRatio(_ui->keepAspectRatio->isChecked());
+        setFastTransformation(_ui->fastTransformation->isChecked());
     }
 
     QDialog::accept();

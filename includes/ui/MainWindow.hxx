@@ -68,8 +68,12 @@ class MainWindow final : public QMainWindow
     void _addRecentFile(const QString& path);
     void _clearRecentFiles();
 
-    QMap<QKeySequence, Key>      _keyMapping;
-    std::array<QColor, 4>        _colorMapping;
+    QMap<QKeySequence, Key> _keyMapping;
+    std::array<QColor, 4>   _colorMapping;
+    std::array<bool, 3>     _layersToDisplay;
+    Qt::AspectRatioMode     _aspectRatioMode{};
+    Qt::TransformationMode  _transformationMode{};
+
     const Graphics::Framebuffer* _framebuffer{};
     Status                       _emulationStatus{Status::Stopped};
     QLabel*                      _emulationStatusLabel;

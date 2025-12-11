@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>466</width>
-    <height>305</height>
+    <width>743</width>
+    <height>451</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -106,6 +106,57 @@
            <widget class="QPushButton" name="resetPalette">
             <property name="text">
              <string>Reset</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>Graphics</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QCheckBox" name="showBackground">
+            <property name="text">
+             <string>Show Background</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="showObjects">
+            <property name="text">
+             <string>Show Objects</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="showWindow">
+            <property name="text">
+             <string>Show Window</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="keepAspectRatio">
+            <property name="text">
+             <string>Keep Aspect Ratio</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="fastTransformation">
+            <property name="text">
+             <string>Fast Transformation</string>
             </property>
            </widget>
           </item>
