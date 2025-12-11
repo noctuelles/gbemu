@@ -52,10 +52,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
     connect(_ui->actionPreference, &QAction::triggered, this,
             [this]
             {
+                _updateEmulationStatus(Status::Paused);
+
                 if (Preference prefDialog(this); prefDialog.exec() == QDialog::Accepted)
                 {
                     _loadSettings();
                 }
+
+                _updateEmulationStatus(Status::Running);
+                emit requestNextFrame();
             });
 
     connect(_ui->actionDebugger, &QAction::triggered, this, [this] { _debugger.show(); });
@@ -181,12 +186,12 @@ void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const
         for (const auto& [x, color] : std::views::enumerate(row))
         {
             const auto pixelType{(color & 0x0C) >> 2};
+            const auto pixelColor{color & 0x03};
             auto       rgbColor{_colorMapping[0]};
-            /* Only extract the pixel and leave out the debugging information. */
 
             if (_layersToDisplay[pixelType])
             {
-                rgbColor = _colorMapping[color & 0b11];
+                rgbColor = _colorMapping[pixelColor];
             }
 
             img.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
@@ -349,8 +354,8 @@ void MainWindow::_loadSettings()
         _layersToDisplay[Graphics::PixelType::Object]     = areObjectsEnabled();
         _layersToDisplay[Graphics::PixelType::Window]     = isWindowEnabled();
 
-        _transformationMode   = useFastTransformation() ? Qt::FastTransformation : Qt::SmoothTransformation;
-        _aspectRatioMode = keepAspectRatio() ? Qt::KeepAspectRatio : Qt::IgnoreAspectRatio;
+        _transformationMode = useFastTransformation() ? Qt::FastTransformation : Qt::SmoothTransformation;
+        _aspectRatioMode    = keepAspectRatio() ? Qt::KeepAspectRatio : Qt::IgnoreAspectRatio;
     }
 }
 
