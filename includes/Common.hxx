@@ -43,6 +43,7 @@ namespace MemoryMap
     constexpr AddressRange NOT_USABLE{0xFEA0, 0xFEFF};
 
     constexpr AddressRange IO_REGISTERS{0xFF00, 0xFF7F};
+
     namespace IORegisters
     {
         constexpr uint16_t JOYPAD{0xFF00};

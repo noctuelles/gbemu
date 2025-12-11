@@ -7,6 +7,8 @@
 #include <QEvent>
 #include <QMouseEvent>
 
+#include "ui/debugger/BreakpointDelegate.hxx"
+
 InstructionListView::InstructionListView(QWidget* parent) : QListView(parent)
 {
     setMouseTracking(true);

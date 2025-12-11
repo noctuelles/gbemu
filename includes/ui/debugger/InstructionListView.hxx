@@ -13,8 +13,8 @@ class InstructionListView final : public QListView
   public:
     explicit InstructionListView(QWidget* parent = nullptr);
 
-    QModelIndex hoveredIndex() const;
-    int         hoveredX() const;
+    [[nodiscard]] QModelIndex hoveredIndex() const;
+    [[nodiscard]] int         hoveredX() const;
 
   protected:
     void mouseMoveEvent(QMouseEvent* ev) override;

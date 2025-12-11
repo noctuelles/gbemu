@@ -2,11 +2,50 @@
 // Created by plouvel on 12/4/25.
 //
 
-#include "../../../includes/ui/debugger/BreakpointDelegate.hxx"
+#include "ui/debugger/BreakpointDelegate.hxx"
 
+#include <QEvent>
+#include <QMenu>
+#include <QMouseEvent>
 #include <QPainter>
+#include <QToolTip>
 
-#include "../../../includes/ui/debugger/InstructionListView.hxx"
+#include "ui/debugger/InstructionListView.hxx"
+
+bool BreakpointDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, const QStyleOptionViewItem& option,
+                                     const QModelIndex& index)
+{
+    if (event->type() == QEvent::MouseButtonPress)
+    {
+        const auto* me{dynamic_cast<QMouseEvent*>(event)};
+
+        if (me == nullptr)
+        {
+            return false;
+        }
+
+        if (me->pos().x() < GUTTER_WIDTH && me->button() == Qt::LeftButton)
+        {
+            const auto isToggled{model->data(index, Qt::UserRole).toBool()};
+            model->setData(index, !isToggled, Qt::UserRole);
+            return true;
+        }
+        if (me->pos().x() < GUTTER_WIDTH && me->button() == Qt::RightButton)
+        {
+            if (model->data(index, Qt::UserRole).toBool())
+            {
+                QMenu menu{};
+
+                menu.addAction("Set condition...");
+                menu.exec(me->globalPos());
+
+                return true;
+            }
+        }
+    }
+
+    return QStyledItemDelegate::editorEvent(event, model, option, index);
+}
 
 QSize BreakpointDelegate::sizeHint(const QStyleOptionViewItem& opt, const QModelIndex& idx) const
 {
@@ -32,7 +71,7 @@ void BreakpointDelegate::paint(QPainter* p, const QStyleOptionViewItem& opt, con
     }
 
     const bool  isHovered = (idx == view->hoveredIndex()) && view->hoveredX() < GUTTER_WIDTH;
-    const bool  bp{false};
+    const bool  isBreakpointSet{idx.data(Qt::UserRole).toBool()};
     const int   diameter{qMin(option.rect.height() - 6, GUTTER_WIDTH - 6)};
     const int   cx{original.left() + (GUTTER_WIDTH - diameter) / 2};
     const int   cy{original.center().y() - diameter / 2};
@@ -41,7 +80,7 @@ void BreakpointDelegate::paint(QPainter* p, const QStyleOptionViewItem& opt, con
     p->save();
     p->setRenderHint(QPainter::Antialiasing);
 
-    if (bp)
+    if (isBreakpointSet)
     {
         p->setBrush(Qt::red);
         p->setPen(Qt::NoPen);

@@ -6,14 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>952</width>
-    <height>775</height>
+    <width>1187</width>
+    <height>796</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Debugger</string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="minimumSize">
+    <size>
+     <width>500</width>
+     <height>0</height>
+    </size>
+   </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <widget class="QLabel" name="disassemblyLabel">
@@ -36,7 +42,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>952</width>
+     <width>1187</width>
      <height>23</height>
     </rect>
    </property>
@@ -63,6 +69,18 @@
    <addaction name="actionStep_In"/>
   </widget>
   <widget class="QDockWidget" name="dockRegisters">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>350</width>
+     <height>524287</height>
+    </size>
+   </property>
    <property name="features">
     <set>QDockWidget::DockWidgetFeature::DockWidgetClosable|QDockWidget::DockWidgetFeature::DockWidgetFloatable|QDockWidget::DockWidgetFeature::DockWidgetMovable</set>
    </property>
@@ -87,8 +105,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>246</width>
-          <height>235</height>
+          <width>332</width>
+          <height>234</height>
          </rect>
         </property>
         <attribute name="label">
@@ -189,8 +207,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>246</width>
-          <height>235</height>
+          <width>332</width>
+          <height>234</height>
          </rect>
         </property>
         <attribute name="label">
@@ -246,24 +264,9 @@
     <layout class="QGridLayout" name="gridLayout"/>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dockBreakpoints">
-   <property name="windowTitle">
-    <string>Breakpoints</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>1</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_10">
-    <layout class="QGridLayout" name="gridLayout_5">
-     <item row="0" column="0">
-      <widget class="QListView" name="listView"/>
-     </item>
-    </layout>
-   </widget>
-  </widget>
   <action name="actionContinue">
    <property name="icon">
-    <iconset resource="../../resource.qrc">
+    <iconset>
      <normaloff>:/resources/debugger/play.svg</normaloff>:/resources/debugger/play.svg</iconset>
    </property>
    <property name="text">
@@ -302,11 +305,9 @@
   <customwidget>
    <class>InstructionListView</class>
    <extends>QListView</extends>
-   <header>ui/InstructionListView.hxx</header>
+   <header>ui/debugger/InstructionListView.hxx</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="../../resource.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>
