@@ -15,22 +15,6 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-set(EXTERNAL_DIR ${CMAKE_BINARY_DIR}/external)
-set(QHEXEDIT_SOURCE ${EXTERNAL_DIR}/src/qhexedit2)
-set(QHEXEDIT_BINARY ${EXTERNAL_DIR}/build/qhexedit2)
-
-ExternalProject_Add(
-        qhexedit2
-        PREFIX ${EXTERNAL_DIR}
-        SOURCE_DIR ${QHEXEDIT_SOURCE}
-        BINARY_DIR ${QHEXEDIT_BINARY}
-        GIT_REPOSITORY https://github.com/Simsys/qhexedit2
-        GIT_TAG v0.9.0
-        CONFIGURE_COMMAND qmake ${QHEXEDIT_SOURCE}/qhexedit.pro
-        BUILD_COMMAND make -j
-        BUILD_BYPRODUCTS ${QHEXEDIT_BINARY}/libqhexedit.a
-)
-
 enable_testing()
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
@@ -62,28 +46,36 @@ qt_add_executable(gbemu
         includes/hardware/Timer.hxx
         includes/hardware/WorkRAM.hxx
 
-        srcs/ui/MainWindow.cxx
         includes/ui/MainWindow.hxx
-        srcs/ui/MainWindow.ui
-        srcs/Emulator.cxx
-        includes/Emulator.hxx
-        srcs/main.cxx
-        srcs/ui/Preference.cxx
         includes/ui/Preference.hxx
-        srcs/ui/Preference.ui
         includes/ui/Settings.hxx
-        srcs/ui/Settings.cxx
-        srcs/ui/Debugger.cxx
-        includes/ui/Debugger.hxx
-        srcs/ui/Debugger.ui
-        includes/tests/roms/BlarggInstructions.hxx
-        includes/tests/roms/MooneyeAcceptance.hxx
-        includes/QtRenderer.hxx
+        includes/ui/debugger/Debugger.hxx
+        includes/ui/debugger/RegisterModel.hxx
+        includes/ui/debugger/InstructionModel.hxx
+        includes/ui/debugger/BreakpointDelegate.hxx
+        includes/ui/debugger/InstructionListView.hxx
+
+        includes/Emulator.hxx
         includes/IRenderer.hxx
+        includes/QtRenderer.hxx
+
+        srcs/ui/MainWindow.ui
+        srcs/ui/Preference.ui
+        srcs/ui/debugger/Debugger.ui
+
+        srcs/ui/MainWindow.cxx
+        srcs/ui/Preference.cxx
+        srcs/ui/Settings.cxx
+        srcs/ui/debugger/Debugger.cxx
+        srcs/ui/debugger/RegisterModel.cxx
+        srcs/ui/debugger/InstructionModel.cxx
+        srcs/ui/debugger/BreakpointDelegate.cxx
+        srcs/ui/debugger/InstructionListView.cxx
+
         srcs/QtRenderer.cxx
         srcs/Debugger.cxx
-        srcs/ui/RegisterModel.cxx
-        includes/ui/RegisterModel.hxx
+        srcs/Emulator.cxx
+        srcs/main.cxx
 )
 
 add_executable(gbemu_test

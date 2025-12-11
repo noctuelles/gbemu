@@ -2,7 +2,7 @@
 // Created by plouvel on 12/11/25.
 //
 
-#include "ui/RegisterModel.hxx"
+#include "../../../includes/ui/debugger/RegisterModel.hxx"
 
 RegisterModel::RegisterModel(const std::initializer_list<RegisterEntry> registers, QObject* parent)
     : QAbstractTableModel(parent), _registers(registers)

@@ -302,7 +302,7 @@
   <customwidget>
    <class>InstructionListView</class>
    <extends>QListView</extends>
-   <header>ui/debugger/InstructionListView.hxx</header>
+   <header>ui/InstructionListView.hxx</header>
   </customwidget>
  </customwidgets>
  <resources>

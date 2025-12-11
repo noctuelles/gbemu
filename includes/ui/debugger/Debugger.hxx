@@ -8,6 +8,8 @@
 #include <QMainWindow>
 
 #include "RegisterModel.hxx"
+#include "BreakpointDelegate.hxx"
+#include "InstructionModel.hxx"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -16,7 +18,7 @@ namespace Ui
 }
 QT_END_NAMESPACE
 
-class Debugger : public QMainWindow
+class Debugger final : public QMainWindow
 {
     Q_OBJECT
 
@@ -39,10 +41,11 @@ class Debugger : public QMainWindow
     void stepOut();
 
   private:
-    Ui::Debugger* ui;
-    RegisterModel _cpuEightBitsRegistersModel{};
-    RegisterModel _cpuSixteenBitsRegistersModel{};
-    RegisterModel _ppuRegistersModel{};
+    Ui::Debugger*    ui;
+    RegisterModel    _cpuEightBitsRegistersModel{};
+    RegisterModel    _cpuSixteenBitsRegistersModel{};
+    RegisterModel    _ppuRegistersModel{};
+    InstructionModel _instructionsModel{};
 };
 
 #endif  // GBEMU_DEBUGGER_HXX

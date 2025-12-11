@@ -9,8 +9,8 @@
 #include <QMainWindow>
 #include <QThread>
 
-#include "Debugger.hxx"
 #include "Emulator.hxx"
+#include "debugger/Debugger.hxx"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
