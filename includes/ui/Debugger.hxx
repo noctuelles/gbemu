@@ -24,6 +24,12 @@ class Debugger : public QMainWindow
     explicit Debugger(QWidget* parent = nullptr);
     ~Debugger() override;
 
+  private slots:
+    void onCpuRegisterChanged(RegisterModel::RegisterEntry registerEntry);
+    void onCpuFlagsChanged(bool checked);
+    void onCpuImeChanged(bool checked);
+    void onPpuRegisterChanged(RegisterModel::RegisterEntry registerEntry);
+
   signals:
 
     void pauseExecution();

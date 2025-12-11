@@ -6,7 +6,7 @@
 #define GBEMU_REGISTERMODEL_HXX
 #include <qabstractitemmodel.h>
 
-class RegisterModel : public QAbstractTableModel
+class RegisterModel final : public QAbstractTableModel
 {
     Q_OBJECT
   public:
@@ -26,9 +26,7 @@ class RegisterModel : public QAbstractTableModel
         bool     editable{true};
     };
 
-    explicit RegisterModel(QObject* parent = nullptr);
-
-    void setRegisters(const std::vector<RegisterEntry>& registers);
+    RegisterModel(std::initializer_list<RegisterEntry> registers = {}, QObject* parent = nullptr);
 
     [[nodiscard]] QVariant      headerData(int section, Qt::Orientation orientation, int role) const override;
     [[nodiscard]] int           rowCount(const QModelIndex& parent) const override;
@@ -36,6 +34,9 @@ class RegisterModel : public QAbstractTableModel
     [[nodiscard]] QVariant      data(const QModelIndex& index, int role) const override;
     [[nodiscard]] Qt::ItemFlags flags(const QModelIndex& index) const override;
     [[nodiscard]] bool          setData(const QModelIndex& index, const QVariant& value, int role) override;
+
+  signals:
+    void registerChanged(const RegisterModel::RegisterEntry& entry);
 
   private:
     std::vector<RegisterEntry> _registers;

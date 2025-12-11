@@ -4,13 +4,9 @@
 
 #include "ui/RegisterModel.hxx"
 
-RegisterModel::RegisterModel(QObject* parent) : QAbstractTableModel(parent) {}
-
-void RegisterModel::setRegisters(const std::vector<RegisterEntry>& registers)
+RegisterModel::RegisterModel(const std::initializer_list<RegisterEntry> registers, QObject* parent)
+    : QAbstractTableModel(parent), _registers(registers)
 {
-    beginResetModel();
-    _registers = registers;
-    endResetModel();
 }
 
 QVariant RegisterModel::headerData(const int section, const Qt::Orientation orientation, const int role) const
@@ -105,6 +101,7 @@ bool RegisterModel::setData(const QModelIndex& index, const QVariant& value, con
         registerEntry.value = newValue;
 
         emit dataChanged(index, index);
+        emit registerChanged(registerEntry);
 
         return true;
     }
