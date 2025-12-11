@@ -7,6 +7,8 @@
 
 #include <QMainWindow>
 
+#include "RegisterModel.hxx"
+
 QT_BEGIN_NAMESPACE
 namespace Ui
 {
@@ -32,6 +34,9 @@ class Debugger : public QMainWindow
 
   private:
     Ui::Debugger* ui;
+    RegisterModel _cpuEightBitsRegistersModel{};
+    RegisterModel _cpuSixteenBitsRegistersModel{};
+    RegisterModel _ppuRegistersModel{};
 };
 
 #endif  // GBEMU_DEBUGGER_HXX

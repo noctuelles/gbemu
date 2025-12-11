@@ -180,10 +180,19 @@ void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const
     {
         for (const auto& [x, color] : std::views::enumerate(row))
         {
+            const auto pixelType{(color & 0x0C) >> 2};
             /* Only extract the pixel and leave out the debugging information. */
 
-            const auto& rgbColor{_colorMapping[color & 0b11]};
-            img.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
+            if (pixelType == Graphics::PixelType::Object)
+            {
+                const auto& rgbColor{_colorMapping[color & 0b11]};
+                img.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
+            }
+            else
+            {
+                const auto& rgbColor{_colorMapping[0]};
+                img.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
+            }
         }
     }
 
