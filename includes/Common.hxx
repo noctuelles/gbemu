@@ -29,6 +29,8 @@ enum class Key : uint8_t
     Down
 };
 
+using AddressSpace = std::array<uint8_t, 0x10000>;
+
 namespace MemoryMap
 {
     using AddressRange = std::pair<uint16_t, uint16_t>;

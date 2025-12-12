@@ -39,6 +39,12 @@ class Emulator final : public QObject
         std::unordered_set<uint16_t> _breakpoints;
     };
 
+    struct State
+    {
+        SM83::View cpuView;
+        Bus::View  busView;
+    };
+
     explicit Emulator(const std::optional<QString>& bootRom = std::nullopt, QObject* parent = nullptr);
 
   public slots:
@@ -50,12 +56,14 @@ class Emulator final : public QObject
     void onKeyPressed(Key key);
     void onKeyReleased(Key key);
     void setBreakpoint(uint16_t address);
+    void getEmulationStatus();
 
   private slots:
     void onRender(const Graphics::Framebuffer& framebuffer);
 
   signals:
-    void breakpointHit();
+    void breakpointHit(const Emulator::State& state);
+    void emulationStatusUpdated(const Emulator::State& state);
     void frameReady(const Graphics::Framebuffer& framebuffer);
     void emulationFatalError(const QString& message);
 
@@ -82,6 +90,7 @@ class Emulator final : public QObject
     QtRenderer*   _renderer;
     Components    _components;
     Debugger      _debugger;
+    State        _status;
 
     std::chrono::nanoseconds _frameDuration{16740000ns};
 };

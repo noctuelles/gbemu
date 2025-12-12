@@ -5,6 +5,7 @@
 #include "hardware/Bus.hxx"
 
 #include <format>
+#include <ranges>
 #include <utility>
 
 #include "Common.hxx"
@@ -27,9 +28,9 @@ void Bus::setPostBootRomRegisters()
     _bootRomMapped = 1;
 }
 
-std::array<uint8_t, 0x10000> Bus::getAddressSpace() const noexcept
+Bus::View Bus::getView() const noexcept
 {
-    std::array<uint8_t, 0x10000> snapshot{};
+    AddressSpace snapshot{};
 
     for (auto i = 0ULL; i < _memoryMap.size(); i++)
     {
@@ -37,6 +38,14 @@ std::array<uint8_t, 0x10000> Bus::getAddressSpace() const noexcept
     }
 
     return snapshot;
+}
+
+void Bus::applyView(const View& snapshot)
+{
+    for (const auto [i, byte] : std::views::enumerate(snapshot))
+    {
+        write(i, byte);
+    }
 }
 
 /**

@@ -34,7 +34,8 @@ class MainWindow final : public QMainWindow
     bool eventFilter(QObject* watched, QEvent* event) override;
 
   public slots:
-    void onBreakpointHit();
+    void onEmulationStatusUpdated(const Emulator::State& state);
+    void onBreakpointHit(const Emulator::State& state);
     void onFrameReady(const Graphics::Framebuffer& framebuffer);
     void onEmulationFatalError(const QString& message);
 
@@ -46,6 +47,9 @@ class MainWindow final : public QMainWindow
 
     void requestNextFrame();
     void requestStartEmulation(const QString& path);
+    void requestEmulationStatus();
+
+    void updateDebugger(const Emulator::State& state);
 
   private:
     enum class Status

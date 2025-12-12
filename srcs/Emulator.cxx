@@ -74,6 +74,11 @@ void Emulator::setBreakpoint(const uint16_t address)
     _debugger.addBreakpoint(address);
 }
 
+void Emulator::getEmulationStatus()
+{
+    emit emulationStatusUpdated({_components.cpu.getView(), _components.bus.getView()});
+}
+
 void Emulator::runFrame()
 {
     const auto frameStart{std::chrono::steady_clock::now()};
@@ -112,7 +117,7 @@ bool Emulator::stepInstruction()
 
     if (_debugger.shouldBreak())
     {
-        emit breakpointHit();
+        emit breakpointHit({_components.cpu.getView(), _components.bus.getView()});
         return true;
     }
 

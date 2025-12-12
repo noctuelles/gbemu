@@ -7,9 +7,10 @@
 
 #include <QMainWindow>
 
-#include "RegisterModel.hxx"
 #include "BreakpointDelegate.hxx"
+#include "Emulator.hxx"
 #include "InstructionModel.hxx"
+#include "RegisterModel.hxx"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -26,6 +27,9 @@ class Debugger final : public QMainWindow
     explicit Debugger(QWidget* parent = nullptr);
     ~Debugger() override;
 
+  public slots:
+    void onUpdate(const Emulator::State& state);
+
   private slots:
     void onCpuRegisterChanged(RegisterModel::RegisterEntry registerEntry);
     void onCpuFlagsChanged(bool checked);
@@ -39,6 +43,7 @@ class Debugger final : public QMainWindow
     void stepIn();
     void stepOver();
     void stepOut();
+    void updateEmulation();
 
   private:
     Ui::Debugger*    ui;

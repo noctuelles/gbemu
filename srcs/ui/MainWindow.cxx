@@ -65,12 +65,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
 
     connect(_ui->actionDebugger, &QAction::triggered, this, [this] { _debugger.show(); });
 
+    connect(this, &MainWindow::updateDebugger, &_debugger, &Debugger::onUpdate);
     connect(&_debugger, &Debugger::pauseExecution, this,
             [this]
             {
                 if (_emulationStatus == Status::Running)
                 {
                     _updateEmulationStatus(Status::Paused);
+                    emit requestEmulationStatus();
                 }
             });
 
@@ -140,16 +142,18 @@ void MainWindow::resizeEvent(QResizeEvent* event)
 
 bool MainWindow::eventFilter(QObject* watched, QEvent* event)
 {
-    if (event->type() == QEvent::Show)
-    {
-        qDebug() << "Show event";
-    }
     return QMainWindow::eventFilter(watched, event);
 }
 
-void MainWindow::onBreakpointHit()
+void MainWindow::onEmulationStatusUpdated(const Emulator::State& state)
+{
+    emit updateDebugger(state);
+}
+
+void MainWindow::onBreakpointHit(const Emulator::State& state)
 {
     _updateEmulationStatus(Status::Paused);
+    onEmulationStatusUpdated(state);
 }
 
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
@@ -237,6 +241,7 @@ void MainWindow::_startEmulation(const QString& romPath)
     connect(emulator, &Emulator::frameReady, this, &MainWindow::onFrameReady);
     connect(emulator, &Emulator::emulationFatalError, this, &MainWindow::onEmulationFatalError);
     connect(emulator, &Emulator::breakpointHit, this, &MainWindow::onBreakpointHit);
+    connect(emulator, &Emulator::emulationStatusUpdated, this, &MainWindow::onEmulationStatusUpdated);
 
     connect(this, &MainWindow::requestNextFrame, emulator, &Emulator::runFrame);
 
@@ -245,6 +250,7 @@ void MainWindow::_startEmulation(const QString& romPath)
 
     connect(this, &MainWindow::requestStartEmulation, emulator, &Emulator::startEmulation);
     connect(this, &MainWindow::requestSetBreakpoint, emulator, &Emulator::setBreakpoint);
+    connect(this, &MainWindow::requestEmulationStatus, emulator, &Emulator::getEmulationStatus);
 
     _emulatorThread.start();
     _updateEmulationStatus(Status::Running);

@@ -31,7 +31,7 @@
     <item>
      <widget class="InstructionListView" name="instructionsDisassembly">
       <property name="selectionMode">
-       <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
+       <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
       </property>
      </widget>
     </item>
@@ -106,7 +106,7 @@
           <x>0</x>
           <y>0</y>
           <width>332</width>
-          <height>234</height>
+          <height>312</height>
          </rect>
         </property>
         <attribute name="label">
@@ -207,8 +207,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>332</width>
-          <height>234</height>
+          <width>274</width>
+          <height>312</height>
          </rect>
         </property>
         <attribute name="label">

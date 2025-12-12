@@ -28,6 +28,8 @@ class RegisterModel final : public QAbstractTableModel
 
     RegisterModel(std::initializer_list<RegisterEntry> registers = {}, QObject* parent = nullptr);
 
+    bool setRegisterValue(const QString& name, uint64_t value);
+
     [[nodiscard]] QVariant      headerData(int section, Qt::Orientation orientation, int role) const override;
     [[nodiscard]] int           rowCount(const QModelIndex& parent) const override;
     [[nodiscard]] int           columnCount(const QModelIndex& parent) const override;

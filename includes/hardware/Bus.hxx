@@ -6,12 +6,15 @@
 #include <span>
 #include <vector>
 
+#include "Common.hxx"
 #include "EmulationState.hxx"
 #include "IAddressable.hxx"
 
 class Bus final : public IAddressable
 {
   public:
+    using View = AddressSpace;
+
     explicit Bus(const EmulationState& emulationState);
 
     void                           loadBootRom(const std::array<uint8_t, 256>& bootRom) noexcept;
@@ -21,7 +24,8 @@ class Bus final : public IAddressable
 
     void setPostBootRomRegisters();
 
-    [[nodiscard]] std::array<uint8_t, 0x10000> getAddressSpace() const noexcept;
+    [[nodiscard]] View getView() const noexcept;
+    void               applyView(const View& snapshot);
 
     void attach(IAddressable& addressable);
 

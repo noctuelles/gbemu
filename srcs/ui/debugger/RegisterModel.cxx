@@ -2,11 +2,23 @@
 // Created by plouvel on 12/11/25.
 //
 
-#include "../../../includes/ui/debugger/RegisterModel.hxx"
+#include "ui/debugger/RegisterModel.hxx"
 
 RegisterModel::RegisterModel(const std::initializer_list<RegisterEntry> registers, QObject* parent)
     : QAbstractTableModel(parent), _registers(registers)
 {
+}
+
+bool RegisterModel::setRegisterValue(const QString& name, uint64_t value)
+{
+    const auto it{std::ranges::find_if(_registers, [&name](const RegisterEntry& entry) { return entry.name == name; })};
+
+    if (it == _registers.end())
+    {
+        return false;
+    }
+
+    return setData(index(std::distance(std::begin(_registers), it), 0), QString::number(value, 16), Qt::UserRole);
 }
 
 QVariant RegisterModel::headerData(const int section, const Qt::Orientation orientation, const int role) const
@@ -79,7 +91,7 @@ bool RegisterModel::setData(const QModelIndex& index, const QVariant& value, con
         return false;
     }
 
-    if (role == Qt::EditRole)
+    if (role == Qt::EditRole || role == Qt::UserRole)
     {
         auto&            registerEntry{_registers.at(index.row())};
         qulonglong       newValue{};
@@ -101,7 +113,11 @@ bool RegisterModel::setData(const QModelIndex& index, const QVariant& value, con
         registerEntry.value = newValue;
 
         emit dataChanged(index, index);
-        emit registerChanged(registerEntry);
+
+        if (role == Qt::EditRole)
+        {
+            emit registerChanged(registerEntry);
+        }
 
         return true;
     }
