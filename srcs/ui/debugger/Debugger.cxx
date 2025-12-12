@@ -124,4 +124,9 @@ void Debugger::onUpdate(const Emulator::State& state)
     _ppuRegistersModel.setRegisterValue("WY", state.busView[MemoryMap::IORegisters::WY]);
 
     _instructionsModel.updateInstructions(state.busView);
+
+    const auto idx = _instructionsModel.indexForAddress(state.cpuView.registers.PC);
+    auto*      sm  = ui->instructionsDisassembly->selectionModel();
+    sm->setCurrentIndex(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    ui->instructionsDisassembly->scrollTo(idx, QAbstractItemView::PositionAtCenter);
 }

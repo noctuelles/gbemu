@@ -66,13 +66,18 @@ class SM83 final : public IComponent
     class Disassembler
     {
       public:
-        using InstructionDump          = std::pair<uint16_t, std::vector<uint8_t>>;
-        using DisassembledInstructions = std::map<InstructionDump, std::string>;
+        struct DisassembledInstruction
+        {
+            uint16_t    address{};
+            std::string opcode{};
+            std::string name{};
+        };
+
+        using DisassembledInstructions = std::vector<DisassembledInstruction>;
 
         explicit Disassembler(std::span<const uint8_t> memory);
 
-        [[nodiscard]] auto disassemble(uint16_t startingAddress, std::size_t nbrOfInstructions,
-                                       std::optional<uint16_t> baseAddress = {}) const -> DisassembledInstructions;
+        [[nodiscard]] auto disassemble(uint16_t startingAddress = 0) const -> DisassembledInstructions;
 
       private:
         std::span<const uint8_t> memory;

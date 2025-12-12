@@ -525,30 +525,31 @@ const SM83::Disassembler::InstructionLookup SM83::Disassembler::prefixedInstruct
     {"SET 7, A"}      // 0xFF
 }};
 
-SM83::Disassembler::Disassembler(std::span<const uint8_t> memory) : memory(memory) {}
+SM83::Disassembler::Disassembler(const std::span<const uint8_t> memory) : memory(memory) {}
 
-auto SM83::Disassembler::disassemble(const uint16_t startingAddress, std::size_t nbrOfInstructions,
-                                     const std::optional<uint16_t> baseAddress) const -> DisassembledInstructions
+auto SM83::Disassembler::disassemble(const uint16_t startingAddress) const -> DisassembledInstructions
 {
-    DisassembledInstructions disassembled_instructions{};
-    uint16_t                 currentAddress{startingAddress};
+    DisassembledInstructions disassembledInstructions{};
+    uint32_t                 currentAddress{startingAddress};
+    Instruction              instruction;
+    DisassembledInstruction  disassembledInstruction;
 
-    while (nbrOfInstructions)
+    const auto readMemory = [this, &currentAddress, &disassembledInstruction]
     {
-        DisassembledInstructions::mapped_type name{};
-        DisassembledInstructions::key_type    instruction_dump{currentAddress, {}};
-        Instruction                           instruction;
-        const auto                            read_memory = [this, &currentAddress, &instruction_dump]
-        {
-            const auto byte{memory[currentAddress++]};
-            instruction_dump.second.push_back(byte);
+        const auto byte{memory[currentAddress++]};
+        disassembledInstruction.opcode += std::format("{:02X} ", static_cast<unsigned int>(byte));
+        return byte;
+    };
 
-            return byte;
-        };
+    disassembledInstructions.reserve(memory.size());
 
-        if (auto opcode{read_memory()}; opcode == 0xCB)
+    while (currentAddress < memory.size())
+    {
+        disassembledInstruction.address = currentAddress;
+
+        if (auto opcode{readMemory()}; opcode == 0xCB)
         {
-            opcode      = read_memory();
+            opcode      = readMemory();
             instruction = prefixedInstructionLookup[opcode];
         }
         else
@@ -562,52 +563,42 @@ auto SM83::Disassembler::disassemble(const uint16_t startingAddress, std::size_t
             {
                 case AddressingMode::RELATIVE:
                 {
-                    const auto value{static_cast<int8_t>(read_memory())};
+                    const auto value{static_cast<int8_t>(readMemory())};
                     uint16_t   target{static_cast<uint16_t>(value)};
 
-                    if (baseAddress.has_value())
-                    {
-                        target = *baseAddress + target;
-                    }
-                    else
-                    {
-                        target = currentAddress + target;
-                    }
-
-                    name = std::vformat(instruction.name, std::make_format_args(target));
+                    target                       = currentAddress + target;
+                    disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(target));
                     break;
                 }
                 case AddressingMode::IMMEDIATE_SIGNED:
                 {
-                    const auto value{static_cast<int8_t>(read_memory())};
-                    name = std::vformat(instruction.name, std::make_format_args(value));
+                    const auto value{static_cast<int8_t>(readMemory())};
+                    disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(value));
                     break;
                 }
                 case AddressingMode::IMMEDIATE:
                 {
-                    const auto value{read_memory()};
-                    name = std::vformat(instruction.name, std::make_format_args(value));
+                    const auto value{readMemory()};
+                    disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(value));
                     break;
                 }
                 case AddressingMode::IMMEDIATE_EXTENDED:
                 {
-                    const auto lsb{read_memory()};
-                    const auto msb{read_memory()};
+                    const auto lsb{readMemory()};
+                    const auto msb{readMemory()};
                     const auto value{Utils::to_word(msb, lsb)};
-                    name = std::vformat(instruction.name, std::make_format_args(value));
+                    disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(value));
                     break;
                 }
-            };
+            }
         }
         else
         {
-            name = instruction.name;
+            disassembledInstruction.name = instruction.name;
         }
 
-        disassembled_instructions.insert({instruction_dump, name});
-
-        nbrOfInstructions -= 1;
+        disassembledInstructions.push_back(std::move(disassembledInstruction));
     }
 
-    return disassembled_instructions;
+    return disassembledInstructions;
 }

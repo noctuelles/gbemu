@@ -15,19 +15,24 @@ void InstructionModel::updateInstructions(const AddressSpace& addressSpace)
 {
     beginResetModel();
 
-    SM83::Disassembler disassembler{addressSpace};
-    const auto         result{disassembler.disassemble(0x0000, 0x1000, std::nullopt)};
+    const SM83::Disassembler disassembler{addressSpace};
 
-    _instructions.clear();
-
-    for (const auto& [addrAndBytecode, inst] : result)
-    {
-        QVector<uint8_t> vect{addrAndBytecode.second.begin(), addrAndBytecode.second.end()};
-
-        _instructions.push_back({inst.c_str(), addrAndBytecode.first, std::move(vect), false});
-    }
+    _instructions = disassembler.disassemble();
 
     endResetModel();
+}
+
+QModelIndex InstructionModel::indexForAddress(uint16_t address) const
+{
+    const auto it{std::ranges::find_if(_instructions,
+                                       [address](const SM83::Disassembler::DisassembledInstruction& instruction)
+                                       { return instruction.address == address; })};
+    if (it == _instructions.end())
+    {
+        return QModelIndex{};
+    }
+
+    return index(std::distance(std::begin(_instructions), it), 0);
 }
 
 int InstructionModel::columnCount(const QModelIndex& parent) const
@@ -46,34 +51,20 @@ QVariant InstructionModel::data(const QModelIndex& index, int role) const
     {
         return {};
     }
-    const auto& instruction{_instructions.at(index.row())};
+    const auto& [address, opcode, name]{_instructions.at(index.row())};
 
     if (role == Qt::DisplayRole)
     {
-        QString byteCode{};
-
-        for (const auto byte : instruction.bytes)
-        {
-            byteCode += QString{"%1 "}.arg(byte, 2, 16, QChar{'0'}).toUpper();
-        }
-
-        return QString{"%1 %2 %3"}
-            .arg(instruction.address, 4, 16, QChar{'0'})
-            .arg(byteCode, -20, QChar{' '})
-            .arg(instruction.instruction.toLower());
+        return QString{"%1 %2 %3"}.arg(address, 4, 16, QChar{'0'}).arg(opcode, -20, QChar{' '}).arg(name);
     }
 
     if (role == Qt::UserRole)
     {
-        return _instructions.at(index.row()).hasBreakpointDefined;
+        return false;
     }
 
     if (role == Qt::BackgroundRole)
     {
-        if (instruction.hasBreakpointDefined)
-        {
-            return QColor{0xFF, 0x00, 0x00, 0xFF};
-        }
     }
 
     return {};
@@ -93,8 +84,7 @@ bool InstructionModel::setData(const QModelIndex& index, const QVariant& value, 
 
     if (role == Qt::UserRole)
     {
-        _instructions[index.row()].hasBreakpointDefined = value.toBool();
-        return true;
+        return false;
     }
 
     return QAbstractListModel::setData(index, value, role);

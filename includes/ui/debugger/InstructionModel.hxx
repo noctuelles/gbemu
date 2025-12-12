@@ -7,22 +7,16 @@
 
 #include "Common.hxx"
 #include "RegisterModel.hxx"
+#include "hardware/core/SM83.hxx"
 
 class InstructionModel final : public QAbstractListModel
 {
     Q_OBJECT
   public:
-    struct Instruction
-    {
-        QString          instruction{"ret"};
-        uint16_t         address{};
-        QVector<uint8_t> bytes{};
-        bool             hasBreakpointDefined{};
-    };
-
     explicit InstructionModel(QObject* parent = nullptr);
 
-    void updateInstructions(const AddressSpace& addressSpace);
+    void                      updateInstructions(const AddressSpace& addressSpace);
+    [[nodiscard]] QModelIndex indexForAddress(uint16_t address) const;
 
     [[nodiscard]] int           columnCount(const QModelIndex& parent) const override;
     [[nodiscard]] int           rowCount(const QModelIndex& parent) const override;
@@ -31,7 +25,8 @@ class InstructionModel final : public QAbstractListModel
     [[nodiscard]] bool          setData(const QModelIndex& index, const QVariant& value, int role) override;
 
   private:
-    QVector<Instruction> _instructions;
+    SM83::Disassembler::DisassembledInstructions _instructions;
+    uint16_t                                     _currentSelection{};
 };
 
 #endif  // GBEMU_INSTRUCTIONMODEL_HXX
