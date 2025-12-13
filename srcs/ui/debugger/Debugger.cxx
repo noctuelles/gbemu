@@ -72,8 +72,10 @@ Debugger::Debugger(QWidget* parent)
     ui->instructionsDisassembly->setModel(&_instructionsModel);
     ui->instructionsDisassembly->setItemDelegate(new BreakpointDelegate{this});
     ui->instructionsDisassembly->setUniformItemSizes(true);
-
     ui->instructionsDisassembly->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+
+    ui->stackFrame->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    ui->stackFrame->setModel(&_stackModel);
 }
 
 Debugger::~Debugger()
@@ -160,6 +162,8 @@ void Debugger::onEmulationStatusUpdate(const Emulator::State& state)
     _ppuRegistersModel.setRegisterValue("WY", state.busView[MemoryMap::IORegisters::WY]);
 
     _instructionsModel.updateInstructions(state.busView);
+    _stackModel.updateStack(state.cpuView.registers.SP, state.busView);
+
     _scrollToAddress(state.cpuView.registers.PC);
     _selectAddress(state.cpuView.registers.PC);
 }

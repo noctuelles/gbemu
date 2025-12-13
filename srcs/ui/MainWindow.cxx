@@ -150,8 +150,8 @@ void MainWindow::resizeEvent(QResizeEvent* event)
 
     if (_emulationStatus == Status::Paused)
     {
-        assert(_framebuffer != nullptr);
-        _updateDisplay(*_framebuffer);
+        _ui->display->setPixmap(
+            QPixmap::fromImage(_displayImage.scaled(event->size(), _aspectRatioMode, _transformationMode)));
     }
 }
 
@@ -164,8 +164,6 @@ void MainWindow::onBreakpointHit(const Emulator::State& state)
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
 {
     _updateDisplay(framebuffer);
-
-    _framebuffer = &framebuffer;
 
     if (_emulationStatus == Status::Paused)
     {
@@ -185,11 +183,8 @@ void MainWindow::onEmulationFatalError(const QString& message)
     _updateEmulationStatus(Status::Stopped);
 }
 
-void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const
+void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer)
 {
-    QImage img{std::tuple_size_v<Graphics::Framebuffer::value_type>, std::tuple_size_v<Graphics::Framebuffer>,
-               QImage::Format_RGB32};
-
     for (const auto& [y, row] : std::views::enumerate(framebuffer))
     {
         for (const auto& [x, color] : std::views::enumerate(row))
@@ -203,12 +198,12 @@ void MainWindow::_updateDisplay(const Graphics::Framebuffer& framebuffer) const
                 rgbColor = _colorMapping[pixelColor];
             }
 
-            img.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
+            _displayImage.setPixel(x, y, qRgb(rgbColor.red(), rgbColor.green(), rgbColor.blue()));
         }
     }
 
     _ui->display->setPixmap(
-        QPixmap::fromImage(img.scaled(_ui->display->size(), _aspectRatioMode, _transformationMode)));
+        QPixmap::fromImage(_displayImage.scaled(_ui->display->size(), _aspectRatioMode, _transformationMode)));
 }
 
 std::optional<Key> MainWindow::_isAMappedKey(const QKeyEvent* keyEvent) const

@@ -61,7 +61,7 @@ class MainWindow final : public QMainWindow
 
     static constexpr qsizetype MaxRecentFiles{8};
 
-    void               _updateDisplay(const Graphics::Framebuffer& framebuffer) const;
+    void               _updateDisplay(const Graphics::Framebuffer& framebuffer);
     std::optional<Key> _isAMappedKey(const QKeyEvent* keyEvent) const;
 
     void _startEmulation(const QString& romPath);
@@ -71,19 +71,20 @@ class MainWindow final : public QMainWindow
     void _addRecentFile(const QString& path);
     void _clearRecentFiles();
 
-    QMap<QKeySequence, Key> _keyMapping;
-    std::array<QColor, 4>   _colorMapping;
+    QMap<QKeySequence, Key> _keyMapping{};
+    std::array<QColor, 4>   _colorMapping{};
     std::array<bool, 3>     _layersToDisplay{};
     Qt::AspectRatioMode     _aspectRatioMode{};
     Qt::TransformationMode  _transformationMode{};
 
-    const Graphics::Framebuffer* _framebuffer{};
-    Status                       _emulationStatus{Status::Stopped};
-    QLabel*                      _emulationStatusLabel;
-    QThread                      _emulatorThread;
-    Ui::MainWindow*              _ui;
+    QImage _displayImage{std::tuple_size_v<Graphics::Framebuffer::value_type>, std::tuple_size_v<Graphics::Framebuffer>,
+                         QImage::Format_RGB32};
+    Status _emulationStatus{Status::Stopped};
+    QLabel*         _emulationStatusLabel{};
+    QThread         _emulatorThread{};
+    Ui::MainWindow* _ui{};
 
-    Debugger _debugger;
+    Debugger _debugger{};
 };
 
 #endif  // GBEMU_MAINWINDOW_HXX

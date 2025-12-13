@@ -80,6 +80,8 @@ qt_add_executable(gbemu
         srcs/ui/debugger/utils/AddressInputDialog.cxx
         includes/ui/debugger/utils/AddressInputDialog.hxx
         srcs/ui/debugger/utils/AddressInputDialog.ui
+        srcs/ui/debugger/StackFrameModel.cxx
+        includes/ui/debugger/StackFrameModel.hxx
 )
 
 add_executable(gbemu_test

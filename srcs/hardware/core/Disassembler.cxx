@@ -536,6 +536,11 @@ auto SM83::Disassembler::disassemble(const uint16_t startingAddress) const -> Di
 
     const auto readMemory = [this, &currentAddress, &disassembledInstruction]
     {
+        if (currentAddress >= memory.size())
+        {
+            throw std::out_of_range{""};
+        }
+
         const auto byte{memory[currentAddress++]};
         disassembledInstruction.opcode += std::format("{:02X} ", static_cast<unsigned int>(byte));
         return byte;
@@ -545,63 +550,70 @@ auto SM83::Disassembler::disassemble(const uint16_t startingAddress) const -> Di
 
     while (currentAddress < memory.size())
     {
-        disassembledInstruction.address = currentAddress;
+        try
+        {
+            disassembledInstruction.address = currentAddress;
 
-        if (auto opcode{readMemory()}; opcode == 0xCB)
-        {
-            opcode      = readMemory();
-            instruction = prefixedInstructionLookup[opcode];
-        }
-        else
-        {
-            instruction = instructionLookup[opcode];
-        }
-
-        if (auto mode = instruction.addressing)
-        {
-            switch (*mode)
+            if (auto opcode{readMemory()}; opcode == 0xCB)
             {
-                case AddressingMode::RELATIVE:
-                {
-                    const auto value{static_cast<int8_t>(readMemory())};
-                    uint16_t   target{static_cast<uint16_t>(value)};
+                opcode      = readMemory();
+                instruction = prefixedInstructionLookup[opcode];
+            }
+            else
+            {
+                instruction = instructionLookup[opcode];
+            }
 
-                    target                       = currentAddress + target;
-                    disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(target));
-                    break;
-                }
-                case AddressingMode::IMMEDIATE_SIGNED:
+            if (auto mode = instruction.addressing)
+            {
+                switch (*mode)
                 {
-                    const auto value{static_cast<int8_t>(readMemory())};
-                    disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(value));
-                    break;
-                }
-                case AddressingMode::IMMEDIATE:
-                {
-                    const auto value{readMemory()};
-                    disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(value));
-                    break;
-                }
-                case AddressingMode::IMMEDIATE_EXTENDED:
-                {
-                    const auto lsb{readMemory()};
-                    const auto msb{readMemory()};
-                    const auto value{Utils::to_word(msb, lsb)};
-                    disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(value));
-                    break;
+                    case AddressingMode::RELATIVE:
+                    {
+                        const auto value{static_cast<int8_t>(readMemory())};
+                        uint16_t   target{static_cast<uint16_t>(value)};
+
+                        target                       = currentAddress + target;
+                        disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(target));
+                        break;
+                    }
+                    case AddressingMode::IMMEDIATE_SIGNED:
+                    {
+                        const auto value{static_cast<int8_t>(readMemory())};
+                        disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(value));
+                        break;
+                    }
+                    case AddressingMode::IMMEDIATE:
+                    {
+                        const auto value{readMemory()};
+                        disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(value));
+                        break;
+                    }
+                    case AddressingMode::IMMEDIATE_EXTENDED:
+                    {
+                        const auto lsb{readMemory()};
+                        const auto msb{readMemory()};
+                        const auto value{Utils::toWord(msb, lsb)};
+                        disassembledInstruction.name = std::vformat(instruction.name, std::make_format_args(value));
+                        break;
+                    }
                 }
             }
-        }
-        else
-        {
-            disassembledInstruction.name = instruction.name;
-        }
+            else
+            {
+                disassembledInstruction.name = instruction.name;
+            }
 
-        if (disassembledInstruction.name.find("") != std::string::npos)
-        {
-        }
+            if (disassembledInstruction.name.find("") != std::string::npos)
+            {
+            }
 
-        disassembledInstructions.push_back(std::move(disassembledInstruction));
+            disassembledInstructions.push_back(std::move(disassembledInstruction));
+        }
+        catch (const std::out_of_range&)
+        {
+            break;
+        }
     }
 
     return disassembledInstructions;

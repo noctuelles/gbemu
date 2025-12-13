@@ -55,7 +55,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
             {
                 const auto lsb{fetchOperand()};
                 const auto msb{fetchOperand()};
-                const auto address{Utils::to_word(msb, lsb)};
+                const auto address{Utils::toWord(msb, lsb)};
 
                 writeMemory(address, Utils::wordLsb(SP));
                 writeMemory(address + 1, Utils::wordMsb(SP));
@@ -767,7 +767,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
             {
                 const auto lsb = fetchOperand();
                 const auto msb = fetchOperand();
-                writeMemory(Utils::to_word(msb, lsb), A);
+                writeMemory(Utils::toWord(msb, lsb), A);
             }
             break;
             case 0xEE:
@@ -811,7 +811,7 @@ void SM83::decodeExecuteInstruction(const bool extended_set)  // NOLINT
             {
                 const auto lsb{fetchOperand()};
                 const auto msb{fetchOperand()};
-                A = fetchMemory(Utils::to_word(msb, lsb));
+                A = fetchMemory(Utils::toWord(msb, lsb));
             }
             break;
             case 0xFB:

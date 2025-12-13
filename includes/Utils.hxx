@@ -24,7 +24,7 @@ namespace Utils
         return static_cast<uint8_t>((x & 0xFF00) >> 8);
     }
 
-    constexpr auto to_word(const uint8_t msb, const uint8_t lsb)
+    constexpr auto toWord(const uint8_t msb, const uint8_t lsb)
     {
         return static_cast<uint16_t>(msb << 8 | lsb);
     }

@@ -255,22 +255,22 @@ void SM83::writeMemory(const uint16_t address, const uint8_t value)
 
 uint16_t SM83::AF() const
 {
-    return Utils::to_word(A, F);
+    return Utils::toWord(A, F);
 }
 
 uint16_t SM83::BC() const
 {
-    return Utils::to_word(B, C);
+    return Utils::toWord(B, C);
 }
 
 uint16_t SM83::DE() const
 {
-    return Utils::to_word(D, E);
+    return Utils::toWord(D, E);
 }
 
 uint16_t SM83::HL() const
 {
-    return Utils::to_word(H, L);
+    return Utils::toWord(H, L);
 }
 
 void SM83::AF(const uint16_t value)
@@ -335,7 +335,7 @@ uint16_t SM83::add(const uint16_t lhs, const uint8_t rhs)
 
     setFlag(Flags::Zero, false);
 
-    return Utils::to_word(lhs_msb, lhs_lsb);
+    return Utils::toWord(lhs_msb, lhs_lsb);
 }
 
 void SM83::daa()
@@ -550,7 +550,7 @@ void SM83::jp()
     const auto lsb{fetchOperand()};
     const auto msb{fetchOperand()};
 
-    PC = Utils::to_word(msb, lsb);
+    PC = Utils::toWord(msb, lsb);
     onMachineCycle();
 }
 
@@ -560,7 +560,7 @@ void SM83::call()
     const auto msb{fetchOperand()};
 
     push(PC);
-    PC = Utils::to_word(msb, lsb);
+    PC = Utils::toWord(msb, lsb);
 }
 
 void SM83::call_cc(Conditionals conditional)
@@ -581,7 +581,7 @@ void SM83::ret()
     const auto lsb{fetchMemory(SP++)};
     const auto msb{fetchMemory(SP++)};
 
-    PC = Utils::to_word(msb, lsb);
+    PC = Utils::toWord(msb, lsb);
     onMachineCycle();
 }
 
@@ -650,7 +650,7 @@ void SM83::pop(uint16_t& value)
 {
     const auto lsb{fetchMemory(SP++)};
     const auto msb{fetchMemory(SP++)};
-    value = Utils::to_word(msb, lsb);
+    value = Utils::toWord(msb, lsb);
 }
 
 void SM83::setFlag(const Flags flag, const bool value)

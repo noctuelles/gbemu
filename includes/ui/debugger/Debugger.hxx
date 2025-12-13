@@ -11,6 +11,7 @@
 #include "Emulator.hxx"
 #include "InstructionModel.hxx"
 #include "RegisterModel.hxx"
+#include "StackFrameModel.hxx"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -54,6 +55,7 @@ class Debugger final : public QMainWindow
     RegisterModel    _cpuEightBitsRegistersModel{};
     RegisterModel    _cpuSixteenBitsRegistersModel{};
     RegisterModel    _ppuRegistersModel{};
+    StackFrameModel  _stackModel{};
     InstructionModel _instructionsModel{};
 };
 
