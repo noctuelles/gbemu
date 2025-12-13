@@ -106,7 +106,7 @@
           <x>0</x>
           <y>0</y>
           <width>332</width>
-          <height>312</height>
+          <height>335</height>
          </rect>
         </property>
         <attribute name="label">
@@ -207,8 +207,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>98</width>
-          <height>88</height>
+          <width>274</width>
+          <height>335</height>
          </rect>
         </property>
         <attribute name="label">
@@ -260,20 +260,9 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dockMemoryEditor">
-   <property name="windowTitle">
-    <string>Memory Editor</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>8</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_8">
-    <layout class="QGridLayout" name="gridLayout"/>
-   </widget>
-  </widget>
   <action name="actionContinue">
    <property name="icon">
-    <iconset>
+    <iconset theme="QIcon::ThemeIcon::MediaPlaybackStart">
      <normaloff>:/resources/debugger/play.svg</normaloff>:/resources/debugger/play.svg</iconset>
    </property>
    <property name="text">
@@ -285,7 +274,7 @@
   </action>
   <action name="actionPause">
    <property name="icon">
-    <iconset>
+    <iconset theme="QIcon::ThemeIcon::MediaPlaybackPause">
      <normaloff>:/debugger/img/resources/debugger/pause.svg</normaloff>:/debugger/img/resources/debugger/pause.svg</iconset>
    </property>
    <property name="text">
@@ -297,7 +286,7 @@
   </action>
   <action name="actionStep_In">
    <property name="icon">
-    <iconset>
+    <iconset theme="QIcon::ThemeIcon::GoDown">
      <normaloff>:/debugger/img/resources/debugger/arrow-down.svg</normaloff>:/debugger/img/resources/debugger/arrow-down.svg</iconset>
    </property>
    <property name="text">
