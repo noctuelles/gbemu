@@ -26,23 +26,36 @@ class Emulator final : public QObject
     class Debugger
     {
       public:
+        struct Breakpoint
+        {
+            enum class Type
+            {
+                OnPC,
+                Conditional,
+            };
+
+            uint16_t                     address;
+            std::variant<std::monostate> condition;
+        };
+
         explicit Debugger(SM83& cpu);
         ~Debugger() = default;
 
-        void addBreakpoint(uint16_t address);
+        void addBreakpoint(const Breakpoint& breakpoint);
+        void removeBreakpoint(const Breakpoint& breakpoint);
         void removeBreakpoint(uint16_t address);
 
         bool shouldBreak() const;
 
       private:
-        SM83&                        _cpu;
-        std::unordered_set<uint16_t> _breakpoints;
+        SM83&                                    _cpu;
+        std::unordered_map<uint16_t, Breakpoint> _breakpoints;
     };
 
     struct State
     {
-        SM83::View cpuView;
-        Bus::View  busView;
+        SM83::View cpuView{};
+        Bus::View  busView{};
     };
 
     explicit Emulator(const std::optional<QString>& bootRom = std::nullopt, QObject* parent = nullptr);
@@ -50,12 +63,13 @@ class Emulator final : public QObject
   public slots:
     void startEmulation(const QString& path);
     void runFrame();
-    bool stepInstruction();
+    bool nextInstruction();
+    void stepInInstruction();
 
     /* Each of these events will be handled in between frames. */
     void onKeyPressed(Key key);
     void onKeyReleased(Key key);
-    void setBreakpoint(uint16_t address);
+    void setBreakpoint(const Emulator::Debugger::Breakpoint& breakpoint);
     void getEmulationStatus();
 
   private slots:
@@ -89,8 +103,8 @@ class Emulator final : public QObject
     volatile bool _running{true};
     QtRenderer*   _renderer;
     Components    _components;
-    Debugger      _debugger;
-    State        _status;
+    Debugger      _backEndDebugger;
+    State         _status;
 
     std::chrono::nanoseconds _frameDuration{16740000ns};
 };

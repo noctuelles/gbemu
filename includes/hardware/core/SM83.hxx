@@ -71,6 +71,7 @@ class SM83 final : public IComponent
             uint16_t    address{};
             std::string opcode{};
             std::string name{};
+            std::string comments{};
         };
 
         using DisassembledInstructions = std::vector<DisassembledInstruction>;

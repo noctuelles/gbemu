@@ -10,7 +10,7 @@
 #include <iostream>
 
 Emulator::Emulator(const std::optional<QString>& bootRomPath, QObject* parent)
-    : QObject(parent), _renderer(new QtRenderer(this)), _components(*_renderer), _debugger(_components.cpu)
+    : QObject(parent), _renderer(new QtRenderer(this)), _components(*_renderer), _backEndDebugger(_components.cpu)
 {
     if (!bootRomPath.has_value())
     {
@@ -69,9 +69,9 @@ void Emulator::onKeyReleased(const Key key)
     _components.joypad.release(key);
 }
 
-void Emulator::setBreakpoint(const uint16_t address)
+void Emulator::setBreakpoint(const Debugger::Breakpoint& breakpoint)
 {
-    _debugger.addBreakpoint(address);
+    _backEndDebugger.addBreakpoint(breakpoint);
 }
 
 void Emulator::getEmulationStatus()
@@ -89,7 +89,7 @@ void Emulator::runFrame()
 
         while (_running)
         {
-            if (stepInstruction())
+            if (nextInstruction())
             {
                 return;
             }
@@ -111,17 +111,24 @@ void Emulator::runFrame()
     }
 }
 
-bool Emulator::stepInstruction()
+bool Emulator::nextInstruction()
 {
     _components.cpu.runInstruction();
 
-    if (_debugger.shouldBreak())
+    if (_backEndDebugger.shouldBreak())
     {
         emit breakpointHit({_components.cpu.getView(), _components.bus.getView()});
         return true;
     }
 
     return false;
+}
+
+void Emulator::stepInInstruction()
+{
+    _components.cpu.runInstruction();
+
+    emit emulationStatusUpdated({_components.cpu.getView(), _components.bus.getView()});
 }
 
 void Emulator::onRender(const Graphics::Framebuffer& framebuffer)

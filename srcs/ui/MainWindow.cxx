@@ -65,7 +65,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
 
     connect(_ui->actionDebugger, &QAction::triggered, this, [this] { _debugger.show(); });
 
-    connect(this, &MainWindow::updateDebugger, &_debugger, &Debugger::onUpdate);
     connect(&_debugger, &Debugger::pauseExecution, this,
             [this]
             {
@@ -85,8 +84,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                     emit requestNextFrame();
                 }
             });
-
-    connect(&_debugger, &Debugger::stepIn, this, [this] { emit requestSetBreakpoint(0x100); });
 }
 
 MainWindow::~MainWindow()
@@ -145,15 +142,10 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
     return QMainWindow::eventFilter(watched, event);
 }
 
-void MainWindow::onEmulationStatusUpdated(const Emulator::State& state)
-{
-    emit updateDebugger(state);
-}
-
 void MainWindow::onBreakpointHit(const Emulator::State& state)
 {
     _updateEmulationStatus(Status::Paused);
-    onEmulationStatusUpdated(state);
+    _debugger.onEmulationStatusUpdate(state);
 }
 
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
@@ -241,7 +233,6 @@ void MainWindow::_startEmulation(const QString& romPath)
     connect(emulator, &Emulator::frameReady, this, &MainWindow::onFrameReady);
     connect(emulator, &Emulator::emulationFatalError, this, &MainWindow::onEmulationFatalError);
     connect(emulator, &Emulator::breakpointHit, this, &MainWindow::onBreakpointHit);
-    connect(emulator, &Emulator::emulationStatusUpdated, this, &MainWindow::onEmulationStatusUpdated);
 
     connect(this, &MainWindow::requestNextFrame, emulator, &Emulator::runFrame);
 
@@ -249,8 +240,10 @@ void MainWindow::_startEmulation(const QString& romPath)
     connect(this, &MainWindow::keyReleased, emulator, &Emulator::onKeyReleased);
 
     connect(this, &MainWindow::requestStartEmulation, emulator, &Emulator::startEmulation);
-    connect(this, &MainWindow::requestSetBreakpoint, emulator, &Emulator::setBreakpoint);
     connect(this, &MainWindow::requestEmulationStatus, emulator, &Emulator::getEmulationStatus);
+
+    connect(emulator, &Emulator::emulationStatusUpdated, &_debugger, &Debugger::onEmulationStatusUpdate);
+    connect(&_debugger, &Debugger::stepIn, emulator, &Emulator::stepInInstruction);
 
     _emulatorThread.start();
     _updateEmulationStatus(Status::Running);
@@ -262,6 +255,19 @@ void MainWindow::_updateEmulationStatus(const Status status)
 {
     const auto metaEnum{QMetaEnum::fromType<Status>()};
     const auto text{metaEnum.valueToKey(std::to_underlying(status))};
+
+    if (status == Status::Running && (_emulationStatus == Status::Paused || _emulationStatus == Status::Stopped))
+    {
+        _debugger.setEnabled(false);
+    }
+    else if (status == Status::Paused && _emulationStatus == Status::Running)
+    {
+        _debugger.setEnabled(true);
+    }
+    else if (status == Status::Stopped)
+    {
+        _debugger.setEnabled(false);
+    }
 
     _emulationStatus = status;
     _emulationStatusLabel->setText(text);

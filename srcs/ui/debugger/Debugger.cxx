@@ -79,6 +79,14 @@ Debugger::~Debugger()
     delete ui;
 }
 
+void Debugger::setEnabled(const bool enabled) const
+{
+    ui->instructionsDisassembly->setEnabled(enabled);
+    ui->dockMemoryEditor->setEnabled(enabled);
+    ui->dockRegisters->setEnabled(enabled);
+    ui->dockStackFrame->setEnabled(enabled);
+}
+
 void Debugger::onCpuRegisterChanged(RegisterModel::RegisterEntry registerEntry) {}
 
 void Debugger::onCpuFlagsChanged(bool checked) {}
@@ -87,7 +95,16 @@ void Debugger::onCpuImeChanged(bool checked) {}
 
 void Debugger::onPpuRegisterChanged(RegisterModel::RegisterEntry registerEntry) {}
 
-void Debugger::onUpdate(const Emulator::State& state)
+void Debugger::_scrollAndSelectToPC(const uint16_t PC)
+{
+    const auto idx{_instructionsModel.indexForAddress(PC)};
+    auto*      selectionModel{ui->instructionsDisassembly->selectionModel()};
+
+    selectionModel->setCurrentIndex(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    ui->instructionsDisassembly->scrollTo(idx, QAbstractItemView::PositionAtCenter);
+}
+
+void Debugger::onEmulationStatusUpdate(const Emulator::State& state)
 {
     _cpuEightBitsRegistersModel.setRegisterValue("A", state.cpuView.registers.A);
     _cpuEightBitsRegistersModel.setRegisterValue("B", state.cpuView.registers.B);
@@ -124,9 +141,5 @@ void Debugger::onUpdate(const Emulator::State& state)
     _ppuRegistersModel.setRegisterValue("WY", state.busView[MemoryMap::IORegisters::WY]);
 
     _instructionsModel.updateInstructions(state.busView);
-
-    const auto idx = _instructionsModel.indexForAddress(state.cpuView.registers.PC);
-    auto*      sm  = ui->instructionsDisassembly->selectionModel();
-    sm->setCurrentIndex(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-    ui->instructionsDisassembly->scrollTo(idx, QAbstractItemView::PositionAtCenter);
+    _scrollAndSelectToPC(state.cpuView.registers.PC);
 }

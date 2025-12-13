@@ -26,9 +26,10 @@ class Debugger final : public QMainWindow
   public:
     explicit Debugger(QWidget* parent = nullptr);
     ~Debugger() override;
+    void setEnabled(bool enabled) const;
 
   public slots:
-    void onUpdate(const Emulator::State& state);
+    void onEmulationStatusUpdate(const Emulator::State& state);
 
   private slots:
     void onCpuRegisterChanged(RegisterModel::RegisterEntry registerEntry);
@@ -46,6 +47,8 @@ class Debugger final : public QMainWindow
     void updateEmulation();
 
   private:
+    void _scrollAndSelectToPC(uint16_t PC);
+
     Ui::Debugger*    ui;
     RegisterModel    _cpuEightBitsRegistersModel{};
     RegisterModel    _cpuSixteenBitsRegistersModel{};

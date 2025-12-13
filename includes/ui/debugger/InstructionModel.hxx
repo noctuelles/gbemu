@@ -13,6 +13,11 @@ class InstructionModel final : public QAbstractListModel
 {
     Q_OBJECT
   public:
+    enum Role
+    {
+        BreakpointRole = Qt::UserRole + 1
+    };
+
     explicit InstructionModel(QObject* parent = nullptr);
 
     void                      updateInstructions(const AddressSpace& addressSpace);
@@ -26,7 +31,7 @@ class InstructionModel final : public QAbstractListModel
 
   private:
     SM83::Disassembler::DisassembledInstructions _instructions;
-    uint16_t                                     _currentSelection{};
+    std::unordered_map<uint16_t, bool>           _breakpoints;
 };
 
 #endif  // GBEMU_INSTRUCTIONMODEL_HXX

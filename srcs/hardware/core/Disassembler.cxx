@@ -597,6 +597,10 @@ auto SM83::Disassembler::disassemble(const uint16_t startingAddress) const -> Di
             disassembledInstruction.name = instruction.name;
         }
 
+        if (disassembledInstruction.name.find("") != std::string::npos)
+        {
+        }
+
         disassembledInstructions.push_back(std::move(disassembledInstruction));
     }
 

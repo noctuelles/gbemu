@@ -22,17 +22,20 @@ void InstructionModel::updateInstructions(const AddressSpace& addressSpace)
     endResetModel();
 }
 
-QModelIndex InstructionModel::indexForAddress(uint16_t address) const
+QModelIndex InstructionModel::indexForAddress(const uint16_t address) const
 {
+    /* Could be replaced with something more efficient. */
+
     const auto it{std::ranges::find_if(_instructions,
                                        [address](const SM83::Disassembler::DisassembledInstruction& instruction)
                                        { return instruction.address == address; })};
+
     if (it == _instructions.end())
     {
         return QModelIndex{};
     }
 
-    return index(std::distance(std::begin(_instructions), it), 0);
+    return index(static_cast<int>(std::distance(std::begin(_instructions), it)), 0);
 }
 
 int InstructionModel::columnCount(const QModelIndex& parent) const
@@ -51,7 +54,7 @@ QVariant InstructionModel::data(const QModelIndex& index, int role) const
     {
         return {};
     }
-    const auto& [address, opcode, name]{_instructions.at(index.row())};
+    const auto& [address, opcode, name, comment]{_instructions.at(index.row())};
 
     if (role == Qt::DisplayRole)
     {

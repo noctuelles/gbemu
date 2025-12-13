@@ -34,10 +34,11 @@ class MainWindow final : public QMainWindow
     bool eventFilter(QObject* watched, QEvent* event) override;
 
   public slots:
-    void onEmulationStatusUpdated(const Emulator::State& state);
-    void onBreakpointHit(const Emulator::State& state);
     void onFrameReady(const Graphics::Framebuffer& framebuffer);
     void onEmulationFatalError(const QString& message);
+
+    /* UI Debugger <-> UI MainWindow */
+    void onBreakpointHit(const Emulator::State& state);
 
   signals:
     void requestSetBreakpoint(uint16_t address);
@@ -46,10 +47,9 @@ class MainWindow final : public QMainWindow
     void keyReleased(Key key);
 
     void requestNextFrame();
+    void requestStepInInstruction();
     void requestStartEmulation(const QString& path);
     void requestEmulationStatus();
-
-    void updateDebugger(const Emulator::State& state);
 
   private:
     enum class Status
@@ -74,7 +74,7 @@ class MainWindow final : public QMainWindow
 
     QMap<QKeySequence, Key> _keyMapping;
     std::array<QColor, 4>   _colorMapping;
-    std::array<bool, 3>     _layersToDisplay;
+    std::array<bool, 3>     _layersToDisplay{};
     Qt::AspectRatioMode     _aspectRatioMode{};
     Qt::TransformationMode  _transformationMode{};
 

@@ -6,9 +6,14 @@
 
 Emulator::Debugger::Debugger(SM83& cpu) : _cpu(cpu) {}
 
-void Emulator::Debugger::addBreakpoint(uint16_t address)
+void Emulator::Debugger::addBreakpoint(const Breakpoint& breakpoint)
 {
-    _breakpoints.insert(address);
+    _breakpoints.insert({breakpoint.address, breakpoint});
+}
+
+void Emulator::Debugger::removeBreakpoint(const Breakpoint& breakpoint)
+{
+    _breakpoints.erase(breakpoint.address);
 }
 
 void Emulator::Debugger::removeBreakpoint(uint16_t address)
