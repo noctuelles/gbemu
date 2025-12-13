@@ -16,8 +16,13 @@ class InstructionListView final : public QListView
     [[nodiscard]] QModelIndex hoveredIndex() const;
     [[nodiscard]] int         hoveredX() const;
 
+  signals:
+
+    void gotoAddress(uint16_t address);
+
   protected:
     void mouseMoveEvent(QMouseEvent* ev) override;
+    void mousePressEvent(QMouseEvent* event) override;
     void leaveEvent(QEvent* ev) override;
 
   private:

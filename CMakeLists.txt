@@ -76,6 +76,10 @@ qt_add_executable(gbemu
         srcs/Debugger.cxx
         srcs/Emulator.cxx
         srcs/main.cxx
+
+        srcs/ui/debugger/utils/AddressInputDialog.cxx
+        includes/ui/debugger/utils/AddressInputDialog.hxx
+        srcs/ui/debugger/utils/AddressInputDialog.ui
 )
 
 add_executable(gbemu_test

@@ -47,7 +47,8 @@ class Debugger final : public QMainWindow
     void updateEmulation();
 
   private:
-    void _scrollAndSelectToPC(uint16_t PC);
+    void _scrollToAddress(uint16_t address) const;
+    void _selectAddress(uint16_t address) const;
 
     Ui::Debugger*    ui;
     RegisterModel    _cpuEightBitsRegistersModel{};

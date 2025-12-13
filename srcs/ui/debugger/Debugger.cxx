@@ -66,6 +66,8 @@ Debugger::Debugger(QWidget* parent)
     connect(ui->halfCarryFlag, &QCheckBox::toggled, this, &Debugger::onCpuFlagsChanged);
     connect(ui->negativeFlag, &QCheckBox::toggled, this, &Debugger::onCpuFlagsChanged);
     connect(ui->ime, &QCheckBox::toggled, this, &Debugger::onCpuImeChanged);
+    connect(ui->instructionsDisassembly, &InstructionListView::gotoAddress, this,
+            [this](const uint16_t address) { _scrollToAddress(address); });
 
     ui->instructionsDisassembly->setModel(&_instructionsModel);
     ui->instructionsDisassembly->setItemDelegate(new BreakpointDelegate{this});
@@ -96,13 +98,29 @@ void Debugger::onCpuImeChanged(bool checked) {}
 
 void Debugger::onPpuRegisterChanged(RegisterModel::RegisterEntry registerEntry) {}
 
-void Debugger::_scrollAndSelectToPC(const uint16_t PC)
+void Debugger::_scrollToAddress(const uint16_t address) const
 {
-    const auto idx{_instructionsModel.indexForAddress(PC)};
+    const auto idx{_instructionsModel.indexForAddress(address)};
+
+    if (!idx.isValid())
+    {
+        return;
+    }
+
+    ui->instructionsDisassembly->scrollTo(idx, QAbstractItemView::PositionAtCenter);
+}
+
+void Debugger::_selectAddress(const uint16_t address) const
+{
+    const auto idx{_instructionsModel.indexForAddress(address)};
     auto*      selectionModel{ui->instructionsDisassembly->selectionModel()};
 
+    if (!idx.isValid())
+    {
+        return;
+    }
+
     selectionModel->setCurrentIndex(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-    ui->instructionsDisassembly->scrollTo(idx, QAbstractItemView::PositionAtCenter);
 }
 
 void Debugger::onEmulationStatusUpdate(const Emulator::State& state)
@@ -142,5 +160,6 @@ void Debugger::onEmulationStatusUpdate(const Emulator::State& state)
     _ppuRegistersModel.setRegisterValue("WY", state.busView[MemoryMap::IORegisters::WY]);
 
     _instructionsModel.updateInstructions(state.busView);
-    _scrollAndSelectToPC(state.cpuView.registers.PC);
+    _scrollToAddress(state.cpuView.registers.PC);
+    _selectAddress(state.cpuView.registers.PC);
 }
