@@ -32,7 +32,6 @@ Hz.
     - Clang 16+ or
     - MSVC 2022+
 - **Qt6** (Widgets component)
-- **Boost** libraries
 
 ### Optional
 
@@ -44,28 +43,13 @@ Hz.
 
 1. **Install dependencies:**
 
+You must have installed Qt 6.10.
+
 ### Installation
 
 #### Linux (Ubuntu/Debian)
 
-1. **Install dependencies:**
-
-   ```bash
-   sudo apt update
-   sudo apt install -y build-essential cmake git pkg-config \
-       libboost-all-dev qt6-base-dev qt6-tools-dev qt6-declarative-dev \
-       libxcb-keysyms1-dev libxcb-image0-dev libxcb-icccm4-dev libxcb-randr0-dev \
-       libxcb-xfixes0-dev
-   ```
-
-   Notes:
-
-* Package names may vary between distributions and Ubuntu versions. If `qt6-*` packages are not available, use your
-  distribution's Qt6 packages or install Qt6 from the official Qt installer.
-* If you prefer a more lightweight install just for building the application, install the `*-dev` packages required for
-  Qt Widgets and Qt6's CMake config.
-
-2. **Clone the repository and build:**
+1. **Clone the repository and build:**
 
    ```bash
    git clone https://github.com/noctuelles/gbemu.git
