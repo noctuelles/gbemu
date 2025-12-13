@@ -34,8 +34,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
     _populateRecentMenu();
     _loadSettings();
 
-    installEventFilter(this);
-
     /* UI */
 
     connect(_ui->actionOpen, &QAction::triggered, this,
@@ -52,14 +50,25 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
     connect(_ui->actionPreference, &QAction::triggered, this,
             [this]
             {
-                _updateEmulationStatus(Status::Paused);
+                bool pausedByPreferenceOpen{};
+
+                if (_emulationStatus == Status::Running)
+                {
+                    pausedByPreferenceOpen = true;
+                    _updateEmulationStatus(Status::Paused);
+                    _debugger.setEnabled(false);
+                }
 
                 if (Preference prefDialog(this); prefDialog.exec() == QDialog::Accepted)
                 {
                     _loadSettings();
                 }
 
-                _updateEmulationStatus(Status::Running);
+                if (pausedByPreferenceOpen)
+                {
+                    _updateEmulationStatus(Status::Running);
+                }
+
                 emit requestNextFrame();
             });
 
@@ -82,6 +91,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                 {
                     _updateEmulationStatus(Status::Running);
                     emit requestNextFrame();
+                }
+            });
+
+    connect(&_debugger, &Debugger::stepIn, this,
+            [this]
+            {
+                if (_emulationStatus == Status::Paused)
+                {
+                    emit requestStepInInstruction();
                 }
             });
 }
@@ -135,11 +153,6 @@ void MainWindow::resizeEvent(QResizeEvent* event)
         assert(_framebuffer != nullptr);
         _updateDisplay(*_framebuffer);
     }
-}
-
-bool MainWindow::eventFilter(QObject* watched, QEvent* event)
-{
-    return QMainWindow::eventFilter(watched, event);
 }
 
 void MainWindow::onBreakpointHit(const Emulator::State& state)
@@ -241,9 +254,9 @@ void MainWindow::_startEmulation(const QString& romPath)
 
     connect(this, &MainWindow::requestStartEmulation, emulator, &Emulator::startEmulation);
     connect(this, &MainWindow::requestEmulationStatus, emulator, &Emulator::getEmulationStatus);
+    connect(this, &MainWindow::requestStepInInstruction, emulator, &Emulator::stepInInstruction);
 
     connect(emulator, &Emulator::emulationStatusUpdated, &_debugger, &Debugger::onEmulationStatusUpdate);
-    connect(&_debugger, &Debugger::stepIn, emulator, &Emulator::stepInInstruction);
 
     _emulatorThread.start();
     _updateEmulationStatus(Status::Running);

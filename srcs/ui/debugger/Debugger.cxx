@@ -81,6 +81,7 @@ Debugger::~Debugger()
 
 void Debugger::setEnabled(const bool enabled) const
 {
+    ui->instructionsDisassembly->selectionModel()->clearSelection();
     ui->instructionsDisassembly->setEnabled(enabled);
     ui->dockMemoryEditor->setEnabled(enabled);
     ui->dockRegisters->setEnabled(enabled);

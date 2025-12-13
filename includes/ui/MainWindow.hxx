@@ -31,7 +31,6 @@ class MainWindow final : public QMainWindow
     void keyPressEvent(QKeyEvent* event) override;
     void keyReleaseEvent(QKeyEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
-    bool eventFilter(QObject* watched, QEvent* event) override;
 
   public slots:
     void onFrameReady(const Graphics::Framebuffer& framebuffer);
