@@ -93,13 +93,9 @@ void Debugger::setEnabled(const bool enabled) const
     ui->dockStackFrame->setEnabled(enabled);
 }
 
-void Debugger::onCpuRegisterChanged(RegisterModel::RegisterEntry registerEntry) {}
-
 void Debugger::onCpuFlagsChanged(bool checked) {}
 
 void Debugger::onCpuImeChanged(bool checked) {}
-
-void Debugger::onPpuRegisterChanged(RegisterModel::RegisterEntry registerEntry) {}
 
 void Debugger::_scrollToAddress(const uint16_t address) const
 {
@@ -126,7 +122,7 @@ void Debugger::_selectAddress(const uint16_t address) const
     selectionModel->setCurrentIndex(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }
 
-void Debugger::onEmulationStatusUpdate(const Emulator::State& state)
+void Debugger::onEmulationStateUpdate(const Emulator::State& state)
 {
     _cpuEightBitsRegistersModel.setRegisterValue("A", state.cpuView.registers.A);
     _cpuEightBitsRegistersModel.setRegisterValue("B", state.cpuView.registers.B);
@@ -167,4 +163,73 @@ void Debugger::onEmulationStatusUpdate(const Emulator::State& state)
 
     _scrollToAddress(state.cpuView.registers.PC);
     _selectAddress(state.cpuView.registers.PC);
+
+    _currentState = state;
 }
+
+void Debugger::onCpuRegisterChanged(const QString& name, uint64_t value)
+{
+    if (name == "A")
+    {
+        _currentState.cpuView.registers.A = value;
+    }
+    else if (name == "B")
+    {
+        _currentState.cpuView.registers.B = value;
+    }
+    else if (name == "C")
+    {
+        _currentState.cpuView.registers.C = value;
+    }
+    else if (name == "D")
+    {
+        _currentState.cpuView.registers.D = value;
+    }
+    else if (name == "H")
+    {
+        _currentState.cpuView.registers.H = value;
+    }
+    else if (name == "L")
+    {
+        _currentState.cpuView.registers.L = value;
+    }
+    else if (name == "IE")
+    {
+        _currentState.cpuView.interrupts.IE = value;
+    }
+    else if (name == "IF")
+    {
+        _currentState.cpuView.interrupts.IF = value;
+    }
+    else if (name == "AF")
+    {
+        _currentState.cpuView.registers.AF = value;
+    }
+    else if (name == "BC")
+    {
+        _currentState.cpuView.registers.BC = value;
+    }
+    else if (name == "DE")
+    {
+        _currentState.cpuView.registers.DE = value;
+    }
+    else if (name == "HL")
+    {
+        _currentState.cpuView.registers.HL = value;
+    }
+    else if (name == "SP")
+    {
+        _currentState.cpuView.registers.SP = value;
+    }
+    else if (name == "PC")
+    {
+        _currentState.cpuView.registers.PC = value;
+
+        _scrollToAddress(value);
+        _selectAddress(value);
+    }
+
+    updateEmulationState(_currentState);
+}
+
+void Debugger::onPpuRegisterChanged(const QString& name, uint64_t value) {}

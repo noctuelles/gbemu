@@ -158,7 +158,7 @@ void MainWindow::resizeEvent(QResizeEvent* event)
 void MainWindow::onBreakpointHit(const Emulator::State& state)
 {
     _updateEmulationStatus(Status::Paused);
-    _debugger.onEmulationStatusUpdate(state);
+    _debugger.onEmulationStateUpdate(state);
 }
 
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
@@ -251,7 +251,7 @@ void MainWindow::_startEmulation(const QString& romPath)
     connect(this, &MainWindow::requestEmulationStatus, emulator, &Emulator::getEmulationStatus);
     connect(this, &MainWindow::requestStepInInstruction, emulator, &Emulator::stepInInstruction);
 
-    connect(emulator, &Emulator::emulationStatusUpdated, &_debugger, &Debugger::onEmulationStatusUpdate);
+    connect(emulator, &Emulator::emulationStatusUpdated, &_debugger, &Debugger::onEmulationStateUpdate);
 
     _emulatorThread.start();
     _updateEmulationStatus(Status::Running);

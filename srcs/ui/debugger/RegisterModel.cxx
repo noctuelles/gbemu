@@ -116,7 +116,7 @@ bool RegisterModel::setData(const QModelIndex& index, const QVariant& value, con
 
         if (role == Qt::EditRole)
         {
-            emit registerChanged(registerEntry);
+            emit registerChanged(registerEntry.name, newValue);
         }
 
         return true;

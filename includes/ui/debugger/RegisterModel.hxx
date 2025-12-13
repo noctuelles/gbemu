@@ -38,7 +38,7 @@ class RegisterModel final : public QAbstractTableModel
     [[nodiscard]] bool          setData(const QModelIndex& index, const QVariant& value, int role) override;
 
   signals:
-    void registerChanged(const RegisterModel::RegisterEntry& entry);
+    void registerChanged(const QString& name, uint64_t value);
 
   private:
     std::vector<RegisterEntry> _registers;

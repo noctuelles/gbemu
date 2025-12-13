@@ -27,16 +27,17 @@ class Debugger final : public QMainWindow
   public:
     explicit Debugger(QWidget* parent = nullptr);
     ~Debugger() override;
+
     void setEnabled(bool enabled) const;
 
   public slots:
-    void onEmulationStatusUpdate(const Emulator::State& state);
+    void onEmulationStateUpdate(const Emulator::State& state);
 
   private slots:
-    void onCpuRegisterChanged(RegisterModel::RegisterEntry registerEntry);
+    void onCpuRegisterChanged(const QString& name, uint64_t value);
+    void onPpuRegisterChanged(const QString& name, uint64_t value);
     void onCpuFlagsChanged(bool checked);
     void onCpuImeChanged(bool checked);
-    void onPpuRegisterChanged(RegisterModel::RegisterEntry registerEntry);
 
   signals:
 
@@ -45,13 +46,15 @@ class Debugger final : public QMainWindow
     void stepIn();
     void stepOver();
     void stepOut();
-    void updateEmulation();
+    void updateEmulationState(const Emulator::State& state);
 
   private:
     void _scrollToAddress(uint16_t address) const;
     void _selectAddress(uint16_t address) const;
 
     Ui::Debugger*    ui;
+
+    Emulator::State  _currentState{};
     RegisterModel    _cpuEightBitsRegistersModel{};
     RegisterModel    _cpuSixteenBitsRegistersModel{};
     RegisterModel    _ppuRegistersModel{};
