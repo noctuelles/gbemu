@@ -147,8 +147,16 @@ Preference::~Preference()
 
 void Preference::accept()
 {
-    Settings::setBootRomEnabled(_ui->enableBootRomCheckbox->isChecked());
-    Settings::setBootRomPath(Settings::getBootRomPath());
+    if (_ui->enableBootRomCheckbox->isChecked() && !_bootRomPath.isEmpty())
+    {
+        Settings::setBootRomEnabled(true);
+        Settings::setBootRomPath(_bootRomPath);
+    }
+    else
+    {
+        Settings::setBootRomEnabled(false);
+        Settings::setBootRomPath("");
+    }
 
     {
         using namespace Settings::Keys;

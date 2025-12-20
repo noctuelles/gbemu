@@ -17,31 +17,32 @@ Emulator::Emulator(const std::optional<QString>& bootRomPath, QObject* parent)
         _components.bus.setPostBootRomRegisters();
         _components.cpu.setPostBootRomRegisters();
         _components.ppu.setPostBootRomRegisters();
-        return;
+    }
+    else
+    {
+        QFile                      file{bootRomPath.value()};
+        std::array<uint8_t, 0x100> bootRom{};
+
+        if (!file.open(QIODevice::ReadOnly))
+        {
+            throw std::system_error{file.error(), std::generic_category(), file.errorString().toStdString()};
+        }
+
+        if (static_cast<size_t>(file.size()) > bootRom.size())
+        {
+            throw std::runtime_error("Boot ROM size is too large (max 256 bytes)");
+        }
+
+        if (const auto readBytes{file.read(reinterpret_cast<char*>(bootRom.data()), bootRom.size())};
+            readBytes != bootRom.size())
+        {
+            throw std::system_error{file.error(), std::generic_category(), file.errorString().toStdString()};
+        }
+
+        _components.bus.loadBootRom(bootRom);
     }
 
     connect(_renderer, &QtRenderer::onRender, this, &Emulator::onRender, Qt::DirectConnection);
-
-    QFile                      file{bootRomPath.value()};
-    std::array<uint8_t, 0x100> bootRom{};
-
-    if (!file.open(QIODevice::ReadOnly))
-    {
-        throw std::system_error();
-    }
-
-    if (static_cast<size_t>(file.size()) > bootRom.size())
-    {
-        throw std::runtime_error("Boot ROM size is too large (max 256 bytes)");
-    }
-
-    if (const auto readBytes{file.read(reinterpret_cast<char*>(bootRom.data()), bootRom.size())};
-        readBytes != bootRom.size())
-    {
-        throw std::system_error{};
-    }
-
-    _components.bus.loadBootRom(bootRom);
 }
 
 void Emulator::startEmulation(const QString& path)
