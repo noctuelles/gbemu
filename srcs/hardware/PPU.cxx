@@ -90,6 +90,7 @@ void PPU::write(const uint16_t address, uint8_t value)
     else if (address == MemoryMap::IORegisters::LYC)
     {
         _registers.LYC = value;
+        _checkLYCInterrupt();
     }
     else if (address == MemoryMap::IORegisters::SCY)
     {
@@ -175,7 +176,8 @@ void PPU::tick(const size_t machineCycle)
                      * identical, the object located first in OAM has higher priority.
                      * A stable sort preserves the original order of the OAM if two OAM entries X position are equal.
                      */
-                    std::ranges::stable_sort(_oamEntriesToDraw, {}, &OAMEntry::x);
+                    std::ranges::stable_sort(_oamEntriesToDraw,
+                                             [](const auto lhs, const auto rhs) { return lhs->x < rhs->x; });
 
                     _transition(Mode::Drawing);
                 }
@@ -199,22 +201,7 @@ void PPU::tick(const size_t machineCycle)
                 {
                     _dots = 0;
 
-                    _registers.LY += 1;
-
-                    if (_registers.LY == _registers.LYC)
-                    {
-                        if (_registers.STAT & Status::LYC)
-                        {
-                            _bus.write(MemoryMap::IORegisters::IF,
-                                       _bus.read(MemoryMap::IORegisters::IF) | (1 << Interrupts::LCD));
-                        }
-
-                        _registers.STAT |= Status::LYCCompare;
-                    }
-                    else
-                    {
-                        _registers.STAT &= ~Status::LYCCompare;
-                    }
+                    _setLY(_registers.LY + 1);
 
                     if (_registers.LY == 144)
                     {
@@ -233,7 +220,7 @@ void PPU::tick(const size_t machineCycle)
                 if (_dots == 456)
                 {
                     _dots = 0;
-                    _registers.LY += 1;
+                    _setLY(_registers.LY + 1);
 
                     if (_registers.LY == 154)
                     {
@@ -570,6 +557,25 @@ uint8_t PPU::_pixelMixing(const ObjPixel& objPixel, const BgPixel& bgPixel) cons
     return palettedPixel;
 }
 
+void PPU::_setLY(const uint8_t value)
+{
+    _registers.LY = value;
+    _checkLYCInterrupt();
+}
+
+void PPU::_checkLYCInterrupt()
+{
+    if (_registers.LY == _registers.LYC)
+    {
+        _triggerStatInterrupt(_registers.STAT & Status::LYC);
+        _registers.STAT |= Status::LYCCompare;
+    }
+    else
+    {
+        _registers.STAT &= ~Status::LYCCompare;
+    }
+}
+
 void PPU::_transition(const Mode transitionTo)
 {
     auto modeValue{std::to_underlying(_mode)};
@@ -586,7 +592,7 @@ void PPU::_transition(const Mode transitionTo)
 
     if (transitionTo == Mode::OAMScan || transitionTo == Mode::HorizontalBlank || transitionTo == Mode::VerticalBlank)
     {
-        //_triggerStatInterrupt((_registers.STAT & (1 << (2 + modeValue))) != 0);
+        _triggerStatInterrupt((_registers.STAT & (1 << (2 + modeValue))) != 0);
     }
 
     if (_mode == Mode::OAMScan && transitionTo == Mode::Drawing)
@@ -615,13 +621,13 @@ void PPU::_transition(const Mode transitionTo)
 
 void PPU::_triggerStatInterrupt(const bool value)
 {
-    if (value && !_irq)
+    if (value && !_statIrqBlocking)
     {
-        _irq = true;
         _bus.write(MemoryMap::IORegisters::IF, _bus.read(MemoryMap::IORegisters::IF) | (1 << Interrupts::LCD));
+        _statIrqBlocking = true;
     }
-    else
+    else if (!value && _statIrqBlocking)
     {
-        _irq = false;
+        _statIrqBlocking = false;
     }
 }

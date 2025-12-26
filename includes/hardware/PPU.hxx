@@ -190,6 +190,8 @@ class PPU final : public IComponent
     [[nodiscard]] ObjPixel _spriteFetch(uint8_t x) const;
     [[nodiscard]] BgPixel  _bgFetch(uint8_t x) const;
     [[nodiscard]] uint8_t  _pixelMixing(const ObjPixel& objPixel, const BgPixel& bgPixel) const;
+    void                   _setLY(uint8_t value);
+    void _checkLYCInterrupt();
 
     void _transition(Mode transitionTo);
     void _triggerStatInterrupt(bool value);
@@ -201,7 +203,7 @@ class PPU final : public IComponent
     OAMArrayItVector _oamEntriesToDraw{};
     bool             _videoRamAccessible{true};
     bool             _oamAccessible{true};
-    bool             _irq{};
+    bool             _statIrqBlocking{};
     Registers        _registers{};
     uint16_t         _dots{};
     uint8_t          _pixelsToDiscard{};
