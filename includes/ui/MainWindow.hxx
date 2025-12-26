@@ -84,7 +84,7 @@ class MainWindow final : public QMainWindow
     QThread         _emulatorThread{};
     Ui::MainWindow* _ui{};
 
-    Debugger _debugger{};
+    Debugger* _debugger{};
 };
 
 #endif  // GBEMU_MAINWINDOW_HXX

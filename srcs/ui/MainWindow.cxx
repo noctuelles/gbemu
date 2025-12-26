@@ -19,7 +19,7 @@
 #include "ui/Settings.hxx"
 #include "ui_MainWindow.h"
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainWindow), _debugger(this)
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainWindow), _debugger(new Debugger{this})
 {
     _ui->setupUi(this);
 
@@ -56,7 +56,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                 {
                     pausedByPreferenceOpen = true;
                     _updateEmulationStatus(Status::Paused);
-                    _debugger.setEnabled(false);
+                    _debugger->setEnabled(false);
                 }
 
                 if (Preference prefDialog(this); prefDialog.exec() == QDialog::Accepted)
@@ -72,9 +72,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                 emit requestNextFrame();
             });
 
-    connect(_ui->actionDebugger, &QAction::triggered, this, [this] { _debugger.show(); });
+    connect(_ui->actionDebugger, &QAction::triggered, this, [this] { _debugger->show(); });
 
-    connect(&_debugger, &Debugger::pauseExecution, this,
+    connect(_debugger, &Debugger::pauseExecution, this,
             [this]
             {
                 if (_emulationStatus == Status::Running)
@@ -84,7 +84,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                 }
             });
 
-    connect(&_debugger, &Debugger::continueExecution, this,
+    connect(_debugger, &Debugger::continueExecution, this,
             [this]
             {
                 if (_emulationStatus == Status::Paused)
@@ -94,7 +94,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), _ui(new Ui::MainW
                 }
             });
 
-    connect(&_debugger, &Debugger::stepIn, this,
+    connect(_debugger, &Debugger::stepIn, this,
             [this]
             {
                 if (_emulationStatus == Status::Paused)
@@ -158,7 +158,7 @@ void MainWindow::resizeEvent(QResizeEvent* event)
 void MainWindow::onBreakpointHit(const Emulator::State& state)
 {
     _updateEmulationStatus(Status::Paused);
-    _debugger.onEmulationStateUpdate(state);
+    _debugger->onEmulationStateUpdate(state);
 }
 
 void MainWindow::onFrameReady(const Graphics::Framebuffer& framebuffer)
@@ -251,7 +251,7 @@ void MainWindow::_startEmulation(const QString& romPath)
     connect(this, &MainWindow::requestEmulationStatus, emulator, &Emulator::getEmulationStatus);
     connect(this, &MainWindow::requestStepInInstruction, emulator, &Emulator::stepInInstruction);
 
-    connect(emulator, &Emulator::emulationStatusUpdated, &_debugger, &Debugger::onEmulationStateUpdate);
+    connect(emulator, &Emulator::emulationStatusUpdated, _debugger, &Debugger::onEmulationStateUpdate);
 
     _emulatorThread.start();
     _updateEmulationStatus(Status::Running);
@@ -266,15 +266,15 @@ void MainWindow::_updateEmulationStatus(const Status status)
 
     if (status == Status::Running && (_emulationStatus == Status::Paused || _emulationStatus == Status::Stopped))
     {
-        _debugger.setEnabled(false);
+        _debugger->setEnabled(false);
     }
     else if (status == Status::Paused && _emulationStatus == Status::Running)
     {
-        _debugger.setEnabled(true);
+        _debugger->setEnabled(true);
     }
     else if (status == Status::Stopped)
     {
-        _debugger.setEnabled(false);
+        _debugger->setEnabled(false);
     }
 
     _emulationStatus = status;
