@@ -27,7 +27,7 @@ Preference::Preference(QWidget* parent) : QDialog(parent), _ui(new Ui::Preferenc
                 [this]
                 {
                     const auto path =
-                        QFileDialog::getOpenFileName(this, tr("Select Boot ROM"), ".", tr("ROM Files (*.gb)"));
+                        QFileDialog::getOpenFileName(this, tr("Select Boot ROM"), ".", tr("Boot ROM Files (*.bin)"));
 
                     if (!path.isEmpty())
                     {

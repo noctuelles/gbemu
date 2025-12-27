@@ -200,9 +200,7 @@ void PPU::tick(const size_t machineCycle)
                 if (_dots == 456)
                 {
                     _dots = 0;
-
                     _setLY(_registers.LY + 1);
-
                     if (_registers.LY == 144)
                     {
                         _transition(Mode::VerticalBlank);
@@ -221,8 +219,7 @@ void PPU::tick(const size_t machineCycle)
                 {
                     _dots = 0;
                     _setLY(_registers.LY + 1);
-
-                    if (_registers.LY == 154)
+                    if (_registers.LY == 153)
                     {
                         _transition(Mode::OAMScan);
                     }
@@ -236,8 +233,8 @@ void PPU::tick(const size_t machineCycle)
 
 void PPU::setPostBootRomRegisters()
 {
-    _registers.LCDC = 0x91;
-    _registers.STAT = 0x85;
+    write(MemoryMap::IORegisters::LCDC, 0x91);
+    write(MemoryMap::IORegisters::BGP, 0xFC);
 }
 
 IAddressable::AddressableRange PPU::getAddressableRange() const noexcept
@@ -344,9 +341,12 @@ PPU::ObjPixel PPU::_spriteFetch(const uint8_t x) const
 
             objPixel = (((objTileDataHigh >> objColOffset) & 1) << 1) | ((objTileDataLow >> objColOffset) & 1);
 
-            /* Stop at the first (highest priority) object found for this pixel. */
+            /* Stop at the first (highest priority) object found for this pixel that has a non-transparent pixel. */
 
-            break;
+            if (objPixel != 0)
+            {
+                break;
+            }
         }
     }
 
@@ -613,7 +613,7 @@ void PPU::_transition(const Mode transitionTo)
     }
     else if (_mode == Mode::VerticalBlank && transitionTo == Mode::OAMScan)
     {
-        _registers.LY = 0;
+        _setLY(0);
     }
 
     _mode = transitionTo;

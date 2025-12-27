@@ -60,7 +60,10 @@ IAddressable::AddressableRange SM83::getAddressableRange() const noexcept
 
 void SM83::setPostBootRomRegisters()
 {
-    A  = 0x01;
+    A = 0x01;
+    setFlag(Flags::Zero, true);
+    setFlag(Flags::Subtract, false);
+    B  = 0x00;
     C  = 0x13;
     E  = 0xD8;
     H  = 0x01;
